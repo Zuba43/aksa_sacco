@@ -1,0 +1,88 @@
+{% extends "base.html" %} {% block title %}Sign In - AKSA SACCO{% endblock %} {%
+block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="bg-primary p-4 text-white text-center">
+          <i class="bi bi-shield-lock fs-1"></i>
+          <h4 class="fw-bold mb-0 mt-2">Welcome Back</h4>
+          <p class="small text-white-50 mb-0">
+            Sign in to access your AKSA account
+          </p>
+        </div>
+        <div class="card-body p-4">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+
+          <form method="POST" action="{{ url_for('auth.login') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+              {{ form.login_id.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text bg-light"
+                  ><i class="bi bi-person"></i
+                ></span>
+                {{ form.login_id(class="form-control form-control-lg",
+                placeholder="Username or Phone") }}
+              </div>
+              {% for error in form.login_id.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.password.label(class="form-label fw-semibold") }}
+              <div class="input-group">
+                <span class="input-group-text bg-light"
+                  ><i class="bi bi-lock"></i
+                ></span>
+                {{ form.password(class="form-control form-control-lg",
+                placeholder="••••••••") }}
+              </div>
+              {% for error in form.password.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check">
+                {{ form.remember(class="form-check-input") }} {{
+                form.remember.label(class="form-check-label small") }}
+              </div>
+              <a href="#" class="small text-primary text-decoration-none"
+                >Forgot password?</a
+              >
+            </div>
+
+            {{ form.submit(class="btn btn-primary btn-lg w-100 fw-bold shadow-sm
+            mb-3") }}
+          </form>
+
+          <div class="text-center">
+            <span class="text-muted small">Don't have an account?</span>
+            <a
+              href="{{ url_for('auth.register') }}"
+              class="small fw-bold text-primary text-decoration-none ms-1"
+              >Register here</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

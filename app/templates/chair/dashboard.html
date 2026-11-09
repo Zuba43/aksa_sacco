@@ -1,0 +1,899 @@
+{% extends "base.html" %} {% block title %}Chairman Dashboard - AKSA SACCO{%
+endblock %} {% block content %}
+<div class="container-fluid py-4 px-4">
+  <!-- Layout Wrapper with Collapsible Sidebar Navigation -->
+  <div class="row">
+    <!-- SIDEBAR NAVIGATION MENU -->
+    <div class="col-lg-3 col-xl-2 mb-4 mb-lg-0">
+      <div
+        class="card border-0 shadow-sm rounded-3 p-3 bg-white sticky-top"
+        style="top: 20px"
+      >
+        <div
+          class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom"
+        >
+          <span class="fw-bold text-dark small text-uppercase">
+            <i class="bi bi-person-workspace text-primary me-1"></i> Member
+            Actions
+          </span>
+          <button
+            class="btn btn-sm btn-light d-lg-none"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#memberNavCollapse"
+          >
+            <i class="bi bi-list"></i>
+          </button>
+        </div>
+
+        <div class="collapse d-lg-block" id="memberNavCollapse">
+          <div class="nav flex-column gap-2">
+            <!-- My Wallet / Savings Overview -->
+            <button
+              type="button"
+              class="btn btn-light text-start w-100 d-flex justify-content-between align-items-center py-2 px-3 fw-semibold small rounded-2"
+              data-bs-toggle="modal"
+              data-bs-target="#viewSavingsModal"
+            >
+              <span
+                ><i class="bi bi-wallet2 text-success me-2"></i>My Wallet</span
+              >
+              <span class="badge bg-success bg-opacity-10 text-success"
+                >UGX {{ "{:,.0f}".format(current_user_savings|default(0.0))
+                }}</span
+              >
+            </button>
+
+            <!-- Friday Savings -->
+            <button
+              type="button"
+              class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
+              data-bs-toggle="modal"
+              data-bs-target="#saveFridayModal"
+            >
+              <i class="bi bi-piggy-bank text-primary me-2"></i>Friday Savings
+            </button>
+
+            <!-- Loan Application -->
+            <button
+              type="button"
+              class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
+              data-bs-toggle="modal"
+              data-bs-target="#applyLoanModal"
+            >
+              <i class="bi bi-cash-stack text-warning me-2"></i>Loan Application
+            </button>
+
+            <!-- Loan Repayment -->
+            <button
+              type="button"
+              class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
+              data-bs-toggle="modal"
+              data-bs-target="#repayLoanModal"
+            >
+              <i class="bi bi-arrow-return-left text-danger me-2"></i>Loan
+              Repayment
+            </button>
+
+            <hr class="my-2" />
+
+            <!-- Transaction History Summary -->
+            <button
+              type="button"
+              class="btn btn-dark text-start w-100 py-2 px-3 fw-semibold small rounded-2 shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#transactionHistoryModal"
+            >
+              <i class="bi bi-clock-history me-2"></i>Transaction History
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CHAIRMAN CONTENT AREA -->
+    <div class="col-lg-9 col-xl-10">
+      <!-- Executive Header Banner -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 class="fw-bold mb-1">
+            <i class="bi bi-award text-primary me-2"></i>Executive Portal
+            (Chairman)
+          </h3>
+          <p class="text-muted small mb-0">
+            Executive SACCO governance, high-level loan approvals, and
+            institutional oversight.
+          </p>
+        </div>
+        <span class="badge bg-dark px-3 py-2 fs-6 rounded-pill">
+          <i class="bi bi-shield-lock me-1"></i> Chairman Privileges
+        </span>
+      </div>
+
+      <!-- Key Performance Indicators (Metrics) -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div
+            class="card border-0 shadow-sm rounded-3 bg-primary text-white p-3"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Active Members
+                </div>
+                <div class="fs-3 fw-bold">{{ total_members }}</div>
+              </div>
+              <i class="bi bi-people fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div
+            class="card border-0 shadow-sm rounded-3 bg-warning text-dark p-3"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-dark-50 text-uppercase fw-bold">
+                  Pending Approvals
+                </div>
+                <div class="fs-3 fw-bold">{{ pending_loans|length }}</div>
+              </div>
+              <i class="bi bi-hourglass-split fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div
+            class="card border-0 shadow-sm rounded-3 bg-success text-white p-3"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Approved Loans
+                </div>
+                <div class="fs-3 fw-bold">{{ approved_loans|length }}</div>
+              </div>
+              <i class="bi bi-cash-stack fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div
+            class="card border-0 shadow-sm rounded-3 bg-danger text-white p-3"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Pending Reg. Requests
+                </div>
+                <div class="fs-3 fw-bold">{{ pending_activations }}</div>
+              </div>
+              <i class="bi bi-person-exclamation fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <ul
+        class="nav nav-pills nav-fill mb-4 bg-white p-2 rounded-3 shadow-sm border"
+        id="chairTab"
+        role="tablist"
+      >
+        <li class="nav-item">
+          <button
+            class="nav-link active fw-semibold"
+            id="loans-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#loans"
+            type="button"
+          >
+            <i class="bi bi-file-earmark-check me-1"></i> Pending Loan
+            Applications ({{ pending_loans|length }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            class="nav-link fw-semibold"
+            id="defaulters-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#defaulters"
+            type="button"
+          >
+            <i class="bi bi-exclamation-triangle me-1"></i> Loan Portfolio &
+            Defaulters ({{ active_defaulters|length }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            class="nav-link fw-semibold"
+            id="minutes-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#minutes"
+            type="button"
+          >
+            <i class="bi bi-journal-text me-1"></i> Minutes & Board Audit
+          </button>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="chairTabContent">
+        <!-- Tab 1: Executive Loan Approvals -->
+        <div class="tab-pane fade show active" id="loans" role="tabpanel">
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-0">
+              <h5 class="fw-bold mb-0">
+                Loan Requests Awaiting Executive Approval
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              {% if pending_loans %}
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Applicant</th>
+                      <th>Amount Requested</th>
+                      <th>Interest Rate</th>
+                      <th>Duration / Term</th>
+                      <th>Submitted Date</th>
+                      <th>Executive Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for loan in pending_loans %}
+                    <tr>
+                      <td>
+                        <div class="fw-bold">
+                          {{ loan.user.fname }} {{ loan.user.lname }}
+                        </div>
+                        <small class="text-muted"
+                          >@{{ loan.user.username }} | {{ loan.user.phone
+                          }}</small
+                        >
+                      </td>
+                      <td class="fw-bold text-primary">
+                        UGX {{ "{:,.2f}".format(loan.amount_requested) }}
+                      </td>
+                      <td>{{ loan.interest_rate }}%</td>
+                      <td>
+                        {{ loan.duration_months if loan.duration_months else
+                        '12' }} Months
+                      </td>
+                      <td>
+                        <small class="text-muted"
+                          >{{ loan.created_at.strftime('%Y-%m-%d') if
+                          loan.created_at else 'N/A' }}</small
+                        >
+                      </td>
+                      <td>
+                        <div class="d-flex gap-1">
+                          <form
+                            method="POST"
+                            action="{{ url_for('chair.approve_loan', loan_id=loan.id) }}"
+                          >
+                            <input
+                              type="hidden"
+                              name="csrf_token"
+                              value="{{ csrf_token() }}"
+                            />
+                            <button
+                              type="submit"
+                              class="btn btn-success btn-sm px-3"
+                            >
+                              <i class="bi bi-check-lg me-1"></i> Approve
+                            </button>
+                          </form>
+                          <form
+                            method="POST"
+                            action="{{ url_for('chair.reject_loan', loan_id=loan.id) }}"
+                            onsubmit="
+                              return confirm('Reject this loan application?');
+                            "
+                          >
+                            <input
+                              type="hidden"
+                              name="csrf_token"
+                              value="{{ csrf_token() }}"
+                            />
+                            <button
+                              type="submit"
+                              class="btn btn-danger btn-sm px-3"
+                            >
+                              <i class="bi bi-x-lg me-1"></i> Reject
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <div class="p-5 text-center text-muted">
+                <i class="bi bi-file-earmark-check fs-1 text-success"></i>
+                <p class="mt-2 mb-0">
+                  No loan applications pending executive review at this time.
+                </p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Loan Portfolio & Active Defaulters Oversight -->
+        <div class="tab-pane fade" id="defaulters" role="tabpanel">
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-0">
+              <h5 class="fw-bold mb-0">Active Loans Portfolio Oversight</h5>
+            </div>
+            <div class="card-body p-0">
+              {% if active_defaulters %}
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Borrower</th>
+                      <th>Amount Issued</th>
+                      <th>Emergency Contacts (3 Persons)</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for loan in active_defaulters %}
+                    <tr>
+                      <td>
+                        <div class="fw-bold">
+                          {{ loan.user.fname }} {{ loan.user.lname }}
+                        </div>
+                        <small class="text-muted">{{ loan.user.phone }}</small>
+                      </td>
+                      <td class="fw-bold text-dark">
+                        UGX {{ "{:,.2f}".format(loan.amount_requested) }}
+                      </td>
+                      <td>
+                        <small class="d-block"
+                          >1. {{ loan.user.emergency_name_1 }} ({{
+                          loan.user.emergency_relation_1 }}): {{
+                          loan.user.emergency_phone_1 }}</small
+                        >
+                        <small class="d-block"
+                          >2. {{ loan.user.emergency_name_2 }} ({{
+                          loan.user.emergency_relation_2 }}): {{
+                          loan.user.emergency_phone_2 }}</small
+                        >
+                        <small class="d-block fw-bold text-primary"
+                          >3. NOK: {{ loan.user.nok_name }} ({{
+                          loan.user.nok_relation }}): {{ loan.user.nok_phone
+                          }}</small
+                        >
+                      </td>
+                      <td>
+                        <span class="badge bg-warning text-dark"
+                          >{{ loan.status }}</span
+                        >
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <div class="p-5 text-center text-muted">
+                <i class="bi bi-shield-check fs-1 text-success"></i>
+                <p class="mt-2 mb-0">No active loans logged in the system.</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Governance Minutes Audit Log -->
+        <div class="tab-pane fade" id="minutes" role="tabpanel">
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-0">
+              <h5 class="fw-bold mb-0">Board Meeting Minutes Audit Log</h5>
+            </div>
+            <div class="card-body p-0">
+              {% if recent_minutes %}
+              <div class="list-group list-group-flush">
+                {% for min in recent_minutes %}
+                <div class="list-group-item p-3">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-1"
+                  >
+                    <h6 class="fw-bold text-primary mb-0">{{ min.title }}</h6>
+                    <small class="text-muted"
+                      ><i class="bi bi-calendar3 me-1"></i>{{ min.meeting_date
+                      }}</small
+                    >
+                  </div>
+                  <p class="small text-muted mb-2">
+                    {{ min.content[:200] }}...
+                  </p>
+                  {% if min.file_attachment %}
+                  <a
+                    href="{{ url_for('static', filename='uploads/minutes/' ~ min.file_attachment) }}"
+                    target="_blank"
+                    class="btn btn-sm btn-outline-secondary"
+                  >
+                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i> View
+                    Minutes PDF
+                  </a>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="p-4 text-center text-muted">
+                No meeting minutes logged yet.
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL CONTAINERS ================= -->
+
+<!-- Modal 1: Friday Savings Deposit -->
+<div class="modal fade" id="saveFridayModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-piggy-bank me-2"></i>Friday Savings Contribution
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form method="POST" action="{{ url_for('member.save_friday') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="modal-body p-4">
+          <label class="form-label fw-semibold">Amount to Deposit (UGX)</label>
+          <input
+            type="number"
+            name="amount"
+            class="form-control form-control-lg"
+            min="2000"
+            max="20000"
+            step="500"
+            value="5000"
+            required
+          />
+          <div class="form-text mt-2">
+            Rule: Contributions must be between UGX 2,000 and UGX 20,000 every
+            Friday.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-success fw-bold px-4">
+            Confirm Deposit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Popup View Savings Breakdown -->
+<div class="modal fade" id="viewSavingsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-piggy-bank me-2"></i>My Savings Transaction History
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body p-0">
+        {% if savings %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">#</th>
+                <th>Date</th>
+                <th>Deposit Type</th>
+                <th class="text-end pe-4">Amount (UGX)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in savings %}
+              <tr>
+                <td class="ps-4 text-muted small">{{ loop.index }}</td>
+                <td>{{ s.date_recorded.strftime('%d %b %Y, %H:%M') }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border"
+                    >{{ s.deposit_type }}</span
+                  >
+                </td>
+                <td class="text-end pe-4 fw-semibold text-success">
+                  +{{ "{:,.2f}".format(s.amount) }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light border-top border-2">
+              <tr>
+                <td
+                  colspan="3"
+                  class="ps-4 fw-bold text-uppercase text-secondary"
+                >
+                  Total Accumulated Savings
+                </td>
+                <td class="text-end pe-4 fw-bold fs-5 text-primary">
+                  UGX {{ "{:,.2f}".format(current_user_savings|default(0.0)) }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+          <i
+            class="bi bi-info-circle display-6 d-block mb-2 text-secondary"
+          ></i>
+          No savings records found yet.
+        </div>
+        {% endif %}
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary px-4"
+          data-bs-dismiss="modal"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Loan Application Modal -->
+<div class="modal fade" id="applyLoanModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-cash-stack me-2"></i>Apply for SACCO Credit
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form method="POST" action="{{ url_for('member.apply_loan') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="modal-body p-4">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Loan Type</label>
+              <select
+                name="loan_type"
+                id="loanTypeSelect"
+                class="form-select"
+                required
+              >
+                <option value="general" selected>
+                  General Loan (10% Interest)
+                </option>
+                <option value="emergency">Emergency Loan (7% Interest)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Loan Amount (UGX)</label>
+              <input
+                type="number"
+                name="amount_requested"
+                class="form-control"
+                placeholder="e.g. 500000"
+                min="50000"
+                step="5000"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Loan Period (Tenure)</label>
+              <select
+                name="tenure_months"
+                id="tenureSelect"
+                class="form-select"
+                required
+              >
+                <option value="1">1 Month</option>
+                <option value="2">2 Months</option>
+                <option value="3" selected>3 Months</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Interest Rate</label>
+              <input
+                type="text"
+                id="interestRateInput"
+                name="interest_rate"
+                class="form-control bg-light fw-bold"
+                value="10%"
+                readonly
+              />
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Guarantor Name</label>
+              <input
+                type="text"
+                name="guarantor_name"
+                class="form-control"
+                placeholder="Full Legal Name"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold"
+                >Guarantor Email</label
+              >
+              <input
+                type="email"
+                name="guarantor_email"
+                class="form-control"
+                placeholder="guarantor@example.com"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold"
+                >Guarantor Phone</label
+              >
+              <input
+                type="tel"
+                name="guarantor_phone"
+                class="form-control"
+                placeholder="Phone Number"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button
+            type="button"
+            class="btn btn-light border"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary fw-bold px-4">
+            Submit Application
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4: Loan Repayment Modal -->
+<div class="modal fade" id="repayLoanModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-arrow-return-left me-2"></i>Repay Active Loan
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form method="POST" action="{{ url_for('member.repay_loan') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Select Active Loan</label>
+            <select name="loan_id" class="form-select form-select-lg" required>
+              {% for l in loans|default([]) %} {% if l.status in ['Approved',
+              'Active'] %}
+              <option value="{{ l.id }}">
+                Loan #{{ l.id }} - UGX {{ "{:,.2f}".format(l.amount_requested)
+                }}
+              </option>
+              {% endif %} {% else %}
+              <option value="" disabled selected>
+                No active approved loans found
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Repayment Amount (UGX)</label>
+            <input
+              type="number"
+              name="repayment_amount"
+              class="form-control form-control-lg"
+              placeholder="e.g. 50000"
+              min="1000"
+              step="500"
+              required
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-warning fw-bold px-4">
+            Submit Repayment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 5: Transaction History Summary (Savings & Loans Combined) -->
+<div
+  class="modal fade"
+  id="transactionHistoryModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-dark text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-clock-history me-2"></i>Unified Transaction History
+          (Savings & Loans)
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small">
+          Summary of all personal savings contributions and loan
+          disbursements/repayments logged in the system.
+        </p>
+
+        <ul class="nav nav-tabs mb-3" id="historyTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active fw-semibold"
+              id="sav-hist-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#savHist"
+              type="button"
+              role="tab"
+            >
+              Savings Logs
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link fw-semibold"
+              id="loan-hist-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#loanHist"
+              type="button"
+              role="tab"
+            >
+              Loan Requests & Repayments
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="historyTabContent">
+          <!-- Savings Tab -->
+          <div class="tab-pane fade show active" id="savHist" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th class="text-end">Amount (UGX)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in savings|default([]) %}
+                  <tr>
+                    <td>{{ s.date_recorded.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                      <span class="badge bg-success bg-opacity-10 text-success"
+                        >{{ s.deposit_type }}</span
+                      >
+                    </td>
+                    <td class="text-end fw-bold text-success">
+                      +{{ "{:,.2f}".format(s.amount) }}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-3">
+                      No savings history found.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Loans Tab -->
+          <div class="tab-pane fade" id="loanHist" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date Applied</th>
+                    <th>Category</th>
+                    <th>Principal</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for l in loans|default([]) %}
+                  <tr>
+                    <td>
+                      {{ l.date_applied.strftime('%Y-%m-%d') if l.date_applied
+                      else 'N/A' }}
+                    </td>
+                    <td>{{ l.loan_type }}</td>
+                    <td class="fw-bold">
+                      UGX {{ "{:,.2f}".format(l.amount_requested) }}
+                    </td>
+                    <td>
+                      <span class="badge bg-primary bg-opacity-10 text-primary"
+                        >{{ l.status }}</span
+                      >
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted py-3">
+                      No loan history found.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary px-4"
+          data-bs-dismiss="modal"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
