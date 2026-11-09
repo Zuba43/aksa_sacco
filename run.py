@@ -3,7 +3,6 @@ from app import create_app, db
 from config import Config
 
 def ensure_mysql_database_exists():
-    """Connects to MySQL server and creates the database if it doesn't exist."""
     try:
         connection = pymysql.connect(
             host=Config.DB_HOST,
@@ -12,25 +11,33 @@ def ensure_mysql_database_exists():
             port=int(Config.DB_PORT)
         )
         with connection.cursor() as cursor:
-            # Create database if it doesn't exist with UTF8mb4 support
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        connection.commit()
         connection.close()
-        print(f"-> Database '{Config.DB_NAME}' verified/created successfully.")
+        print(f"-> Database '{Config.DB_NAME}' verified/created.")
     except Exception as e:
-        print(f"-> Warning: Could not auto-create MySQL database. Ensure your MySQL server is running. Error: {e}")
+        print(f"-> Warning: Could not auto-create DB: {e}")
 
+# 1. Make sure DB exists BEFORE we create app
+ensure_mysql_database_exists()
+
+# 2. Create app
 app = create_app()
 
-if __name__ == '__main__':
-    # Step 1: Ensure the MySQL database exists before starting the app
-    ensure_mysql_database_exists()
+# 3. Create tables BOTH on laptop AND on PythonAnywhere (WSGI)
+# This runs on import, not only when you do python run.py
+try:
+    import app.models  # <-- makes sure models are registered
+    print("-> Models imported")
+except Exception as e:
+    print(f"-> Models import warning: {e}")
 
-    # Step 2: Create all database tables based on models.py
-    with app.app_context():
-        #db.drop_all()
+with app.app_context():
+    try:
         db.create_all()
-        #for debugging only.
-        print("-> Database tables verified/created successfully.")
+        print("-> Database tables verified/created.")
+    except Exception as e:
+        print(f"-> create_all error: {e}")
 
-    # Step 3: Run the development server (accessible locally and on your local network)
-    app.run()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
