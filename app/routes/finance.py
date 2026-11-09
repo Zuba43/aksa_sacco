@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from sqlalchemy import func
-from app.models import User, Loan, Savings, LoanRepayment
+from datetime import datetime
+from app.models import User, Loan, Savings, LoanRepayment, Expense, FineFee
 from app import db
 
 finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
@@ -56,8 +57,14 @@ def dashboard():
     # 6. Global Transactions for All Members (Explicitly joining User to guarantee member name display)
     all_savings_transactions = db.session.query(Savings, User).join(User, Savings.user_id == User.id).order_by(Savings.date_recorded.desc()).all()
     
-    # Fetch all repayments with their associated loan and user info
-    all_repayments_transactions = LoanRepayment.query.order_by(LoanRepayment.date_paid.desc()).all() if hasattr(LoanRepayment, 'date_paid') else LoanRepayment.query.all()
+    # Explicitly join LoanRepayment -> Loan -> User so tuple structure (repayment, user) is consistent
+    all_repayments_transactions = db.session.query(LoanRepayment, User)\
+        .join(Loan, LoanRepayment.loan_id == Loan.id)\
+        .join(User, Loan.user_id == User.id)\
+        .order_by(LoanRepayment.date_paid.desc()).all()
+
+    # 7. Fetch all members list for admin modal dropdowns
+    all_members = User.query.order_by(User.fname.asc()).all()
 
     return render_template(
         'finance/dashboard.html',
@@ -78,7 +85,113 @@ def dashboard():
         all_loans=all_loans,
         savings=personal_savings,
         current_user_savings=current_user_savings,
-        # Passed as tuples (savings_obj, user_obj) to completely eliminate 'Unknown Member' issues:
         all_savings_transactions=all_savings_transactions,
-        all_repayments_transactions=all_repayments_transactions
+        all_repayments_transactions=all_repayments_transactions,
+        all_members=all_members
     )
+
+
+# ================= ADMIN / TREASURER ACTION ROUTES =================
+
+@finance_bp.route('/admin/record-loan', methods=['POST'])
+@login_required
+def admin_record_loan():
+    """Treasurer tool to record historical or pre-deployment existing loans."""
+    if current_user.role not in ['finance', 'treasurer', 'chair']:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    try:
+        user_id = request.form.get('user_id')
+        loan_type = request.form.get('loan_type', 'General')
+        amount_requested = float(request.form.get('amount_requested', 0))
+        status = request.form.get('status', 'Active')
+
+        # Parse submitted custom date, fallback to datetime.utcnow() if omitted
+        date_applied_str = request.form.get('date_applied')
+        if date_applied_str:
+            # Parses datetime-local format: YYYY-MM-DDTHH:MM
+            loan_date = datetime.strptime(date_applied_str, '%Y-%m-%dT%H:%M')
+        else:
+            loan_date = datetime.utcnow()
+
+        new_loan = Loan(
+            user_id=user_id,
+            loan_type=loan_type,
+            amount_requested=amount_requested,
+            interest_rate=10.0,
+            tenure_months=3,
+            status=status,
+            guarantor_name="Pre-Deployment Record",
+            guarantor_email="N/A",
+            guarantor_phone="N/A",
+            date_applied=loan_date  # Overrides the default with historical date
+        )
+        db.session.add(new_loan)
+        db.session.commit()
+        flash('Historical loan successfully recorded with custom issuance date.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error recording loan: {str(e)}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+@finance_bp.route('/admin/make-expense', methods=['POST'])
+@login_required
+def admin_make_expense():
+    """Treasurer tool to log institutional operational expenses."""
+    if current_user.role not in ['finance', 'treasurer', 'chair']:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    try:
+        title = request.form.get('title')
+        amount = float(request.form.get('amount', 0))
+        category = request.form.get('category', 'Administrative')
+
+        new_expense = Expense(
+            title=title,
+            amount=amount,
+            category=category,
+            recorded_by=current_user.id,
+            date_recorded=datetime.utcnow()
+        )
+        db.session.add(new_expense)
+        db.session.commit()
+        flash('Operational expense logged successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error logging expense: {str(e)}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+@finance_bp.route('/admin/record-fine', methods=['POST'])
+@login_required
+def admin_record_fine():
+    """Treasurer tool to log member fines, penalties, or membership fees."""
+    if current_user.role not in ['finance', 'treasurer', 'chair']:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    try:
+        user_id = request.form.get('user_id')
+        fee_type = request.form.get('fee_type', 'Penalty')
+        amount = float(request.form.get('amount', 0))
+
+        new_fine = FineFee(
+            user_id=user_id,
+            fee_type=fee_type,
+            amount=amount,
+            status='Unpaid',
+            date_recorded=datetime.utcnow()
+        )
+        db.session.add(new_fine)
+        db.session.commit()
+        flash('Fine or fee recorded successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error recording fine: {str(e)}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))

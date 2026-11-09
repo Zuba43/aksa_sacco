@@ -130,3 +130,30 @@ class LoanRepayment(db.Model):
 
     # Relationship back to loan
     loan = db.relationship('Loan', backref=db.backref('repayments', lazy=True, cascade='all, delete-orphan'))
+    
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='Administrative')
+    recorded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    date_recorded = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Optional relationship to track which officer logged the expense
+    user = db.relationship('User', foreign_keys=[recorded_by])
+
+
+class FineFee(db.Model):
+    __tablename__ = 'fines_fees'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    fee_type = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='Unpaid')
+    date_recorded = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship back to User
+    user = db.relationship('User', foreign_keys=[user_id])

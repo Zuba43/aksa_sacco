@@ -1,32 +1,34 @@
 {% extends "base.html" %} {% block title %}Chairman Dashboard - AKSA SACCO{%
 endblock %} {% block content %}
-<div class="container-fluid py-4 px-4">
+<div class="container-fluid py-4 px-3 px-md-4">
   <!-- Layout Wrapper with Collapsible Sidebar Navigation -->
   <div class="row">
     <!-- SIDEBAR NAVIGATION MENU -->
     <div class="col-lg-3 col-xl-2 mb-4 mb-lg-0">
       <div
-        class="card border-0 shadow-sm rounded-3 p-3 bg-white sticky-top"
-        style="top: 20px"
+        class="card border-0 shadow-sm rounded-3 p-3 bg-white sticky-lg-top"
+        style="top: 20px; z-index: 1020"
       >
         <div
-          class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom"
+          class="d-flex align-items-center justify-content-between mb-2 mb-lg-3 pb-2 border-bottom"
         >
           <span class="fw-bold text-dark small text-uppercase">
             <i class="bi bi-person-workspace text-primary me-1"></i> Member
             Actions
           </span>
           <button
-            class="btn btn-sm btn-light d-lg-none"
+            class="btn btn-sm btn-outline-secondary d-lg-none"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#memberNavCollapse"
+            aria-expanded="false"
+            aria-controls="memberNavCollapse"
           >
-            <i class="bi bi-list"></i>
+            <i class="bi bi-list"></i> Menu
           </button>
         </div>
 
-        <div class="collapse d-lg-block" id="memberNavCollapse">
+        <div class="collapse d-lg-block mt-2 mt-lg-0" id="memberNavCollapse">
           <div class="nav flex-column gap-2">
             <!-- My Wallet / Savings Overview -->
             <button
@@ -38,10 +40,9 @@ endblock %} {% block content %}
               <span
                 ><i class="bi bi-wallet2 text-success me-2"></i>My Wallet</span
               >
-              <span class="badge bg-success bg-opacity-10 text-success"
-                >UGX {{ "{:,.0f}".format(current_user_savings|default(0.0))
-                }}</span
-              >
+              <span class="badge bg-success bg-opacity-10 text-success ms-2">
+                UGX {{ "{:,.0f}".format(current_user_savings|default(0.0)) }}
+              </span>
             </button>
 
             <!-- Friday Savings -->
@@ -76,6 +77,23 @@ endblock %} {% block content %}
             </button>
 
             <hr class="my-2" />
+            <span
+              class="text-muted small fw-bold text-uppercase px-1"
+              style="font-size: 0.7rem"
+              >Executive Tools</span
+            >
+
+            <!-- Manage Member Roles Quick Action Modal Trigger -->
+            <button
+              type="button"
+              class="btn btn-outline-primary text-start w-100 py-2 px-3 fw-semibold small rounded-2"
+              data-bs-toggle="modal"
+              data-bs-target="#manageRolesModal"
+            >
+              <i class="bi bi-shield-person me-2"></i>Assign Member Roles
+            </button>
+
+            <hr class="my-2" />
 
             <!-- Transaction History Summary -->
             <button
@@ -94,79 +112,89 @@ endblock %} {% block content %}
     <!-- MAIN CHAIRMAN CONTENT AREA -->
     <div class="col-lg-9 col-xl-10">
       <!-- Executive Header Banner -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div
+        class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4"
+      >
         <div>
-          <h3 class="fw-bold mb-1">
+          <h3 class="fw-bold mb-1 fs-4 fs-md-3">
             <i class="bi bi-award text-primary me-2"></i>Executive Portal
             (Chairman)
           </h3>
           <p class="text-muted small mb-0">
-            Executive SACCO governance, high-level loan approvals, and
-            institutional oversight.
+            Executive SACCO governance, high-level loan approvals, role
+            management, and institutional oversight.
           </p>
         </div>
-        <span class="badge bg-dark px-3 py-2 fs-6 rounded-pill">
-          <i class="bi bi-shield-lock me-1"></i> Chairman Privileges
-        </span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-dark px-3 py-2 fs-6 rounded-pill">
+            <i class="bi bi-shield-lock me-1"></i> Chairman Privileges
+          </span>
+        </div>
       </div>
 
       <!-- Key Performance Indicators (Metrics) -->
       <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
           <div
-            class="card border-0 shadow-sm rounded-3 bg-primary text-white p-3"
+            class="card border-0 shadow-sm rounded-3 bg-primary text-white p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Active Members
                 </div>
-                <div class="fs-3 fw-bold">{{ total_members }}</div>
+                <div class="fs-3 fw-bold">{{ total_members|default(0) }}</div>
               </div>
               <i class="bi bi-people fs-1 opacity-50"></i>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
           <div
-            class="card border-0 shadow-sm rounded-3 bg-warning text-dark p-3"
+            class="card border-0 shadow-sm rounded-3 bg-warning text-dark p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-dark-50 text-uppercase fw-bold">
                   Pending Approvals
                 </div>
-                <div class="fs-3 fw-bold">{{ pending_loans|length }}</div>
+                <div class="fs-3 fw-bold">
+                  {{ pending_loans|length if pending_loans else 0 }}
+                </div>
               </div>
               <i class="bi bi-hourglass-split fs-1 opacity-50"></i>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
           <div
-            class="card border-0 shadow-sm rounded-3 bg-success text-white p-3"
+            class="card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Approved Loans
                 </div>
-                <div class="fs-3 fw-bold">{{ approved_loans|length }}</div>
+                <div class="fs-3 fw-bold">
+                  {{ approved_loans|length if approved_loans else 0 }}
+                </div>
               </div>
               <i class="bi bi-cash-stack fs-1 opacity-50"></i>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-6 col-xl-3">
           <div
-            class="card border-0 shadow-sm rounded-3 bg-danger text-white p-3"
+            class="card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Pending Reg. Requests
                 </div>
-                <div class="fs-3 fw-bold">{{ pending_activations }}</div>
+                <div class="fs-3 fw-bold">
+                  {{ pending_activations|default(0) }}
+                </div>
               </div>
               <i class="bi bi-person-exclamation fs-1 opacity-50"></i>
             </div>
@@ -176,43 +204,55 @@ endblock %} {% block content %}
 
       <!-- Navigation Tabs -->
       <ul
-        class="nav nav-pills nav-fill mb-4 bg-white p-2 rounded-3 shadow-sm border"
+        class="nav nav-pills nav-fill mb-4 bg-white p-2 rounded-3 shadow-sm border gap-2"
         id="chairTab"
         role="tablist"
       >
         <li class="nav-item">
           <button
-            class="nav-link active fw-semibold"
+            class="nav-link active fw-semibold btn-sm"
             id="loans-tab"
             data-bs-toggle="tab"
             data-bs-target="#loans"
             type="button"
           >
             <i class="bi bi-file-earmark-check me-1"></i> Pending Loan
-            Applications ({{ pending_loans|length }})
+            Applications ({{ pending_loans|length if pending_loans else 0 }})
           </button>
         </li>
         <li class="nav-item">
           <button
-            class="nav-link fw-semibold"
+            class="nav-link fw-semibold btn-sm text-dark"
             id="defaulters-tab"
             data-bs-toggle="tab"
             data-bs-target="#defaulters"
             type="button"
           >
-            <i class="bi bi-exclamation-triangle me-1"></i> Loan Portfolio &
-            Defaulters ({{ active_defaulters|length }})
+            <i class="bi bi-exclamation-triangle me-1"></i> Loan Portfolio
+            Oversight ({{ active_defaulters|length if active_defaulters else 0
+            }})
           </button>
         </li>
         <li class="nav-item">
           <button
-            class="nav-link fw-semibold"
+            class="nav-link fw-semibold btn-sm text-dark"
+            id="roles-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#roles"
+            type="button"
+          >
+            <i class="bi bi-shield-person me-1"></i> Role Management
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            class="nav-link fw-semibold btn-sm text-dark"
             id="minutes-tab"
             data-bs-toggle="tab"
             data-bs-target="#minutes"
             type="button"
           >
-            <i class="bi bi-journal-text me-1"></i> Minutes & Board Audit
+            <i class="bi bi-journal-text me-1"></i> Board Minutes Audit
           </button>
         </li>
       </ul>
@@ -258,14 +298,18 @@ endblock %} {% block content %}
                       </td>
                       <td>{{ loan.interest_rate }}%</td>
                       <td>
-                        {{ loan.duration_months if loan.duration_months else
-                        '12' }} Months
+                        {{ loan.tenure_months if loan.tenure_months else
+                        (loan.duration_months if loan.duration_months else '3')
+                        }} Months
                       </td>
                       <td>
-                        <small class="text-muted"
-                          >{{ loan.created_at.strftime('%Y-%m-%d') if
-                          loan.created_at else 'N/A' }}</small
-                        >
+                        <small class="text-muted">
+                          {% if loan.date_applied %} {{
+                          loan.date_applied.strftime('%Y-%m-%d') }} {% elif
+                          loan.created_at %} {{
+                          loan.created_at.strftime('%Y-%m-%d') }} {% else %} N/A
+                          {% endif %}
+                        </small>
                       </td>
                       <td>
                         <div class="d-flex gap-1">
@@ -323,7 +367,7 @@ endblock %} {% block content %}
           </div>
         </div>
 
-        <!-- Tab 2: Loan Portfolio & Active Defaulters Oversight -->
+        <!-- Tab 2: Loan Portfolio & Active Defaulters Oversight (FIXED LINE NUMBER BUG HERE) -->
         <div class="tab-pane fade" id="defaulters" role="tabpanel">
           <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header bg-white py-3 border-0">
@@ -355,18 +399,23 @@ endblock %} {% block content %}
                       </td>
                       <td>
                         <small class="d-block"
-                          >1. {{ loan.user.emergency_name_1 }} ({{
-                          loan.user.emergency_relation_1 }}): {{
-                          loan.user.emergency_phone_1 }}</small
+                          >1. {{ loan.user.emergency_name_1|default('N/A') }}
+                          ({{ loan.user.emergency_relation_1|default('Contact
+                          1') }}): {{ loan.user.emergency_phone_1|default('N/A')
+                          }}</small
                         >
                         <small class="d-block"
-                          >2. {{ loan.user.emergency_name_2 }} ({{
-                          loan.user.emergency_relation_2 }}): {{
-                          loan.user.emergency_phone_2 }}</small
+                          >2. {{ loan.user.emergency_name_2|default('N/A') }}
+                          ({{ loan.user.emergency_relation_2|default('Contact
+                          2') }}): {{ loan.user.emergency_phone_2|default('N/A')
+                          }}</small
                         >
                         <small class="d-block fw-bold text-primary"
-                          >3. NOK: {{ loan.user.nok_name }} ({{
-                          loan.user.nok_relation }}): {{ loan.user.nok_phone
+                          >3. NOK: {{
+                          loan.user.nok_name|default(loan.guarantor_name|default('Guarantor'))
+                          }} ({{ loan.user.nok_relation|default('Next of Kin')
+                          }}): {{
+                          loan.user.nok_phone|default(loan.guarantor_phone|default('N/A'))
                           }}</small
                         >
                       </td>
@@ -390,7 +439,178 @@ endblock %} {% block content %}
           </div>
         </div>
 
-        <!-- Tab 3: Governance Minutes Audit Log -->
+        <!-- Tab 3: Member Role Management Section -->
+        <div class="tab-pane fade" id="roles" role="tabpanel">
+          <div class="card border-0 shadow-sm rounded-3">
+            <div
+              class="card-header bg-white py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2"
+            >
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-shield-person text-primary me-2"></i>Executive
+                Role Management
+              </h5>
+              <input
+                type="text"
+                id="roleSearchInput"
+                class="form-control form-control-sm"
+                style="max-width: 260px"
+                placeholder="Search member by name..."
+                onkeyup="filterRoleMembers()"
+              />
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table
+                  class="table table-hover align-middle mb-0"
+                  id="roleMembersTable"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Member Name</th>
+                      <th>Contact Info</th>
+                      <th>Current System Role</th>
+                      <th class="text-end pe-4">Executive Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for m in all_members|default([]) %}
+                    <tr>
+                      <td>
+                        <div class="fw-bold">{{ m.fname }} {{ m.lname }}</div>
+                        <small class="text-muted">@{{ m.username }}</small>
+                      </td>
+                      <td>
+                        <small class="d-block text-dark">{{ m.email }}</small>
+                        <small class="text-muted">{{ m.phone }}</small>
+                      </td>
+                      <td>
+                        {% if m.role == 'chair' %}
+                        <span class="badge bg-dark"
+                          ><i class="bi bi-award me-1"></i>Chairman</span
+                        >
+                        {% elif m.role in ['treasurer', 'finance'] %}
+                        <span class="badge bg-success"
+                          ><i class="bi bi-wallet2 me-1"></i>{{
+                          m.role|capitalize }}</span
+                        >
+                        {% elif m.role == 'secretary' %}
+                        <span class="badge bg-info text-dark"
+                          ><i class="bi bi-journal-text me-1"></i
+                          >Secretary</span
+                        >
+                        {% else %}
+                        <span class="badge bg-secondary"
+                          ><i class="bi bi-person me-1"></i>Member</span
+                        >
+                        {% endif %}
+                      </td>
+                      <td class="text-end pe-4">
+                        {% if m.id != current_user.id %}
+                        <form
+                          method="POST"
+                          action="{{ url_for('chair.update_member_role') }}"
+                          class="d-inline-flex align-items-center gap-2"
+                        >
+                          <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                          />
+                          <input
+                            type="hidden"
+                            name="user_id"
+                            value="{{ m.id }}"
+                          />
+                          <select
+                            name="new_role"
+                            class="form-select form-select-sm"
+                            style="width: auto"
+                          >
+                            <option
+                              value="member"
+                              {%
+                              if
+                              m.role=="member"
+                              %}selected{%
+                              endif
+                              %}
+                            >
+                              Member
+                            </option>
+                            <option
+                              value="secretary"
+                              {%
+                              if
+                              m.role=="secretary"
+                              %}selected{%
+                              endif
+                              %}
+                            >
+                              Secretary
+                            </option>
+                            <option
+                              value="treasurer"
+                              {%
+                              if
+                              m.role=="treasurer"
+                              %}selected{%
+                              endif
+                              %}
+                            >
+                              Treasurer
+                            </option>
+                            <option
+                              value="finance"
+                              {%
+                              if
+                              m.role=="finance"
+                              %}selected{%
+                              endif
+                              %}
+                            >
+                              Finance Officer
+                            </option>
+                            <option
+                              value="chair"
+                              {%
+                              if
+                              m.role=="chair"
+                              %}selected{%
+                              endif
+                              %}
+                            >
+                              Chairman
+                            </option>
+                          </select>
+                          <button
+                            type="submit"
+                            class="btn btn-sm btn-outline-primary fw-semibold"
+                          >
+                            Update
+                          </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small fst-italic"
+                          >Logged-in Chair</span
+                        >
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="4" class="text-center text-muted py-4">
+                        No registered members found.
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Governance Minutes Audit Log -->
         <div class="tab-pane fade" id="minutes" role="tabpanel">
           <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header bg-white py-3 border-0">
@@ -405,13 +625,13 @@ endblock %} {% block content %}
                     class="d-flex justify-content-between align-items-center mb-1"
                   >
                     <h6 class="fw-bold text-primary mb-0">{{ min.title }}</h6>
-                    <small class="text-muted"
-                      ><i class="bi bi-calendar3 me-1"></i>{{ min.meeting_date
-                      }}</small
-                    >
+                    <small class="text-muted">
+                      <i class="bi bi-calendar3 me-1"></i>{{ min.meeting_date if
+                      min.meeting_date else 'N/A' }}
+                    </small>
                   </div>
                   <p class="small text-muted mb-2">
-                    {{ min.content[:200] }}...
+                    {{ min.content[:200] if min.content else '' }}...
                   </p>
                   {% if min.file_attachment %}
                   <a
@@ -519,7 +739,10 @@ endblock %} {% block content %}
               {% for s in savings %}
               <tr>
                 <td class="ps-4 text-muted small">{{ loop.index }}</td>
-                <td>{{ s.date_recorded.strftime('%d %b %Y, %H:%M') }}</td>
+                <td>
+                  {{ s.date_recorded.strftime('%d %b %Y, %H:%M') if
+                  s.date_recorded else 'N/A' }}
+                </td>
                 <td>
                   <span class="badge bg-light text-dark border"
                     >{{ s.deposit_type }}</span
@@ -751,7 +974,7 @@ endblock %} {% block content %}
   </div>
 </div>
 
-<!-- Modal 5: Transaction History Summary (Savings & Loans Combined) -->
+<!-- Modal 5: Unified Transaction History -->
 <div
   class="modal fade"
   id="transactionHistoryModal"
@@ -819,7 +1042,10 @@ endblock %} {% block content %}
                 <tbody>
                   {% for s in savings|default([]) %}
                   <tr>
-                    <td>{{ s.date_recorded.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                      {{ s.date_recorded.strftime('%Y-%m-%d %H:%M') if
+                      s.date_recorded else 'N/A' }}
+                    </td>
                     <td>
                       <span class="badge bg-success bg-opacity-10 text-success"
                         >{{ s.deposit_type }}</span
@@ -857,8 +1083,10 @@ endblock %} {% block content %}
                   {% for l in loans|default([]) %}
                   <tr>
                     <td>
-                      {{ l.date_applied.strftime('%Y-%m-%d') if l.date_applied
-                      else 'N/A' }}
+                      {% if l.date_applied %} {{
+                      l.date_applied.strftime('%Y-%m-%d') }} {% elif
+                      l.created_at %} {{ l.created_at.strftime('%Y-%m-%d') }} {%
+                      else %} N/A {% endif %}
                     </td>
                     <td>{{ l.loan_type }}</td>
                     <td class="fw-bold">
@@ -896,4 +1124,160 @@ endblock %} {% block content %}
   </div>
 </div>
 
+<!-- Modal 6: Dedicated Roles Assignment Modal -->
+<div class="modal fade" id="manageRolesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-dark text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-shield-person me-2"></i>Member Role Assignments
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small mb-3">
+          Promote or demote members to administrative responsibilities across
+          the SACCO portal.
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Member</th>
+                <th>Current Role</th>
+                <th class="text-end">Assign Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if all_members %} {% for m in all_members %}
+              <tr>
+                <td class="fw-bold">
+                  {{ m.fname }} {{ m.lname }}
+                  <small class="text-muted d-block">@{{ m.username }}</small>
+                </td>
+                <td>
+                  <span class="badge bg-secondary text-white"
+                    >{{ m.role|upper }}</span
+                  >
+                </td>
+                <td class="text-end">
+                  {% if m.id != current_user.id %}
+                  <form
+                    method="POST"
+                    action="{{ url_for('chair.update_member_role') }}"
+                    class="d-inline-flex gap-2 align-items-center"
+                  >
+                    <input
+                      type="hidden"
+                      name="csrf_token"
+                      value="{{ csrf_token() }}"
+                    />
+                    <input type="hidden" name="user_id" value="{{ m.id }}" />
+                    <select name="new_role" class="form-select form-select-sm">
+                      <option
+                        value="member"
+                        {%
+                        if
+                        m.role=="member"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        Member
+                      </option>
+                      <option
+                        value="secretary"
+                        {%
+                        if
+                        m.role=="secretary"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        Secretary
+                      </option>
+                      <option
+                        value="treasurer"
+                        {%
+                        if
+                        m.role=="treasurer"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        Treasurer
+                      </option>
+                      <option
+                        value="finance"
+                        {%
+                        if
+                        m.role=="finance"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        Finance
+                      </option>
+                      <option
+                        value="chair"
+                        {%
+                        if
+                        m.role=="chair"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        Chair
+                      </option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                      Save
+                    </button>
+                  </form>
+                  {% else %}
+                  <span class="text-muted small fst-italic">Self (Chair)</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-danger py-3 fw-bold">
+                  DEBUG: all_members variable is empty or not passed from route!
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary px-4"
+          data-bs-dismiss="modal"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+  function filterRoleMembers() {
+    const searchVal = document
+      .getElementById("roleSearchInput")
+      .value.toLowerCase();
+    const rows = document.querySelectorAll("#roleMembersTable tbody tr");
+
+    rows.forEach((row) => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(searchVal) ? "" : "none";
+    });
+  }
+</script>
 {% endblock %}
