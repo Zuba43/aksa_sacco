@@ -21,6 +21,8 @@
     <!-- PWA & Mobile Web App Meta Tags -->
     <meta name="theme-color" content="#0d6efd" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AKSA SACCO" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
@@ -33,14 +35,12 @@
       rel="apple-touch-icon"
       href="{{ url_for('static', filename='icons/icon-192.png') }}"
     />
-    <meta name="theme-color" content="#0d6efd" />
 
     <style>
       :root {
         --brand-primary: #0d6efd;
         --brand-dark: #0f172a;
       }
-
       body {
         font-family:
           system-ui,
@@ -50,34 +50,26 @@
           sans-serif;
         color: #334155;
       }
-
-      /* Hero styling */
       .hero-section {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: #ffffff;
         padding: 80px 0 60px;
       }
-
       .hero-card {
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 1rem;
       }
-
-      /* Feature Card Hover Effects */
       .feature-card {
         transition:
           transform 0.2s ease-in-out,
           box-shadow 0.2s ease-in-out;
         border-radius: 0.75rem;
       }
-
       .feature-card:hover {
         transform: translateY(-4px);
       }
-
-      /* Icon Badges */
       .icon-box {
         width: 56px;
         height: 56px;
@@ -90,55 +82,7 @@
 
     {% block extra_head %}{% endblock %}
   </head>
-  <!-- PWA Install -->
-  <button
-    id="installBtn"
-    class="btn btn-primary"
-    style="
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      border-radius: 50px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    "
-  >
-    ⬇️ Install AKSA App
-  </button>
 
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/static/sw.js")
-        .then(() => console.log("SW registered"))
-        .catch((err) => console.log("SW failed", err));
-    }
-
-    let deferredPrompt;
-    const installBtn = document.getElementById("installBtn");
-
-    window.addEventListener("beforeinstallprompt", (e) => {
-      console.log("beforeinstallprompt fired - app is installable!");
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.style.display = "block";
-    });
-
-    installBtn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log("Install outcome:", outcome);
-      deferredPrompt = null;
-      installBtn.style.display = "none";
-    });
-
-    window.addEventListener("appinstalled", () => {
-      installBtn.style.display = "none";
-      deferredPrompt = null;
-    });
-  </script>
   <body class="d-flex flex-column min-vh-100 bg-light">
     <!-- Navbar -->
     <nav
@@ -162,13 +106,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
           <div class="d-flex align-items-center gap-2">
-            <!-- PWA Install Button (Displays automatically when mobile install criteria is met) -->
-            <button
-              id="pwaInstallBtn"
-              class="btn btn-outline-primary btn-sm d-none align-items-center gap-1 me-1"
-            >
-              <i class="bi bi-download"></i> Install App
-            </button>
             <a
               href="{{ url_for('auth.login') if url_for is defined else '#' }}"
               class="btn btn-outline-light px-4"
@@ -209,33 +146,40 @@
       </div>
     </footer>
 
-    <!-- Service Worker & PWA Installation Handler Script -->
+    <!-- Floating Install Button - visible on all screens when installable -->
+    <button
+      id="pwaInstallBtn"
+      class="btn btn-primary d-none"
+      style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        border-radius: 50px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      "
+    >
+      ⬇️ Install AKSA App
+    </button>
+
+    <!-- Service Worker & PWA Installation Handler - SINGLE SCRIPT ONLY -->
     <script>
-      // Service Worker Registration
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
             .register("{{ url_for('static', filename='sw.js') }}")
-            .then((reg) =>
-              console.log("Service Worker registered successfully:", reg.scope),
-            )
-            .catch((err) =>
-              console.error("Service Worker registration failed:", err),
-            );
+            .then((reg) => console.log("SW registered:", reg.scope))
+            .catch((err) => console.error("SW failed:", err));
         });
       }
 
-      // PWA Prompt Handler for In-App "Install App" Button
       let deferredPrompt;
       const installBtn = document.getElementById("pwaInstallBtn");
 
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (installBtn) {
-          installBtn.classList.remove("d-none");
-          installBtn.classList.add("d-inline-flex");
-        }
+        if (installBtn) installBtn.classList.remove("d-none");
       });
 
       if (installBtn) {
@@ -243,9 +187,7 @@
           if (!deferredPrompt) return;
           deferredPrompt.prompt();
           const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === "accepted") {
-            console.log("PWA install accepted by user");
-          }
+          console.log("Install outcome:", outcome);
           deferredPrompt = null;
           installBtn.classList.add("d-none");
         });
