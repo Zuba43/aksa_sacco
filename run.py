@@ -1,6 +1,7 @@
 import pymysql
 from app import create_app, db
 from config import Config
+import app.models as _models  # <-- import FIRST, with different name
 
 def ensure_mysql_database_exists():
     try:
@@ -24,14 +25,7 @@ ensure_mysql_database_exists()
 # 2. Create app
 app = create_app()
 
-# 3. Create tables BOTH on laptop AND on PythonAnywhere (WSGI)
-# This runs on import, not only when you do python run.py
-try:
-    import app.models  # <-- makes sure models are registered
-    print("-> Models imported")
-except Exception as e:
-    print(f"-> Models import warning: {e}")
-
+# 3. Create tables BOTH on laptop AND on PythonAnywhere
 with app.app_context():
     try:
         db.create_all()
