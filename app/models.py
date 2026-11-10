@@ -48,6 +48,7 @@ class User(UserMixin, db.Model):
     nok_name = db.Column(db.String(100), nullable=False)
     nok_phone = db.Column(db.String(20), nullable=False)
     nok_relation = db.Column(db.String(50), nullable=False)
+    is_outsider = db.Column(db.Boolean, default=False, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

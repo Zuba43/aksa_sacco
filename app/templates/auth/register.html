@@ -6,7 +6,7 @@
       <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="bg-primary p-4 text-white text-center">
           <i class="bi bi-person-plus fs-1"></i>
-          <h3 class="fw-bold mb-0 mt-2">Member Registration</h3>
+          <h3 class="fw-bold mb-0 mt-2">Member & Borrower Registration</h3>
           <p class="small text-white-50 mb-0">
             Accounts require Secretary approval before activation.
           </p>
@@ -46,7 +46,7 @@
                   2. KYC Docs
                 </button>
               </li>
-              <li class="nav-item" role="presentation">
+              <li class="nav-item" role="presentation" id="nok-nav-item">
                 <button
                   class="nav-link fw-semibold"
                   id="nok-tab"
@@ -67,7 +67,7 @@
                   type="button"
                   role="tab"
                 >
-                  4. Security
+                  <span id="security-tab-number">4</span>. Security
                 </button>
               </li>
             </ul>
@@ -80,6 +80,22 @@
                   <i class="bi bi-person-badge me-2"></i>Personal Information
                 </h5>
                 <div class="row g-3">
+                  <div class="col-12">
+                    <div class="form-check p-3 bg-light rounded-3 border">
+                      {{ form.is_outsider(class="form-check-input",
+                      id="isOutsiderCheck") }}
+                      <label
+                        class="form-check-label fw-semibold text-dark ms-2"
+                        for="isOutsiderCheck"
+                      >
+                        <i
+                          class="bi bi-person-exclamation text-warning me-1"
+                        ></i>
+                        Registering as an Outside Borrower (Non-Member, 20%
+                        Interest Rate & No Emergency Contacts required)
+                      </label>
+                    </div>
+                  </div>
                   <div class="col-md-6">
                     {{ form.fname.label(class="form-label fw-semibold") }} {{
                     form.fname(class="form-control " ~ ("is-invalid" if
@@ -205,20 +221,20 @@
                   <button
                     type="button"
                     class="btn btn-primary px-4"
-                    onclick="switchTab('nok-tab')"
+                    onclick="handleNextFromKyc()"
                   >
-                    Next: Emergency Contacts <i class="bi bi-arrow-right"></i>
+                    Next <i class="bi bi-arrow-right"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- Tab 3: Emergency Contacts & Next of Kin (3 Persons) -->
+              <!-- Tab 3: Emergency Contacts & Next of Kin (Members Only) -->
               <div class="tab-pane fade" id="nok" role="tabpanel">
                 <h5 class="fw-bold mb-1 text-primary">
                   <i class="bi bi-people me-2"></i>Emergency & Family Contacts
                 </h5>
                 <p class="small text-muted mb-4">
-                  SACCO policy requires 3 family emergency contacts for
+                  SACCO policy requires 3 family emergency contacts for member
                   coverage.
                 </p>
 
@@ -386,7 +402,7 @@
                   <button
                     type="button"
                     class="btn btn-outline-secondary px-4"
-                    onclick="switchTab('nok-tab')"
+                    onclick="handleBackFromSecurity()"
                   >
                     <i class="bi bi-arrow-left"></i> Back
                   </button>
@@ -414,7 +430,6 @@
 </div>
 {% endblock %} {% block extra_scripts %}
 <script>
-  // Helper function to switch Bootstrap tabs
   function switchTab(tabId) {
     const triggerEl = document.querySelector("#" + tabId);
     if (triggerEl) {
@@ -423,11 +438,48 @@
     }
   }
 
+  const outsiderCheckbox = document.getElementById('isOutsiderCheck');
+  const nokNavItem = document.getElementById('nok-nav-item');
+  const securityTabNumber = document.getElementById('security-tab-number');
+
+  function updateOutsiderView() {
+    if (outsiderCheckbox && outsiderCheckbox.checked) {
+      if (nokNavItem) nokNavItem.style.display = 'none';
+      if (securityTabNumber) securityTabNumber.textContent = '3';
+    } else {
+      if (nokNavItem) nokNavItem.style.display = 'block';
+      if (securityTabNumber) securityTabNumber.textContent = '4';
+    }
+  }
+
+  if (outsiderCheckbox) {
+    outsiderCheckbox.addEventListener('change', updateOutsiderView);
+    // Run on load in case of re-render
+    updateOutsiderView();
+  }
+
+  function handleNextFromKyc() {
+    if (outsiderCheckbox && outsiderCheckbox.checked) {
+      switchTab('security-tab');
+    } else {
+      switchTab('nok-tab');
+    }
+  }
+
+  function handleBackFromSecurity() {
+    if (outsiderCheckbox && outsiderCheckbox.checked) {
+      switchTab('kyc-tab');
+    } else {
+      switchTab('nok-tab');
+    }
+  }
+
   // Auto-switch to the tab containing a form error on page load after a failed POST
   document.addEventListener("DOMContentLoaded", function() {
+    updateOutsiderView();
     {% if form.errors %}
       const errorFields = {
-        'bio': ['fname', 'lname', 'username', 'phone', 'email', 'gender', 'dob', 'home_district', 'nin'],
+        'bio': ['fname', 'lname', 'username', 'phone', 'email', 'gender', 'dob', 'home_district', 'nin', 'is_outsider'],
         'kyc': ['passport_photo', 'id_scan'],
         'nok': [
           'emergency_name_1', 'emergency_phone_1', 'emergency_relation_1',
