@@ -105,17 +105,18 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            {% if current_user.is_authenticated %}
             <a
-              href="{{ url_for('auth.login') if url_for is defined else '#' }}"
+              href="{{ url_for('auth.logout') }}"
               class="btn btn-outline-light px-4"
-              >Sign In</a
-            >
-            <a
-              href="{{ url_for('auth.logout') if url_for is defined else '#' }}"
-              class="btn btn-primary px-4"
               >Logout</a
             >
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary px-4"
+              >Sign In</a
+            >
+            {% endif %}
           </div>
         </div>
       </div>
@@ -162,7 +163,7 @@
       ⬇️ Install AKSA App
     </button>
 
-    <!-- Service Worker & PWA Installation Handler - SINGLE SCRIPT ONLY -->
+    <!-- Service Worker & PWA Installation Handler -->
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

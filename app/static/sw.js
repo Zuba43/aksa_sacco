@@ -1,4 +1,4 @@
-const CACHE_NAME = "aksa-sacco-v2";
+const CACHE_NAME = "aksa-sacco-v3";
 const ASSETS_TO_CACHE = [
   "/",
   "/static/manifest.json",
@@ -24,7 +24,9 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         }),
       );
     }),
@@ -36,7 +38,19 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
+      return (
+        cachedResponse ||
+        fetch(event.request)
+          .then((response) => {
+            return response;
+          })
+          .catch(() => {
+            // Optional fallback for offline navigation
+            if (event.request.mode === "navigate") {
+              return caches.match("/");
+            }
+          })
+      );
     }),
   );
 });

@@ -1,11 +1,15 @@
 {
+  "id": "/",
   "name": "AKSA Savings & Credit",
   "short_name": "AKSA SACCO",
+  "description": "Empowering financial growth, transparent credit management, and seamless group savings.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0d6efd",
   "orientation": "portrait-primary",
+  "categories": ["finance", "productivity"],
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
