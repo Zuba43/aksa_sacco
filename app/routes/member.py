@@ -1,34 +1,77 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app.models import Savings, Loan, LoanRepayment, Notification, Minute
+from app.models import Savings, Loan, LoanRepayment, Notification, Minute,FineFee
 from app import db
 from app.utils import send_guarantor_notification
-
+from datetime import datetime
 member_bp = Blueprint('member', __name__, url_prefix='/member')
+
+from sqlalchemy import desc
 
 @member_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Any active user can view the member dashboard
     if not current_user.is_active_account:
         flash('Your account is pending activation by the Secretary.', 'warning')
         return redirect(url_for('auth.login'))
 
-    # Fetch user personal savings and loans
+    # Fetch user personal savings
     user_savings = Savings.query.filter_by(user_id=current_user.id).order_by(Savings.date_recorded.desc()).all()
     total_savings = sum(s.amount for s in user_savings)
     
-    # Simple profit projection calculation (e.g. 5% estimated annual dividend yield)
     projected_profit = total_savings * 0.05
 
+    # Fetch User Loans and attach computed balance: (Principal + 10% Interest) - Total Repaid
     user_loans = Loan.query.filter_by(user_id=current_user.id).order_by(Loan.date_applied.desc()).all()
+    for l in user_loans:
+        # Sum all repayments for this specific loan
+        repaid_sum = sum(r.amount for r in l.repayments) if hasattr(l, 'repayments') and l.repayments else 0.0
+        # Total due = Principal + 10% interest
+        total_due = l.amount_requested * 1.10
+        # Store dynamic balance attribute on the loan object
+        l.balance_remaining = max(0.0, total_due - repaid_sum)
+        l.repaid_sum = repaid_sum
+        l.total_due = total_due
+
+    # Fetch recent transactions (Fines/Fees & Loan Repayments) for member activity tracking
+    user_fines = FineFee.query.filter_by(user_id=current_user.id).all()
     
-    # Fetch Notifications (Personal or Broadcast)
+    # Extract repayments associated with user loans
+    user_repayments = []
+    for l in user_loans:
+        if hasattr(l, 'repayments') and l.repayments:
+            user_repayments.extend(l.repayments)
+
+    # Combine into a unified history list and sort by date descending
+    recent_activity = []
+    for f in user_fines:
+        recent_activity.append({
+            'type': f'Fee/Fine: {f.fee_type}',
+            'amount': f.amount,
+            'date': f.date_recorded,
+            'badge': 'bg-warning text-dark',
+            'is_credit': False
+        })
+    for r in user_repayments:
+        recent_activity.append({
+            'type': f'Loan Repayment (Loan #{r.loan_id})',
+            'amount': r.amount,
+            'date': r.date_paid,
+            'badge': 'bg-success text-white',
+            'is_credit': True
+        })
+
+    # Sort combined activity by date and pick recent 5
+    recent_transactions = sorted(
+        recent_activity, 
+        key=lambda x: x['date'] if x['date'] else datetime.min, 
+        reverse=True
+    )[:5]
+
     notifications = Notification.query.filter(
         (Notification.user_id == current_user.id) | (Notification.user_id == None)
     ).order_by(Notification.created_at.desc()).all()
 
-    # Fetch Recent SACCO Minutes & Events
     recent_minutes = Minute.query.order_by(Minute.created_at.desc()).limit(5).all()
 
     return render_template(
@@ -37,6 +80,7 @@ def dashboard():
         total_savings=total_savings,
         projected_profit=projected_profit,
         loans=user_loans,
+        recent_transactions=recent_transactions,
         notifications=notifications,
         recent_minutes=recent_minutes
     )

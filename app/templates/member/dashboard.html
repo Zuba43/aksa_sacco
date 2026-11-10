@@ -527,62 +527,115 @@ endblock %} {% block extra_head %}
             </div>
           </div>
         </div>
+      </div>
+      <!-- Loan Requests, Status & Recent Transactions -->
+      <div class="col-lg-6" id="loan-history">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+          <div
+            class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+          >
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-cash-stack text-success me-2"></i>Loans & Recent
+              Activity
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            <!-- Active / Historical Loans Table -->
+            <div class="p-3 bg-light border-bottom">
+              <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                Loan Overview & Balance
+              </h6>
+            </div>
+            {% if loans %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Principal</th>
+                    <th>Total (+10%)</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for l in loans %}
+                  <tr>
+                    <td>{{ l.date_applied.strftime('%d %b %Y') }}</td>
+                    <td>
+                      <span class="badge bg-secondary text-uppercase"
+                        >{{ l.loan_type }}</span
+                      >
+                    </td>
+                    <td class="fw-semibold">
+                      UGX {{ "{:,.0f}".format(l.amount_requested) }}
+                    </td>
+                    <td>UGX {{ "{:,.0f}".format(l.total_due) }}</td>
+                    <td class="fw-bold text-danger">
+                      UGX {{ "{:,.0f}".format(l.balance_remaining) }}
+                    </td>
+                    <td>
+                      {% if l.status == 'Approved' %}
+                      <span class="badge bg-success">Approved</span>
+                      {% elif l.status == 'Pending' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                      {% else %}
+                      <span class="badge bg-secondary">{{ l.status }}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="p-3 text-center text-muted small">
+              No loan applications on record.
+            </div>
+            {% endif %}
 
-        <!-- Loan Requests & Status -->
-        <div class="col-lg-6" id="loan-history">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-header bg-white py-3 border-0">
-              <h5 class="fw-bold mb-0">
-                <i class="bi bi-cash-stack text-success me-2"></i>Loan Requests
-                & Status
-              </h5>
+            <!-- Recent 5 Transactions (Fines, Fees & Repayments) -->
+            <div class="p-3 bg-light border-top border-bottom">
+              <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                Recent 5 Transactions (Fees, Fines & Repayments)
+              </h6>
             </div>
-            <div class="card-body p-0">
-              {% if loans %}
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for l in loans %}
-                    <tr>
-                      <td>{{ l.date_applied.strftime('%d %b %Y') }}</td>
-                      <td>
-                        <span class="badge bg-secondary text-uppercase"
-                          >{{ l.loan_type }}</span
-                        >
-                      </td>
-                      <td class="fw-bold">
-                        UGX {{ "{:,.2f}".format(l.amount_requested) }}
-                      </td>
-                      <td>
-                        {% if l.status == 'Approved' %}
-                        <span class="badge bg-success">Approved</span>
-                        {% elif l.status == 'Pending' %}
-                        <span class="badge bg-warning text-dark"
-                          >Pending Chair</span
-                        >
-                        {% else %}
-                        <span class="badge bg-secondary">{{ l.status }}</span>
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% else %}
-              <div class="p-4 text-center text-muted">
-                No loan applications on record.
-              </div>
-              {% endif %}
+            {% if recent_transactions %}
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th class="text-end">Amount (UGX)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in recent_transactions %}
+                  <tr>
+                    <td>
+                      {{ t.date.strftime('%d %b %Y') if t.date else 'N/A' }}
+                    </td>
+                    <td>
+                      <span class="badge {{ t.badge }} me-1">{{ t.type }}</span>
+                    </td>
+                    <td
+                      class="text-end fw-bold {{ 'text-success' if t.is_credit else 'text-danger' }}"
+                    >
+                      {{ '+' if t.is_credit else '-' }}{{
+                      "{:,.2f}".format(t.amount) }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
+            {% else %}
+            <div class="p-3 text-center text-muted small">
+              No recent fees, fines, or repayment activity.
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
