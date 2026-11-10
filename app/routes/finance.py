@@ -149,13 +149,20 @@ def admin_make_expense():
         title = request.form.get('title')
         amount = float(request.form.get('amount', 0))
         category = request.form.get('category', 'Administrative')
+        
+        # Capture custom date if provided for legacy integration; otherwise use now
+        date_str = request.form.get('date_recorded')
+        if date_str:
+            date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
+        else:
+            date_recorded = datetime.utcnow()
 
         new_expense = Expense(
             title=title,
             amount=amount,
             category=category,
             recorded_by=current_user.id,
-            date_recorded=datetime.utcnow()
+            date_recorded=date_recorded
         )
         db.session.add(new_expense)
         db.session.commit()
@@ -179,13 +186,20 @@ def admin_record_fine():
         user_id = request.form.get('user_id')
         fee_type = request.form.get('fee_type', 'Penalty')
         amount = float(request.form.get('amount', 0))
+        
+        # Capture custom date if provided for legacy integration; otherwise use now
+        date_str = request.form.get('date_recorded')
+        if date_str:
+            date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
+        else:
+            date_recorded = datetime.utcnow()
 
         new_fine = FineFee(
             user_id=user_id,
             fee_type=fee_type,
             amount=amount,
             status='Unpaid',
-            date_recorded=datetime.utcnow()
+            date_recorded=date_recorded
         )
         db.session.add(new_fine)
         db.session.commit()

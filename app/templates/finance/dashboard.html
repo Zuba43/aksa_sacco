@@ -799,7 +799,6 @@ SACCO{% endblock %} {% block content %}
 <!-- ================= NEW ADMIN / TREASURER MODALS ================= -->
 
 <!-- Modal 6: Record Existing Loan (Pre-deployment entry) -->
-<!-- Modal 6: Record Existing Loan (Pre-deployment entry) -->
 <div class="modal fade" id="recordLoanModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow">
@@ -945,6 +944,19 @@ SACCO{% endblock %} {% block content %}
               <option value="Miscellaneous">Miscellaneous</option>
             </select>
           </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"
+              >Transaction Date
+              <small class="text-muted fw-normal"
+                >(Leave blank for today)</small
+              ></label
+            >
+            <input type="date" name="date_recorded" class="form-control" />
+            <div class="form-text">
+              Use this for back-dating legacy expenses prior to system
+              integration.
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">
@@ -1011,6 +1023,19 @@ SACCO{% endblock %} {% block content %}
               placeholder="e.g. 5000"
               required
             />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"
+              >Transaction Date
+              <small class="text-muted fw-normal"
+                >(Leave blank for today)</small
+              ></label
+            >
+            <input type="date" name="date_recorded" class="form-control" />
+            <div class="form-text">
+              Required if logging historical fines/penalties prior to system
+              migration.
+            </div>
           </div>
         </div>
         <div class="modal-footer">
