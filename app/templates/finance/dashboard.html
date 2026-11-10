@@ -1062,7 +1062,7 @@ SACCO{% endblock %} {% block content %}
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-dark text-white py-3">
         <h5 class="modal-title fw-bold">
-          <i class="bi bi-clock-history me-2"></i>All Members Transaction
+          <i class="bi bi-clock-history me-2"></i>All Institution Transaction
           History
         </h5>
         <button
@@ -1073,13 +1073,13 @@ SACCO{% endblock %} {% block content %}
       </div>
       <div class="modal-body p-3 p-md-4">
         <p class="text-muted small mb-3">
-          Comprehensive audit log of all member savings contributions and loan
-          repayments logged across the institution.
+          Comprehensive audit log of all savings contributions, loan repayments,
+          member fines, and institutional expenses.
         </p>
 
         <!-- Compact Horizontal Pill Navigation -->
         <ul
-          class="nav nav-pills gap-2 mb-3 bg-light p-1 rounded-3 d-inline-flex"
+          class="nav nav-pills gap-2 mb-3 bg-light p-1 rounded-3 d-inline-flex flex-wrap"
           id="historyTab"
           role="tablist"
         >
@@ -1105,6 +1105,30 @@ SACCO{% endblock %} {% block content %}
               role="tab"
             >
               <i class="bi bi-cash-stack me-1"></i> Loan Repayments
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link fw-semibold btn-sm px-3 py-2 rounded-2 text-dark"
+              id="all-fines-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#allFinesTab"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-exclamation-octagon me-1"></i> Fines & Fees
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link fw-semibold btn-sm px-3 py-2 rounded-2 text-dark"
+              id="all-exp-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#allExpensesTab"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-receipt me-1"></i> Expenses
             </button>
           </li>
         </ul>
@@ -1203,6 +1227,110 @@ SACCO{% endblock %} {% block content %}
                   <tr>
                     <td colspan="4" class="text-center text-muted py-3">
                       No loan repayment transactions recorded.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- All Fines & Fees Tab -->
+          <div class="tab-pane fade" id="allFinesTab" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Fee / Fine Type</th>
+                    <th>Date Recorded</th>
+                    <th>Status</th>
+                    <th class="text-end">Amount (UGX)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in all_fines_transactions|default([]) %} {% set f
+                  = item[0] %} {% set u = item[1] %}
+                  <tr>
+                    <td class="fw-bold">
+                      {{ u.fname }} {{ u.lname }}
+                      <small class="text-muted d-block"
+                        >@{{ u.username }}</small
+                      >
+                    </td>
+                    <td>
+                      <span class="badge bg-warning bg-opacity-10 text-dark"
+                        >{{ f.fee_type }}</span
+                      >
+                    </td>
+                    <td>
+                      {{ f.date_recorded.strftime('%Y-%m-%d %H:%M') if
+                      f.date_recorded else 'N/A' }}
+                    </td>
+                    <td>
+                      {% if f.status == 'Paid' %}
+                      <span class="badge bg-success">Paid</span>
+                      {% else %}
+                      <span class="badge bg-danger">Unpaid</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end fw-bold text-warning">
+                      +{{ "{:,.2f}".format(f.amount) }}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-3">
+                      No fines or fees recorded.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- All Expenses Tab -->
+          <div class="tab-pane fade" id="allExpensesTab" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Recorded By</th>
+                    <th>Date Recorded</th>
+                    <th class="text-end">Amount (UGX)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in all_expenses_transactions|default([]) %} {% set
+                  e = item[0] %} {% set recorder = item[1] %}
+                  <tr>
+                    <td class="fw-bold">{{ e.title }}</td>
+                    <td>
+                      <span class="badge bg-secondary bg-opacity-10 text-dark"
+                        >{{ e.category }}</span
+                      >
+                    </td>
+                    <td>
+                      <small class="text-muted"
+                        >@{{ recorder.username if recorder else 'System'
+                        }}</small
+                      >
+                    </td>
+                    <td>
+                      {{ e.date_recorded.strftime('%Y-%m-%d %H:%M') if
+                      e.date_recorded else 'N/A' }}
+                    </td>
+                    <td class="text-end fw-bold text-danger">
+                      -{{ "{:,.2f}".format(e.amount) }}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-3">
+                      No expenses recorded.
                     </td>
                   </tr>
                   {% endfor %}

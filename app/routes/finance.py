@@ -16,6 +16,7 @@ def dashboard():
 
     # 1. Total Financial Metrics
     total_savings = db.session.query(func.sum(Savings.amount)).scalar() or 0.0
+    total_fines = db.session.query(func.sum(FineFee.amount)).scalar() or 0.0
     total_disbursed = db.session.query(func.sum(Loan.amount_requested)).filter(
         Loan.status.in_(['Approved', 'Active', 'Fully Paid', 'Defaulted'])
     ).scalar() or 0.0
@@ -65,10 +66,21 @@ def dashboard():
 
     # 7. Fetch all members list for admin modal dropdowns
     all_members = User.query.order_by(User.fname.asc()).all()
+    all_fines_transactions = db.session.query(FineFee, User)\
+    .join(User, FineFee.user_id == User.id)\
+    .order_by(FineFee.date_recorded.desc()).all()
+    
+    all_expenses_transactions = db.session.query(Expense, User)\
+    .join(User, Expense.recorded_by == User.id)\
+    .order_by(Expense.date_recorded.desc()).all()
+    
+    total_capital_pool = total_savings + total_fines
 
     return render_template(
         'finance/dashboard.html',
-        total_savings=total_savings,
+        total_savings=total_capital_pool,
+        all_fines_transactions=all_fines_transactions,
+        all_expenses_transactions=all_expenses_transactions,
         total_disbursed=total_disbursed,
         performing_count=performing_count,
         fully_paid_count=fully_paid_count,
@@ -87,7 +99,7 @@ def dashboard():
         current_user_savings=current_user_savings,
         all_savings_transactions=all_savings_transactions,
         all_repayments_transactions=all_repayments_transactions,
-        all_members=all_members
+        all_members=all_members,
     )
 
 
