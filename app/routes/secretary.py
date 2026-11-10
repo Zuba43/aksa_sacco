@@ -14,7 +14,7 @@ def dashboard():
         flash('Access restricted to the Secretary.', 'danger')
         return redirect(url_for('auth.login'))
 
-    # Fetch pending and active members matching the standard is_active column
+    # Fetch pending and active members matching the standard is_active_account column
     pending_members = User.query.filter_by(is_active_account=False).all()
     active_members = User.query.filter_by(is_active_account=True).all()
     recent_minutes = Minute.query.order_by(Minute.meeting_date.desc()).all()
@@ -89,7 +89,7 @@ def deactivate_member(user_id):
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    member.is_active = False  # Updated from is_active_account to sync with query filter
+    member.is_active_account = False  # Updated from is_active_account to sync with query filter
     
     db.session.commit()
 
