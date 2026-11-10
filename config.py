@@ -20,3 +20,14 @@ class Config:
         f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # FIX: Lost connection to MySQL server during query (2013)
+    # PythonAnywhere MySQL kills idle connections after ~300 sec.
+    # pool_pre_ping checks connection is alive before each query.
+    # pool_recycle throws it away after 280 sec, before MySQL kills it.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+        'pool_size': 5,
+        'max_overflow': 5,
+    }
