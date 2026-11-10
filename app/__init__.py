@@ -4,14 +4,13 @@ from flask_login import LoginManager
 from flask_wtf import CSRFProtect
 from config import Config
 from flask_mail import Mail
-
-
-
+from flask_migrate import Migrate  # <-- 1. ADD THIS
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 csrf = CSRFProtect()
-mail=Mail()
+mail = Mail()
+migrate = Migrate()  # <-- 2. ADD THIS
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -22,6 +21,7 @@ def create_app(config_class=Config):
     mail.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    migrate.init_app(app, db)  # <-- 3. ADD THIS
 
     # Flask-Login configuration
     login_manager.login_view = 'auth.login'
