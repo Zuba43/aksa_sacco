@@ -15,8 +15,8 @@ def dashboard():
         return redirect(url_for('auth.login'))
 
     # Fetch pending and active members matching the standard is_active column
-    pending_members = User.query.filter_by(is_active=False).all()
-    active_members = User.query.filter_by(is_active=True).all()
+    pending_members = User.query.filter_by(is_active_account=False).all()
+    active_members = User.query.filter_by(is_active_account=True).all()
     recent_minutes = Minute.query.order_by(Minute.meeting_date.desc()).all()
     defaulter_loans = Loan.query.filter_by(status='Defaulted').all()
 
@@ -46,7 +46,7 @@ def activate_member(user_id):
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    member.is_active = True  # Updated from is_active_account to sync with query filter
+    member.is_active_account = True  # Updated from is_active_account to sync with query filter
     
     # Send a welcome notification to the member's portal
     welcome_note = Notification(
