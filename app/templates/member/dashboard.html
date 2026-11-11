@@ -886,6 +886,7 @@ endblock %} {% block extra_head %}
           type="button"
           class="btn-close"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
       <form method="POST" action="{{ url_for('member.repay_loan') }}">
@@ -895,13 +896,23 @@ endblock %} {% block extra_head %}
             <label class="form-label fw-semibold">Select Active Loan</label>
             <select name="loan_id" class="form-select form-select-lg" required>
               {% set active_loans_exist = namespace(value=false) %} {% for l in
-              loans %} {% set total_due = l.amount_requested * 1.10 %} {% set
-              total_repaid = l.repayments | sum(attribute='amount') if
-              l.repayments else 0 %} {% set balance = total_due - total_repaid
-              %} {% if balance > 0 %} {% set active_loans_exist.value = true %}
+              loans %} {% set balance = l.balance_remaining %} {% if balance > 0
+              and l.status in ['Approved', 'Active', 'Defaulted'] %} {% set
+              active_loans_exist.value = true %} {# Jinja logic macro/formatting
+              for Principal #} {% if l.amount_requested >= 1000000 %} {% set
+              p_formatted = "{:,.1f}m".format(l.amount_requested / 1000000) |
+              replace('.0m', 'm') %} {% elif l.amount_requested >= 1000 %} {%
+              set p_formatted = "{:,.0f}k".format(l.amount_requested / 1000) %}
+              {% else %} {% set p_formatted =
+              "{:,.0f}".format(l.amount_requested) %} {% endif %} {# Jinja logic
+              formatting for Balance #} {% if balance >= 1000000 %} {% set
+              b_formatted = "{:,.1f}m".format(balance / 1000000) |
+              replace('.0m', 'm') %} {% elif balance >= 1000 %} {% set
+              b_formatted = "{:,.0f}k".format(balance / 1000) %} {% else %} {%
+              set b_formatted = "{:,.0f}".format(balance) %} {% endif %}
+
               <option value="{{ l.id }}">
-                Loan: Ugx {{ "{:,.2f}".format(l.amount_requested)
-                }} (Bal: Ugx {{ "{:,.2f}".format(balance) }})
+                Loan: {{ p_formatted }}, Bal: {{ b_formatted }}
               </option>
               {% endif %} {% endfor %} {% if not active_loans_exist.value %}
               <option value="" disabled selected>

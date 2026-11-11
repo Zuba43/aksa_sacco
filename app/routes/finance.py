@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from datetime import datetime
-from app.models import User, Loan, Savings, LoanRepayment, Expense, FineFee
+from app.models import User, Loan, Savings, Expense, FineFee
 from app import db
 
 finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
@@ -14,26 +14,56 @@ def dashboard():
         flash('Access restricted to Finance & Treasury Officers.', 'danger')
         return redirect(url_for('auth.login'))
 
-    # 1. Total Financial Metrics
+    # 0. Automatically evaluate loan status updates (Tenure defaults & Full settlements)
+    all_loans = Loan.query.order_by(Loan.date_applied.desc()).all()
+    for loan in all_loans:
+        loan.check_and_update_status()
+    db.session.commit()
+
+    # 1. Core Capital Pools
     total_savings = db.session.query(func.sum(Savings.amount)).scalar() or 0.0
     total_fines = db.session.query(func.sum(FineFee.amount)).scalar() or 0.0
-    total_disbursed = db.session.query(func.sum(Loan.amount_requested)).filter(
-        Loan.status.in_(['Approved', 'Active', 'Fully Paid', 'Defaulted'])
-    ).scalar() or 0.0
+    
+    # 2. Loan Calculations & Profits
+    total_disbursed = 0.0
+    unpaid_loan_balance = 0.0
+    loan_profits = 0.0  # Total interest expected or earned on loans
+    total_repayments_collected = 0.0
 
-    # 2. Risk & Status Breakdown Counts
+    for loan in all_loans:
+        total_due = loan.total_due                # Accessed as a property
+        loan.total_repaid_calc = loan.amount_repaid
+        loan.balance_calc = loan.balance_remaining # Accessed as a property
+
+        total_repayments_collected += loan.amount_repaid
+
+        if loan.status in ['Approved', 'Active', 'Fully Paid', 'Defaulted']:
+            total_disbursed += loan.amount_requested
+            loan_profits += (loan.amount_requested * (loan.interest_rate / 100))
+
+        if loan.status in ['Approved', 'Active', 'Defaulted']:
+            unpaid_loan_balance += loan.balance_calc
+
+    # 3. Growth Metrics Calculations
+    # Actual Growth = Total Savings + Total Collected Repayments + Fines
+    actual_growth = total_savings + total_repayments_collected + total_fines
+
+    # Projected Growth = Actual Growth + Outstanding Expected Loan Balances + Projected Interest
+    projected_growth = actual_growth + unpaid_loan_balance + loan_profits
+
+    # 4. Risk & Status Breakdown Counts
     performing_count = Loan.query.filter(Loan.status.in_(['Approved', 'Active'])).count()
     fully_paid_count = Loan.query.filter_by(status='Fully Paid').count()
     pending_count = Loan.query.filter_by(status='Pending').count()
-    default_count = Loan.query.filter(Loan.status.in_(['Defaulted', 'Rejected'])).count()
+    default_count = Loan.query.filter_by(status='Defaulted').count()
 
     npl_amount = db.session.query(func.sum(Loan.amount_requested)).filter(
-        Loan.status.in_(['Defaulted'])
+        Loan.status == 'Defaulted'
     ).scalar() or 0.0
 
     npl_ratio = (npl_amount / total_disbursed * 100) if total_disbursed > 0 else 0.0
 
-    # 3. Purpose Breakdown
+    # 5. Purpose Breakdown
     tuition_total = db.session.query(func.sum(Loan.amount_requested)).filter(Loan.loan_type == 'emergency').scalar() or 0.0
     startup_total = db.session.query(func.sum(Loan.amount_requested)).filter(Loan.loan_type == 'Business startup').scalar() or 0.0
     others_total = db.session.query(func.sum(Loan.amount_requested)).filter(Loan.loan_type == 'general').scalar() or 0.0
@@ -42,43 +72,29 @@ def dashboard():
     startup_count = Loan.query.filter_by(loan_type='Business startup').count()
     others_count = Loan.query.filter_by(loan_type='general').count()
 
-    # 4. Fetch all loans and dynamically compute total repayments from LoanRepayment model
-    all_loans = Loan.query.order_by(Loan.date_applied.desc()).all()
-
-    for loan in all_loans:
-        total_paid = sum(r.amount for r in loan.repayments) if loan.repayments else 0.0
-        total_due = loan.amount_requested * (1 + (loan.interest_rate / 100))
-        loan.total_repaid_calc = total_paid
-        loan.balance_calc = max(0.0, total_due - total_paid)
-
-    # 5. Personal Member Data for Logged-In Officer (Wallet Modal)
+    # 6. Personal Member Data for Logged-In Officer (Wallet Modal)
     personal_savings = Savings.query.filter_by(user_id=current_user.id).order_by(Savings.date_recorded.desc()).all()
     current_user_savings = sum(s.amount for s in personal_savings)
 
-    # 6. Global Transactions for All Members (Explicitly joining User to guarantee member name display)
+    # 7. Global Transactions for All Members
     all_savings_transactions = db.session.query(Savings, User).join(User, Savings.user_id == User.id).order_by(Savings.date_recorded.desc()).all()
     
-    # Explicitly join LoanRepayment -> Loan -> User so tuple structure (repayment, user) is consistent
-    all_repayments_transactions = db.session.query(LoanRepayment, User)\
-        .join(Loan, LoanRepayment.loan_id == Loan.id)\
-        .join(User, Loan.user_id == User.id)\
-        .order_by(LoanRepayment.date_paid.desc()).all()
-
-    # 7. Fetch all members list for admin modal dropdowns
     all_members = User.query.order_by(User.fname.asc()).all()
     all_fines_transactions = db.session.query(FineFee, User)\
-    .join(User, FineFee.user_id == User.id)\
-    .order_by(FineFee.date_recorded.desc()).all()
+        .join(User, FineFee.user_id == User.id)\
+        .order_by(FineFee.date_recorded.desc()).all()
     
     all_expenses_transactions = db.session.query(Expense, User)\
-    .join(User, Expense.recorded_by == User.id)\
-    .order_by(Expense.date_recorded.desc()).all()
-    
-    total_capital_pool = total_savings + total_fines
+        .join(User, Expense.recorded_by == User.id)\
+        .order_by(Expense.date_recorded.desc()).all()
 
     return render_template(
         'finance/dashboard.html',
-        total_savings=total_capital_pool,
+        actual_growth=actual_growth,
+        projected_growth=projected_growth,
+        loan_profits=loan_profits,
+        unpaid_loan_balance=unpaid_loan_balance,
+        total_savings=total_savings,
         all_fines_transactions=all_fines_transactions,
         all_expenses_transactions=all_expenses_transactions,
         total_disbursed=total_disbursed,
@@ -98,7 +114,7 @@ def dashboard():
         savings=personal_savings,
         current_user_savings=current_user_savings,
         all_savings_transactions=all_savings_transactions,
-        all_repayments_transactions=all_repayments_transactions,
+        all_repayments_transactions=[],  # Omitted since LoanRepayment model is bypassed
         all_members=all_members,
     )
 
@@ -108,7 +124,6 @@ def dashboard():
 @finance_bp.route('/admin/record-loan', methods=['POST'])
 @login_required
 def admin_record_loan():
-    """Treasurer tool to record historical or pre-deployment existing loans."""
     if current_user.role not in ['finance', 'treasurer', 'chair']:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('finance.dashboard'))
@@ -119,10 +134,8 @@ def admin_record_loan():
         amount_requested = float(request.form.get('amount_requested', 0))
         status = request.form.get('status', 'Active')
 
-        # Parse submitted custom date, fallback to datetime.utcnow() if omitted
         date_applied_str = request.form.get('date_applied')
         if date_applied_str:
-            # Parses datetime-local format: YYYY-MM-DDTHH:MM
             loan_date = datetime.strptime(date_applied_str, '%Y-%m-%dT%H:%M')
         else:
             loan_date = datetime.utcnow()
@@ -137,7 +150,7 @@ def admin_record_loan():
             guarantor_name="Pre-Deployment Record",
             guarantor_email="N/A",
             guarantor_phone="N/A",
-            date_applied=loan_date  # Overrides the default with historical date
+            date_applied=loan_date
         )
         db.session.add(new_loan)
         db.session.commit()
@@ -152,7 +165,6 @@ def admin_record_loan():
 @finance_bp.route('/admin/make-expense', methods=['POST'])
 @login_required
 def admin_make_expense():
-    """Treasurer tool to log institutional operational expenses."""
     if current_user.role not in ['finance', 'treasurer', 'chair']:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('finance.dashboard'))
@@ -162,7 +174,6 @@ def admin_make_expense():
         amount = float(request.form.get('amount', 0))
         category = request.form.get('category', 'Administrative')
         
-        # Capture custom date if provided for legacy integration; otherwise use now
         date_str = request.form.get('date_recorded')
         if date_str:
             date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
@@ -189,7 +200,6 @@ def admin_make_expense():
 @finance_bp.route('/admin/record-fine', methods=['POST'])
 @login_required
 def admin_record_fine():
-    """Treasurer tool to log member fines, penalties, or membership fees."""
     if current_user.role not in ['finance', 'treasurer', 'chair']:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('finance.dashboard'))
@@ -199,7 +209,6 @@ def admin_record_fine():
         fee_type = request.form.get('fee_type', 'Penalty')
         amount = float(request.form.get('amount', 0))
         
-        # Capture custom date if provided for legacy integration; otherwise use now
         date_str = request.form.get('date_recorded')
         if date_str:
             date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
@@ -219,5 +228,23 @@ def admin_record_fine():
     except Exception as e:
         db.session.rollback()
         flash(f'Error recording fine: {str(e)}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+@finance_bp.route('/admin/pay-fine/<int:fine_id>', methods=['POST'])
+@login_required
+def admin_pay_fine(fine_id):
+    if current_user.role not in ['finance', 'treasurer', 'chair']:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    fine = FineFee.query.get_or_404(fine_id)
+    try:
+        fine.status = 'Paid'
+        db.session.commit()
+        flash(f'Fine #{fine.id} marked as Paid successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating fine: {str(e)}', 'danger')
 
     return redirect(url_for('finance.dashboard'))

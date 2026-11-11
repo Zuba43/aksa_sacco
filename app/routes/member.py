@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app.models import Savings, Loan, LoanRepayment, Notification, Minute,FineFee
+from app.models import Savings, Loan, Notification, Minute, FineFee
 from app import db
 from app.utils import send_guarantor_notification
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 member_bp = Blueprint('member', __name__, url_prefix='/member')
 @member_bp.route('/dashboard')
@@ -19,21 +19,13 @@ def dashboard():
 
     user_loans = Loan.query.filter_by(user_id=current_user.id).order_by(Loan.date_applied.desc()).all()
     
-    # Check for default status (> 3 months active and not fully paid)
-    now = datetime.utcnow()
-    three_months_ago = now - timedelta(days=90) # roughly 3 months
-    
+    # Automatically evaluate statuses
     status_updated = False
     for loan in user_loans:
-        # Always compute and attach these properties to the loan object so the template can read them
-        loan.total_due = loan.amount_requested * 1.10
-        loan.total_repaid = sum(repayment.amount for repayment in loan.repayments) if hasattr(loan, 'repayments') else 0
-        loan.balance_remaining = loan.total_due - loan.total_repaid
-
-        if loan.status == 'Approved':
-            if loan.date_applied and loan.date_applied < three_months_ago and loan.total_repaid < loan.total_due:
-                loan.status = 'Defaulter'
-                status_updated = True
+        old_status = loan.status
+        loan.check_and_update_status()
+        if loan.status != old_status:
+            status_updated = True
 
     if status_updated:
         db.session.commit()
@@ -44,22 +36,9 @@ def dashboard():
 
     recent_minutes = Minute.query.order_by(Minute.created_at.desc()).limit(5).all()
     
-    # Fetch Fines/Fees and Repayments
     fines_fees = FineFee.query.filter_by(user_id=current_user.id).all()
-    repayments = LoanRepayment.query.join(Loan).filter(Loan.user_id == current_user.id).all()
 
-    # Combine and normalize into a unified recent transactions list
     recent_transactions = []
-
-    for rep in repayments:
-        recent_transactions.append({
-            'date': getattr(rep, 'date_paid', None) or getattr(rep, 'date_created', None),
-            'type': 'Loan Repayment',
-            'amount': rep.amount,
-            'is_credit': True,
-            'badge': 'bg-success'
-        })
-
     for ff in fines_fees:
         recent_transactions.append({
             'date': ff.date_recorded,
@@ -69,7 +48,6 @@ def dashboard():
             'badge': 'bg-danger' if ff.status == 'Unpaid' else 'bg-secondary'
         })
 
-    # Sort by date descending and limit to top 5
     recent_transactions.sort(key=lambda x: x['date'] if x['date'] else datetime.min, reverse=True)
     recent_transactions = recent_transactions[:5]
 
@@ -83,6 +61,7 @@ def dashboard():
         recent_minutes=recent_minutes,
         recent_transactions=recent_transactions
     )
+
 
 # Handle Friday Savings Entry Request
 @member_bp.route('/save-friday', methods=['POST'])
@@ -157,7 +136,6 @@ def apply_loan():
             send_guarantor_notification(new_loan, current_user)
             flash("Loan application submitted successfully. Guarantor notified via email.", "success")
         except Exception as mail_err:
-            # Fallback if mail fails so transaction doesn't revert unnecessarily
             flash("Loan application submitted, but failed to send guarantor email notification.", "warning")
 
     except Exception as e:
@@ -174,47 +152,38 @@ def repay_loan():
 
     if not loan_id or repayment_amount <= 0:
         flash("Invalid repayment details provided.", "danger")
-        return redirect(url_for('member.dashboard'))
+        return redirect(request.referrer or url_for('member.dashboard'))
 
-    loan = Loan.query.filter_by(id=loan_id, user_id=current_user.id).first()
+    # Allow finance/treasurers or the loan owner to submit payments
+    loan = Loan.query.filter_by(id=loan_id).first()
 
     if not loan:
         flash("Loan record not found.", "danger")
-        return redirect(url_for('member.dashboard'))
+        return redirect(request.referrer or url_for('member.dashboard'))
 
-    # Allow repayments if approved, defaulter, or even if accidentally marked 'Paid' but has balance
-    if loan.status not in ['Approved', 'Defaulter', 'Paid']:
-        flash("Repayments cannot be made against this loan status.", "warning")
-        return redirect(url_for('member.dashboard'))
+    if loan.status not in ['Approved', 'Active', 'Defaulted']:
+        flash("Repayments can only be made against active, approved, or at-risk loans.", "warning")
+        return redirect(request.referrer or url_for('member.dashboard'))
 
     try:
-        # Record the repayment transaction
-        new_repayment = LoanRepayment(
-            loan_id=loan.id,
-            amount=repayment_amount
-        )
-        db.session.add(new_repayment)
-        db.session.flush() # Flush to ensure relationship updates properly if queried immediately
+        # Increment amount repaid directly
+        loan.amount_repaid = (loan.amount_repaid or 0.0) + repayment_amount
+        total_due = loan.total_due
 
-        # Calculate total paid so far (including this new payment)
-        total_paid_so_far = sum(r.amount for r in loan.repayments) + repayment_amount
-        
-        # Calculate total due using your 10% rule
-        total_due = loan.amount_requested * 1.10
-
-        # Dynamically set status based on actual balance
-        if total_paid_so_far >= total_due:
-            loan.status = 'Paid'
-            flash(f"Repayment of UGX {repayment_amount:,.2f} recorded! Loan #{loan.id} has been fully settled.", "success")
+        # Update status check
+        if loan.amount_repaid >= total_due:
+            loan.status = 'Fully Paid'
+            flash(f"Repayment of UGX {repayment_amount:,.2f} recorded! Loan #{loan.id} is now fully settled.", "success")
         else:
-            loan.status = 'Approved' # Keep it approved/active since balance remains
-            remaining = total_due - total_paid_so_far
+            loan.status = 'Active'  
+            remaining = loan.balance_remaining
             flash(f"Repayment of UGX {repayment_amount:,.2f} recorded. Remaining balance: UGX {remaining:,.2f}.", "success")
 
         db.session.commit()
 
     except Exception as e:
         db.session.rollback()
-        flash("An error occurred while processing your repayment. Please try again.", "danger")
+        flash(f"An error occurred while processing your repayment: {str(e)}", "danger")
 
-    return redirect(url_for('member.dashboard'))
+    # Redirect back to whichever dashboard the officer was on (finance or member)
+    return redirect(request.referrer or url_for('member.dashboard'))

@@ -116,21 +116,44 @@ class Loan(db.Model):
     guarantor_phone = db.Column(db.String(20), nullable=False)
     
     date_applied = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Use back_populates instead of backref
-    user = db.relationship('User', back_populates='loans')
     amount_repaid = db.Column(db.Float, default=0.0)
-    
-class LoanRepayment(db.Model):
-    __tablename__ = 'loan_repayments'
 
-    id = db.Column(db.Integer, primary_key=True)
-    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    date_paid = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', back_populates='loans')
 
-    # Relationship back to loan
-    loan = db.relationship('Loan', backref=db.backref('repayments', lazy=True, cascade='all, delete-orphan'))
+    @property
+    def total_due(self):
+        """Calculates Principal + Interest based on the loan's specific interest rate."""
+        return self.amount_requested * (1.0 + (self.interest_rate / 100.0))
+
+    @property
+    def total_repaid(self):
+        """Maps directly to amount_repaid for template compatibility."""
+        return self.amount_repaid or 0.0
+
+    @property
+    def balance_remaining(self):
+        """Calculates the exact outstanding balance."""
+        return max(0.0, self.total_due - self.total_repaid)
+
+    def check_and_update_status(self):
+        """
+        Evaluates tenure and balance to automatically handle Defaulted vs Fully Paid.
+        Rule: If tenure enters/exceeds 3 months (90 days) and balance remains -> Defaulted.
+        """
+        if self.status in ['Fully Paid', 'Rejected', 'Pending']:
+            return self.status
+
+        now = datetime.utcnow()
+        delta_days = (now - self.date_applied).days
+
+        if self.balance_remaining <= 0:
+            self.status = 'Fully Paid'
+        elif self.status in ['Approved', 'Active'] and delta_days >= 90:
+            self.status = 'Defaulted'
+        elif self.status == 'Approved' and self.amount_repaid > 0:
+            self.status = 'Active'
+
+        return self.status
     
 class Expense(db.Model):
     __tablename__ = 'expenses'
