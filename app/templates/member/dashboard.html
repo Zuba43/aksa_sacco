@@ -900,8 +900,8 @@ endblock %} {% block extra_head %}
               l.repayments else 0 %} {% set balance = total_due - total_repaid
               %} {% if balance > 0 %} {% set active_loans_exist.value = true %}
               <option value="{{ l.id }}">
-                Loan #{{ l.id }} - UGX {{ "{:,.2f}".format(l.amount_requested)
-                }} (Balance: UGX {{ "{:,.2f}".format(balance) }})
+                Loan: Ugx {{ "{:,.2f}".format(l.amount_requested)
+                }} (Bal: Ugx {{ "{:,.2f}".format(balance) }})
               </option>
               {% endif %} {% endfor %} {% if not active_loans_exist.value %}
               <option value="" disabled selected>
