@@ -117,12 +117,6 @@ endblock %} {% block extra_head %}
                   ><i class="bi bi-clock-history me-1"></i> View Savings</a
                 >
               </li>
-              <li>
-                <a href="#projected-profits" class="nav-link sub-nav-link"
-                  ><i class="bi bi-graph-up-arrow me-1"></i> Projected
-                  Profits</a
-                >
-              </li>
             </ul>
           </div>
         </li>
@@ -157,17 +151,6 @@ endblock %} {% block extra_head %}
                   Repayment</a
                 >
               </li>
-              <li>
-                <a href="#loan-history" class="nav-link sub-nav-link"
-                  ><i class="bi bi-journal-text me-1"></i> History &
-                  Repayment</a
-                >
-              </li>
-              <li>
-                <a href="#loan-interest" class="nav-link sub-nav-link"
-                  ><i class="bi bi-percent me-1"></i> Interest Rates (10%)</a
-                >
-              </li>
             </ul>
           </div>
         </li>
@@ -197,66 +180,10 @@ endblock %} {% block extra_head %}
           </div>
         </li>
 
-        <!-- Collapsible 4: General AKSA Events -->
         <li class="nav-item">
-          <a
-            class="nav-link d-flex align-items-center justify-content-between"
-            data-bs-toggle="collapse"
-            href="#eventsMenu"
-            role="button"
-          >
-            <span><i class="bi bi-newspaper me-2"></i>AKSA Events</span>
-            <i class="bi bi-chevron-down small"></i>
+          <a href="#profileModal" data-bs-toggle="modal" class="nav-link">
+            <i class="bi bi-person-badge me-2"></i> Profile Info
           </a>
-          <div class="collapse ms-2" id="eventsMenu">
-            <ul class="nav flex-column gap-1 mt-1">
-              <li>
-                <a href="#minutes-section" class="nav-link sub-nav-link"
-                  ><i class="bi bi-file-earmark-text me-1"></i> Meeting
-                  Minutes</a
-                >
-              </li>
-              <li>
-                <a href="#events-section" class="nav-link sub-nav-link"
-                  ><i class="bi bi-lightning-charge me-1"></i> News &
-                  Trending</a
-                >
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Collapsible 5: Settings -->
-        <li class="nav-item">
-          <a
-            class="nav-link d-flex align-items-center justify-content-between"
-            data-bs-toggle="collapse"
-            href="#settingsMenu"
-            role="button"
-          >
-            <span><i class="bi bi-gear me-2"></i>Settings</span>
-            <i class="bi bi-chevron-down small"></i>
-          </a>
-          <div class="collapse ms-2" id="settingsMenu">
-            <ul class="nav flex-column gap-1 mt-1">
-              <li>
-                <a
-                  href="#profileModal"
-                  data-bs-toggle="modal"
-                  class="nav-link sub-nav-link"
-                  ><i class="bi bi-person me-1"></i> Profile Info</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#profileModal"
-                  data-bs-toggle="modal"
-                  class="nav-link sub-nav-link"
-                  ><i class="bi bi-telephone me-1"></i> Change Phone Number</a
-                >
-              </li>
-            </ul>
-          </div>
         </li>
 
         <hr class="my-3 border-secondary border-opacity-25" />
@@ -341,133 +268,6 @@ endblock %} {% block extra_head %}
             >
           </div>
         </div>
-
-        <!-- Loan Requests & Status -->
-        <div class="col-lg-6" id="loan-history">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-header bg-white py-3 border-0">
-              <h5 class="fw-bold mb-0">
-                <i class="bi bi-cash-stack text-success me-2"></i>Loan Requests
-                & Status
-              </h5>
-            </div>
-            <div class="card-body p-0">
-              {% if loans %}
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for l in loans %}
-                    <tr>
-                      <td>{{ l.date_applied.strftime('%d %b %Y') }}</td>
-                      <td>
-                        <span class="badge bg-secondary text-uppercase"
-                          >{{ l.loan_type }}</span
-                        >
-                      </td>
-                      <td class="fw-bold">
-                        UGX {{ "{:,.2f}".format(l.amount_requested) }}
-                      </td>
-                      <td>
-                        {% if l.status == 'Approved' %}
-                        <span class="badge bg-success">Approved</span>
-                        {% elif l.status == 'Pending' %}
-                        <span class="badge bg-warning text-dark"
-                          >Pending Chair</span
-                        >
-                        {% elif l.status == 'Paid' %}
-                        <span class="badge bg-primary">Fully Paid</span>
-                        {% else %}
-                        <span class="badge bg-secondary">{{ l.status }}</span>
-                        {% endif %}
-                      </td>
-                    </tr>
-
-                    <!-- Sub-row showing repayment history dates & amounts -->
-                    {% if l.repayments %}
-                    <tr class="table-light">
-                      <td colspan="4" class="ps-4 py-2">
-                        <small class="fw-bold text-muted d-block mb-1"
-                          ><i class="bi bi-clock-history me-1"></i> Repayment
-                          History:</small
-                        >
-                        <ul class="list-unstyled mb-0 small">
-                          {% for rep in l.repayments %}
-                          <li
-                            class="d-flex justify-content-between py-1 border-bottom border-light"
-                          >
-                            <span
-                              ><i
-                                class="bi bi-check-circle-fill text-success me-1"
-                              ></i>
-                              Paid on {{ rep.date_paid.strftime('%d %b %Y,
-                              %H:%M') }}</span
-                            >
-                            <span class="fw-bold text-success"
-                              >+UGX {{ "{:,.2f}".format(rep.amount) }}</span
-                            >
-                          </li>
-                          {% endfor %}
-                        </ul>
-                      </td>
-                    </tr>
-                    {% endif %} {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% else %}
-              <div class="p-4 text-center text-muted">
-                No loan applications on record.
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Notifications & Alerts (Full-Width Top) -->
-      <div class="card border-0 shadow-sm rounded-3 mb-4" id="notif-section">
-        <div
-          class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-        >
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-bell text-warning me-2"></i>Notifications &
-            Reminders
-          </h5>
-          <span class="badge bg-warning text-dark"
-            >{{ notifications|length }} Messages</span
-          >
-        </div>
-        <div class="card-body p-0">
-          {% if notifications %}
-          <div class="list-group list-group-flush">
-            {% for n in notifications %}
-            <div class="list-group-item p-3">
-              <div
-                class="d-flex justify-content-between align-items-center mb-1"
-              >
-                <h6 class="fw-bold mb-0 text-dark">{{ n.title }}</h6>
-                <small class="text-muted"
-                  >{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</small
-                >
-              </div>
-              <p class="small text-muted mb-0">{{ n.message }}</p>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="p-4 text-center text-muted">
-            No notifications at this time.
-          </div>
-          {% endif %}
-        </div>
       </div>
 
       <!-- Side-by-Side Grid: Savings History (Left) & Loan Requests (Right) -->
@@ -527,116 +327,172 @@ endblock %} {% block extra_head %}
             </div>
           </div>
         </div>
-      </div>
-      <!-- Loan Requests, Status & Recent Transactions -->
-      <div class="col-lg-6" id="loan-history">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-          <div
-            class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-          >
-            <h5 class="fw-bold mb-0">
-              <i class="bi bi-cash-stack text-success me-2"></i>Loans & Recent
-              Activity
-            </h5>
-          </div>
-          <div class="card-body p-0">
-            <!-- Active / Historical Loans Table -->
-            <div class="p-3 bg-light border-bottom">
-              <h6 class="fw-bold text-uppercase small text-muted mb-0">
-                Loan Overview & Balance
-              </h6>
-            </div>
-            {% if loans %}
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0 small">
-                <thead class="table-light">
-                  <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Principal</th>
-                    <th>Total (+10%)</th>
-                    <th>Balance</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for l in loans %}
-                  <tr>
-                    <td>{{ l.date_applied.strftime('%d %b %Y') }}</td>
-                    <td>
-                      <span class="badge bg-secondary text-uppercase"
-                        >{{ l.loan_type }}</span
-                      >
-                    </td>
-                    <td class="fw-semibold">
-                      UGX {{ "{:,.0f}".format(l.amount_requested) }}
-                    </td>
-                    <td>UGX {{ "{:,.0f}".format(l.total_due) }}</td>
-                    <td class="fw-bold text-danger">
-                      UGX {{ "{:,.0f}".format(l.balance_remaining) }}
-                    </td>
-                    <td>
-                      {% if l.status == 'Approved' %}
-                      <span class="badge bg-success">Approved</span>
-                      {% elif l.status == 'Pending' %}
-                      <span class="badge bg-warning text-dark">Pending</span>
-                      {% else %}
-                      <span class="badge bg-secondary">{{ l.status }}</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% else %}
-            <div class="p-3 text-center text-muted small">
-              No loan applications on record.
-            </div>
-            {% endif %}
 
-            <!-- Recent 5 Transactions (Fines, Fees & Repayments) -->
-            <div class="p-3 bg-light border-top border-bottom">
-              <h6 class="fw-bold text-uppercase small text-muted mb-0">
-                Recent 5 Transactions (Fees, Fines & Repayments)
-              </h6>
+        <!-- Loan Requests, Status & Recent Transactions -->
+        <div class="col-lg-6" id="loan-history">
+          <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div
+              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+            >
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-cash-stack text-success me-2"></i>Loans & Recent
+                Activity
+              </h5>
             </div>
-            {% if recent_transactions %}
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle mb-0 small">
-                <thead class="table-light">
-                  <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th class="text-end">Amount (UGX)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for t in recent_transactions %}
-                  <tr>
-                    <td>
-                      {{ t.date.strftime('%d %b %Y') if t.date else 'N/A' }}
-                    </td>
-                    <td>
-                      <span class="badge {{ t.badge }} me-1">{{ t.type }}</span>
-                    </td>
-                    <td
-                      class="text-end fw-bold {{ 'text-success' if t.is_credit else 'text-danger' }}"
-                    >
-                      {{ '+' if t.is_credit else '-' }}{{
-                      "{:,.2f}".format(t.amount) }}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+            <div class="card-body p-0">
+              <!-- Active / Historical Loans Table -->
+              <div class="p-3 bg-light border-bottom">
+                <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                  Loan Overview & Balance
+                </h6>
+              </div>
+              {% if loans %}
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Principal</th>
+                      <th>Total (+10%)</th>
+                      <th>Balance</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for l in loans %}
+                    <tr>
+                      <td>
+                        {{ l.date_applied.strftime('%d %b %Y') if l.date_applied
+                        else '-' }}
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary text-uppercase"
+                          >{{ l.loan_type | default('N/A') }}</span
+                        >
+                      </td>
+                      <td class="fw-semibold">
+                        UGX {{ "{:,.0f}".format(l.amount_requested | default(0))
+                        }}
+                      </td>
+                      <td>
+                        UGX {{ "{:,.0f}".format(l.total_due | default(0)) }}
+                      </td>
+                      <td>
+                        UGX {{ "{:,.0f}".format(l.balance_remaining |
+                        default(0)) }}
+                      </td>
+                      <td>
+                        {% if l.status == 'Approved' %}
+                        <span class="badge bg-success">Approved</span>
+                        {% elif l.status == 'Pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif l.status == 'Paid' %}
+                        <span class="badge bg-primary">Fully Paid</span>
+                        {% elif l.status == 'Defaulter' %}
+                        <span class="badge bg-danger">Defaulter</span>
+                        {% else %}
+                        <span class="badge bg-secondary"
+                          >{{ l.status | default('Unknown') }}</span
+                        >
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <div class="p-3 text-center text-muted small">
+                No loan applications on record.
+              </div>
+              {% endif %}
+
+              <div class="p-3 bg-light border-top border-bottom">
+                <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                  Recent 5 Transactions (Fees, Fines & Repayments)
+                </h6>
+              </div>
+              {% if recent_transactions %}
+              <div class="table-responsive">
+                <table
+                  class="table table-sm table-hover align-middle mb-0 small"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th class="text-end">Amount (UGX)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for t in recent_transactions %}
+                    <tr>
+                      <td>
+                        {{ t.date.strftime('%d %b %Y, %H:%M') if t.date else
+                        'N/A' }}
+                      </td>
+                      <td>
+                        <span class="badge {{ t.badge }} me-1"
+                          >{{ t.type }}</span
+                        >
+                      </td>
+                      <td
+                        class="text-end fw-bold {{ 'text-success' if t.is_credit else 'text-danger' }}"
+                      >
+                        {{ '+' if t.is_credit else '-' }}{{
+                        "{:,.2f}".format(t.amount | default(0)) }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <div class="p-3 text-center text-muted small">
+                No recent fees, fines, or repayment activity.
+              </div>
+              {% endif %}
             </div>
-            {% else %}
-            <div class="p-3 text-center text-muted small">
-              No recent fees, fines, or repayment activity.
-            </div>
-            {% endif %}
           </div>
+        </div>
+      </div>
+
+      <!-- Section: Notifications & Alerts (Full-Width Top) -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4" id="notif-section">
+        <div
+          class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+        >
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-bell text-warning me-2"></i>Notifications &
+            Reminders
+          </h5>
+          <span class="badge bg-warning text-dark"
+            >{{ notifications|length }} Messages</span
+          >
+        </div>
+        <div class="card-body p-0">
+          {% if notifications %}
+          <div class="list-group list-group-flush">
+            {% for n in notifications %}
+            <div class="list-group-item p-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <h6 class="fw-bold mb-0 text-dark">{{ n.title }}</h6>
+                <small class="text-muted"
+                  >{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</small
+                >
+              </div>
+              <p class="small text-muted mb-0">{{ n.message }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">
+            No notifications at this time.
+          </div>
+          {% endif %}
         </div>
       </div>
 
@@ -693,7 +549,7 @@ endblock %} {% block extra_head %}
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title fw-bold">
-          <i class="bi bi-piggy-bank me-2"></i>Friday Deposit (2,000 - 20,000
+          <i class="bi bi-piggy-bank me-2"></i>Friday Deposit (2,000 - 25,000
           UGX)
         </h5>
         <button
@@ -711,13 +567,13 @@ endblock %} {% block extra_head %}
             name="amount"
             class="form-control form-control-lg"
             min="2000"
-            max="20000"
+            max="25000"
             step="500"
             value="5000"
             required
           />
           <div class="form-text mt-2">
-            Rule: Contributions must be between UGX 2,000 and UGX 20,000 every
+            Rule: Contributions must be between UGX 2,000 and UGX 25,000 every
             Friday.
           </div>
         </div>
@@ -772,14 +628,17 @@ endblock %} {% block extra_head %}
               {% for s in savings %}
               <tr>
                 <td class="ps-4 text-muted small">{{ loop.index }}</td>
-                <td>{{ s.date_recorded.strftime('%d %b %Y, %H:%M') }}</td>
+                <td>
+                  {{ s.date_recorded.strftime('%d %b %Y, %H:%M') if
+                  s.date_recorded else '-' }}
+                </td>
                 <td>
                   <span class="badge bg-light text-dark border">
-                    {{ s.deposit_type }}
+                    {{ s.deposit_type | default('Deposit') }}
                   </span>
                 </td>
                 <td class="text-end pe-4 fw-semibold text-success">
-                  +{{ "{:,.2f}".format(s.amount) }}
+                  +{{ "{:,.2f}".format(s.amount | default(0)) }}
                 </td>
               </tr>
               {% endfor %}
@@ -793,7 +652,7 @@ endblock %} {% block extra_head %}
                   Total Accumulated Savings
                 </td>
                 <td class="text-end pe-4 fw-bold fs-5 text-primary">
-                  UGX {{ "{:,.2f}".format(total_savings) }}
+                  UGX {{ "{:,.2f}".format(total_savings | default(0)) }}
                 </td>
               </tr>
             </tfoot>
@@ -851,7 +710,7 @@ endblock %} {% block extra_head %}
         <div class="modal-body p-4">
           <!-- Section 1: Member Info (Auto-filled) -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-3">
-            <i class="bi bi-person-check me-1"></i> 1. Applicant Information
+            <i class="bi bi-person-check me-1"></i>1. Applicant Information
           </h6>
           <div class="row g-3 mb-4">
             <div class="col-md-6">
@@ -880,7 +739,7 @@ endblock %} {% block extra_head %}
 
           <!-- Section 2: Loan Details -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-3">
-            <i class="bi bi-bank me-1"></i> 2. Loan Parameters
+            <i class="bi bi-bank me-1"></i>2. Loan Parameters
           </h6>
           <div class="row g-3 mb-3">
             <div class="col-md-6">
@@ -953,7 +812,7 @@ endblock %} {% block extra_head %}
 
           <!-- Section 3: Guarantor Obligations -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-1">
-            <i class="bi bi-shield-check me-1"></i> 3. Guarantor Details
+            <i class="bi bi-shield-check me-1"></i>3. Guarantor Details
           </h6>
           <p class="text-muted mb-3" style="font-size: 0.8rem">
             * An official email with loan specifications will be sent to your
@@ -1029,23 +888,26 @@ endblock %} {% block extra_head %}
           data-bs-dismiss="modal"
         ></button>
       </div>
-      <!-- FIXED: Updated action from apply_loan to repay_loan -->
       <form method="POST" action="{{ url_for('member.repay_loan') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="modal-body p-4">
           <div class="mb-3">
             <label class="form-label fw-semibold">Select Active Loan</label>
             <select name="loan_id" class="form-select form-select-lg" required>
-              {% for l in loans %} {% if l.status == 'Approved' %}
+              {% set active_loans_exist = namespace(value=false) %} {% for l in
+              loans %} {% set total_due = l.amount_requested * 1.10 %} {% set
+              total_repaid = l.repayments | sum(attribute='amount') if
+              l.repayments else 0 %} {% set balance = total_due - total_repaid
+              %} {% if balance > 0 %} {% set active_loans_exist.value = true %}
               <option value="{{ l.id }}">
                 Loan #{{ l.id }} - UGX {{ "{:,.2f}".format(l.amount_requested)
-                }}
+                }} (Balance: UGX {{ "{:,.2f}".format(balance) }})
               </option>
-              {% endif %} {% else %}
+              {% endif %} {% endfor %} {% if not active_loans_exist.value %}
               <option value="" disabled selected>
-                No active approved loans found
+                No active loans with remaining balances found
               </option>
-              {% endfor %}
+              {% endif %}
             </select>
           </div>
           <div class="mb-3">
@@ -1074,50 +936,222 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal 4: Settings & Profile -->
-<div class="modal fade" id="profileModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
+<!-- Profile Info Modal -->
+<div
+  class="modal fade"
+  id="profileModal"
+  tabindex="-1"
+  aria-labelledby="profileModalLabel"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+  >
+    <div class="modal-content border-0 shadow-lg">
+      <!-- Modal Header -->
       <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title fw-bold">
-          <i class="bi bi-person-gear me-2"></i>Member Profile & Settings
+        <h5 class="modal-title fw-bold" id="profileModalLabel">
+          <i class="bi bi-person-badge me-2"></i> User Profile Details
         </h5>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
-      <div class="modal-body p-4">
-        <div class="mb-3">
-          <label class="form-label fw-semibold text-muted">Full Name</label>
-          <input
-            type="text"
-            class="form-control"
-            value="{{ current_user.fname }} {{ current_user.lname }}"
-            readonly
-          />
+
+      <!-- Modal Body -->
+      <div class="modal-body p-4 bg-light">
+        <!-- Section 1: Credentials & Status -->
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-bold text-primary">
+            <i class="bi bi-shield-lock me-1"></i> Account & Credentials
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Username</small>
+                <span class="fw-semibold">{{ current_user.username }}</span>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Email Address</small>
+                <span class="fw-semibold">{{ current_user.email }}</span>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Phone Number</small>
+                <span class="fw-semibold">{{ current_user.phone }}</span>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Role</small>
+                <span class="badge bg-info text-dark text-uppercase"
+                  >{{ current_user.role }}</span
+                >
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Account Status</small>
+                {% if current_user.is_active_account %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-warning text-dark"
+                  >Pending Secretary Approval</span
+                >
+                {% endif %}
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold text-muted">Phone Number</label>
-          <input
-            type="text"
-            class="form-control"
-            value="{{ current_user.phone }}"
-          />
+
+        <!-- Section 2: Bio Data -->
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-bold text-primary">
+            <i class="bi bi-person-lines-fill me-1"></i> Personal Bio Data
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Full Name</small>
+                <span class="fw-semibold"
+                  >{{ current_user.fname }} {{ current_user.lname }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Gender</small>
+                <span class="fw-semibold">{{ current_user.gender }}</span>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Date of Birth</small>
+                <span class="fw-semibold">{{ current_user.dob }}</span>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Home District</small>
+                <span class="fw-semibold"
+                  >{{ current_user.home_district }}</span
+                >
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">NIN</small>
+                <span class="fw-semibold">{{ current_user.nin }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold text-muted">Home District</label>
-          <input
-            type="text"
-            class="form-control"
-            value="{{ current_user.home_district }}"
-            readonly
-          />
+
+        <!-- Section 3: Next of Kin & Emergency Contacts -->
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-bold text-primary">
+            <i class="bi bi-people me-1"></i> Next of Kin & Emergency Contacts
+          </div>
+          <div class="card-body">
+            <!-- Primary Next of Kin -->
+            <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
+              Main Next of Kin
+            </h6>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Name</small>
+                <span class="fw-semibold">{{ current_user.nok_name }}</span>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Phone</small>
+                <span class="fw-semibold">{{ current_user.nok_phone }}</span>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Relation</small>
+                <span class="fw-semibold">{{ current_user.nok_relation }}</span>
+              </div>
+            </div>
+
+            <!-- Emergency Contact 1 -->
+            <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
+              Emergency Contact 1
+            </h6>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Name</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_name_1 }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Phone</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_phone_1 }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Relation</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_relation_1 }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Emergency Contact 2 -->
+            <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
+              Emergency Contact 2
+            </h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Name</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_name_2 }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Phone</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_phone_2 }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Relation</small>
+                <span class="fw-semibold"
+                  >{{ current_user.emergency_relation_2 }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: KYC Files / Outsider status -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white fw-bold text-primary">
+            <i class="bi bi-file-earmark-text me-1"></i> KYC & Account Setup
+            Meta
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <small class="text-muted d-block">Is Outsider?</small>
+                <span class="badge bg-secondary"
+                  >{{ 'Yes' if current_user.is_outsider else 'No' }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">Passport Photo File</small>
+                <span class="text-break text-muted"
+                  >{{ current_user.passport_photo or 'Not uploaded' }}</span
+                >
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted d-block">ID Scan File</small>
+                <span class="text-break text-muted"
+                  >{{ current_user.id_scan or 'Not uploaded' }}</span
+                >
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Modal Footer -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button
+          type="button"
+          class="btn btn-secondary px-4"
+          data-bs-dismiss="modal"
+        >
           Close
         </button>
       </div>

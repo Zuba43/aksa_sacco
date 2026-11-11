@@ -3,11 +3,9 @@ from flask_login import login_required, current_user
 from app.models import Savings, Loan, LoanRepayment, Notification, Minute,FineFee
 from app import db
 from app.utils import send_guarantor_notification
-from datetime import datetime
+from datetime import datetime,timedelta
+
 member_bp = Blueprint('member', __name__, url_prefix='/member')
-
-from sqlalchemy import desc
-
 @member_bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -15,64 +13,65 @@ def dashboard():
         flash('Your account is pending activation by the Secretary.', 'warning')
         return redirect(url_for('auth.login'))
 
-    # Fetch user personal savings
     user_savings = Savings.query.filter_by(user_id=current_user.id).order_by(Savings.date_recorded.desc()).all()
     total_savings = sum(s.amount for s in user_savings)
-    
     projected_profit = total_savings * 0.05
 
-    # Fetch User Loans and attach computed balance: (Principal + 10% Interest) - Total Repaid
     user_loans = Loan.query.filter_by(user_id=current_user.id).order_by(Loan.date_applied.desc()).all()
-    for l in user_loans:
-        # Sum all repayments for this specific loan
-        repaid_sum = sum(r.amount for r in l.repayments) if hasattr(l, 'repayments') and l.repayments else 0.0
-        # Total due = Principal + 10% interest
-        total_due = l.amount_requested * 1.10
-        # Store dynamic balance attribute on the loan object
-        l.balance_remaining = max(0.0, total_due - repaid_sum)
-        l.repaid_sum = repaid_sum
-        l.total_due = total_due
-
-    # Fetch recent transactions (Fines/Fees & Loan Repayments) for member activity tracking
-    user_fines = FineFee.query.filter_by(user_id=current_user.id).all()
     
-    # Extract repayments associated with user loans
-    user_repayments = []
-    for l in user_loans:
-        if hasattr(l, 'repayments') and l.repayments:
-            user_repayments.extend(l.repayments)
+    # Check for default status (> 3 months active and not fully paid)
+    now = datetime.utcnow()
+    three_months_ago = now - timedelta(days=90) # roughly 3 months
+    
+    status_updated = False
+    for loan in user_loans:
+        # Always compute and attach these properties to the loan object so the template can read them
+        loan.total_due = loan.amount_requested * 1.10
+        loan.total_repaid = sum(repayment.amount for repayment in loan.repayments) if hasattr(loan, 'repayments') else 0
+        loan.balance_remaining = loan.total_due - loan.total_repaid
 
-    # Combine into a unified history list and sort by date descending
-    recent_activity = []
-    for f in user_fines:
-        recent_activity.append({
-            'type': f'Fee/Fine: {f.fee_type}',
-            'amount': f.amount,
-            'date': f.date_recorded,
-            'badge': 'bg-warning text-dark',
-            'is_credit': False
-        })
-    for r in user_repayments:
-        recent_activity.append({
-            'type': f'Loan Repayment (Loan #{r.loan_id})',
-            'amount': r.amount,
-            'date': r.date_paid,
-            'badge': 'bg-success text-white',
-            'is_credit': True
-        })
+        if loan.status == 'Approved':
+            if loan.date_applied and loan.date_applied < three_months_ago and loan.total_repaid < loan.total_due:
+                loan.status = 'Defaulter'
+                status_updated = True
 
-    # Sort combined activity by date and pick recent 5
-    recent_transactions = sorted(
-        recent_activity, 
-        key=lambda x: x['date'] if x['date'] else datetime.min, 
-        reverse=True
-    )[:5]
+    if status_updated:
+        db.session.commit()
 
     notifications = Notification.query.filter(
         (Notification.user_id == current_user.id) | (Notification.user_id == None)
     ).order_by(Notification.created_at.desc()).all()
 
     recent_minutes = Minute.query.order_by(Minute.created_at.desc()).limit(5).all()
+    
+    # Fetch Fines/Fees and Repayments
+    fines_fees = FineFee.query.filter_by(user_id=current_user.id).all()
+    repayments = LoanRepayment.query.join(Loan).filter(Loan.user_id == current_user.id).all()
+
+    # Combine and normalize into a unified recent transactions list
+    recent_transactions = []
+
+    for rep in repayments:
+        recent_transactions.append({
+            'date': getattr(rep, 'date_paid', None) or getattr(rep, 'date_created', None),
+            'type': 'Loan Repayment',
+            'amount': rep.amount,
+            'is_credit': True,
+            'badge': 'bg-success'
+        })
+
+    for ff in fines_fees:
+        recent_transactions.append({
+            'date': ff.date_recorded,
+            'type': f"Fine/Fee: {ff.fee_type}",
+            'amount': ff.amount,
+            'is_credit': False,
+            'badge': 'bg-danger' if ff.status == 'Unpaid' else 'bg-secondary'
+        })
+
+    # Sort by date descending and limit to top 5
+    recent_transactions.sort(key=lambda x: x['date'] if x['date'] else datetime.min, reverse=True)
+    recent_transactions = recent_transactions[:5]
 
     return render_template(
         'member/dashboard.html',
@@ -80,9 +79,9 @@ def dashboard():
         total_savings=total_savings,
         projected_profit=projected_profit,
         loans=user_loans,
-        recent_transactions=recent_transactions,
         notifications=notifications,
-        recent_minutes=recent_minutes
+        recent_minutes=recent_minutes,
+        recent_transactions=recent_transactions
     )
 
 # Handle Friday Savings Entry Request
@@ -167,7 +166,6 @@ def apply_loan():
 
     return redirect(url_for('member.dashboard'))
 
-from app.models import Savings, Loan, LoanRepayment, Notification, Minute
 @member_bp.route('/repay-loan', methods=['POST'])
 @login_required
 def repay_loan():
@@ -184,30 +182,34 @@ def repay_loan():
         flash("Loan record not found.", "danger")
         return redirect(url_for('member.dashboard'))
 
-    if loan.status != 'Approved':
-        flash("Repayments can only be made against approved active loans.", "warning")
+    # Allow repayments if approved, defaulter, or even if accidentally marked 'Paid' but has balance
+    if loan.status not in ['Approved', 'Defaulter', 'Paid']:
+        flash("Repayments cannot be made against this loan status.", "warning")
         return redirect(url_for('member.dashboard'))
 
     try:
-        # Record the individual repayment transaction with its date
+        # Record the repayment transaction
         new_repayment = LoanRepayment(
             loan_id=loan.id,
             amount=repayment_amount
         )
         db.session.add(new_repayment)
+        db.session.flush() # Flush to ensure relationship updates properly if queried immediately
 
-        # Calculate total amount paid so far
+        # Calculate total paid so far (including this new payment)
         total_paid_so_far = sum(r.amount for r in loan.repayments) + repayment_amount
         
-        # Calculate total due (Principal + Interest)
-        total_due = loan.amount_requested * (1 + (loan.interest_rate / 100))
+        # Calculate total due using your 10% rule
+        total_due = loan.amount_requested * 1.10
 
+        # Dynamically set status based on actual balance
         if total_paid_so_far >= total_due:
             loan.status = 'Paid'
             flash(f"Repayment of UGX {repayment_amount:,.2f} recorded! Loan #{loan.id} has been fully settled.", "success")
         else:
+            loan.status = 'Approved' # Keep it approved/active since balance remains
             remaining = total_due - total_paid_so_far
-            flash(f"Repayment of UGX {repayment_amount:,.2f} recorded successfully. Remaining balance: UGX {remaining:,.2f}.", "success")
+            flash(f"Repayment of UGX {repayment_amount:,.2f} recorded. Remaining balance: UGX {remaining:,.2f}.", "success")
 
         db.session.commit()
 
@@ -216,4 +218,3 @@ def repay_loan():
         flash("An error occurred while processing your repayment. Please try again.", "danger")
 
     return redirect(url_for('member.dashboard'))
-
