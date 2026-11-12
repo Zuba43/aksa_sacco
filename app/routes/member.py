@@ -68,21 +68,50 @@ def dashboard():
 @login_required
 def save_friday():
     amount = float(request.form.get('amount', 0))
+    saving_period = request.form.get('saving_period', 'friday')
     
-    # Weekly limit rule: 2,000 to 20,000 UGX
-    if amount < 2000 or amount > 20000:
-        flash('Friday weekly savings must be between UGX 2,000 and UGX 20,000.', 'danger')
+    # Handle custom months if selected
+    custom_months = request.form.getlist('custom_months') if saving_period == 'custom' else []
+    
+    # Define baseline min/max limits per frequency unit (e.g., weekly = 2k-20k, monthly = 8k-80k)
+    min_limit = 2000
+    max_limit = 25000
+    period_label = "Friday Weekly Contribution"
+    
+    if saving_period == 'monthly':
+        min_limit = 8000
+        max_limit = 100000
+        period_label = "Monthly Savings"
+    elif saving_period == '2_months':
+        min_limit = 16000
+        max_limit = 200000
+        period_label = "2 Months Savings"
+    elif saving_period == 'custom':
+        if not custom_months:
+            flash('Please select at least one month for custom savings.', 'danger')
+            return redirect(url_for('member.dashboard'))
+        
+        # Scale limits based on the number of selected months
+        month_count = len(custom_months)
+        min_limit = 8000 * month_count
+        max_limit = 25000 * month_count
+        period_label = f"Custom Savings ({', '.join(custom_months)})"
+
+    # Validate amount against the calculated limits
+    if amount < min_limit or amount > max_limit:
+        flash(f'Contributions for {period_label.lower()} must be between UGX {min_limit:,.0f} and UGX {max_limit:,.0f}.', 'danger')
         return redirect(url_for('member.dashboard'))
 
+    # Save to database
     new_savings = Savings(
         user_id=current_user.id,
         amount=amount,
-        deposit_type='Friday Weekly Contribution'
+        deposit_type=period_label
     )
     db.session.add(new_savings)
     db.session.commit()
 
-    flash(f'Successfully recorded Friday deposit of UGX {amount:,.2f}!', 'success')
+    flash(f'Successfully recorded deposit of UGX {amount:,.2f} ({period_label})!', 'success')
     return redirect(url_for('member.dashboard'))
 
 # Handle Loan Application Request with Guarantor and Loan Type Support
