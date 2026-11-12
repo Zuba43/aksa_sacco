@@ -6,15 +6,25 @@ endblock %} {% block extra_head %}
     background-color: #0f172a;
     color: #cbd5e1;
   }
-  .sidebar .nav-link {
+  .sidebar .nav-link,
+  .sidebar .sidebar-btn {
     color: #94a3b8;
+    background: transparent;
+    border: none;
     border-radius: 0.5rem;
     padding: 0.6rem 1rem;
     font-weight: 500;
+    width: 100%;
+    text-align: left;
     transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
   }
   .sidebar .nav-link:hover,
-  .sidebar .nav-link.active {
+  .sidebar .sidebar-btn:hover,
+  .sidebar .nav-link.active,
+  .sidebar .sidebar-btn.active {
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.1);
   }
@@ -25,6 +35,7 @@ endblock %} {% block extra_head %}
   }
   .sidebar .sub-nav-link:hover {
     color: #38bdf8;
+    background-color: rgba(255, 255, 255, 0.05);
   }
   /* Modern Metric Card Polish */
   .metric-card {
@@ -102,20 +113,24 @@ endblock %} {% block extra_head %}
           <div class="collapse show ms-2" id="savingsMenu">
             <ul class="nav flex-column gap-1 mt-1">
               <li>
-                <a
-                  href="#fridaySaveModal"
+                <button
+                  type="button"
+                  class="nav-link sub-nav-link text-success fw-semibold bg-transparent border-0 w-100 text-start"
                   data-bs-toggle="modal"
-                  class="nav-link sub-nav-link text-success fw-semibold"
-                  ><i class="bi bi-plus-circle me-1"></i> Friday Savings</a
+                  data-bs-target="#saveFridayModal"
                 >
+                  <i class="bi bi-plus-circle me-1"></i> Friday Savings
+                </button>
               </li>
               <li>
-                <a
-                  href="#viewSavingsModal"
+                <button
+                  type="button"
+                  class="nav-link sub-nav-link bg-transparent border-0 w-100 text-start"
                   data-bs-toggle="modal"
-                  class="nav-link sub-nav-link"
-                  ><i class="bi bi-clock-history me-1"></i> View Savings</a
+                  data-bs-target="#viewSavingsModal"
                 >
+                  <i class="bi bi-clock-history me-1"></i> View Savings
+                </button>
               </li>
             </ul>
           </div>
@@ -135,21 +150,24 @@ endblock %} {% block extra_head %}
           <div class="collapse ms-2" id="loansMenu">
             <ul class="nav flex-column gap-1 mt-1">
               <li>
-                <a
-                  href="#applyLoanModal"
+                <button
+                  type="button"
+                  class="nav-link sub-nav-link bg-transparent border-0 w-100 text-start"
                   data-bs-toggle="modal"
-                  class="nav-link sub-nav-link"
-                  ><i class="bi bi-plus-circle me-1"></i> Application</a
+                  data-bs-target="#applyLoanModal"
                 >
+                  <i class="bi bi-plus-circle me-1"></i> Application
+                </button>
               </li>
               <li>
-                <a
-                  href="#repayLoanModal"
+                <button
+                  type="button"
+                  class="nav-link sub-nav-link text-warning fw-semibold bg-transparent border-0 w-100 text-start"
                   data-bs-toggle="modal"
-                  class="nav-link sub-nav-link text-warning fw-semibold"
-                  ><i class="bi bi-arrow-return-left me-1"></i> Loan
-                  Repayment</a
+                  data-bs-target="#repayLoanModal"
                 >
+                  <i class="bi bi-arrow-return-left me-1"></i> Loan Repayment
+                </button>
               </li>
             </ul>
           </div>
@@ -171,19 +189,23 @@ endblock %} {% block extra_head %}
           <div class="collapse ms-2" id="notifMenu">
             <ul class="nav flex-column gap-1 mt-1">
               <li>
-                <a href="#notif-section" class="nav-link sub-nav-link"
-                  ><i class="bi bi-calendar-event me-1"></i> Meetings &
-                  Reminders</a
-                >
+                <a href="#notif-section" class="nav-link sub-nav-link">
+                  <i class="bi bi-calendar-event me-1"></i> Meetings & Reminders
+                </a>
               </li>
             </ul>
           </div>
         </li>
 
         <li class="nav-item">
-          <a href="#profileModal" data-bs-toggle="modal" class="nav-link">
+          <button
+            type="button"
+            class="nav-link bg-transparent border-0 w-100 text-start d-flex align-items-center gap-2"
+            data-bs-toggle="modal"
+            data-bs-target="#profileModal"
+          >
             <i class="bi bi-person-badge me-2"></i> Profile Info
-          </a>
+          </button>
         </li>
 
         <hr class="my-3 border-secondary border-opacity-25" />
@@ -458,7 +480,7 @@ endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- Section: Notifications & Alerts (Full-Width Top) -->
+      <!-- Section: Notifications & Alerts -->
       <div class="card border-0 shadow-sm rounded-3 mb-4" id="notif-section">
         <div
           class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
@@ -543,8 +565,8 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal: Flexible Savings Modal -->
-<div class="modal fade" id="fridaySaveModal" tabindex="-1">
+<!-- Modal 1: Flexible Savings Modal -->
+<div class="modal fade" id="saveFridayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-success text-white">
@@ -578,30 +600,47 @@ endblock %} {% block extra_head %}
             </select>
           </div>
 
-          <!-- Custom Months Checkboxes (Hidden by default) -->
+          <!-- Custom Months Calendar Grid Picker (Hidden by default) -->
           <div class="mb-3 d-none" id="customMonthsContainer">
-            <label class="form-label fw-semibold">Select Months</label>
-            <div class="row g-2 border rounded p-2 bg-light mx-0">
-              {% set months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-              'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %} {% for month in months %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-semibold mb-0"
+                >Select Months on Calendar Grid</label
+              >
+              <span class="small text-muted" id="selectedCountBadge"
+                >0 selected</span
+              >
+            </div>
+
+            <div class="row g-2 border rounded p-3 bg-light mx-0 shadow-sm">
+              {% set months = [ {'num': '01', 'name': 'Jan'}, {'num': '02',
+              'name': 'Feb'}, {'num': '03', 'name': 'Mar'}, {'num': '04',
+              'name': 'Apr'}, {'num': '05', 'name': 'May'}, {'num': '06',
+              'name': 'Jun'}, {'num': '07', 'name': 'Jul'}, {'num': '08',
+              'name': 'Aug'}, {'num': '09', 'name': 'Sep'}, {'num': '10',
+              'name': 'Oct'}, {'num': '11', 'name': 'Nov'}, {'num': '12',
+              'name': 'Dec'} ] %} {% for m in months %}
               <div class="col-4">
-                <div class="form-check">
-                  <input
-                    class="form-check-input custom-month-checkbox"
-                    type="checkbox"
-                    name="custom_months"
-                    value="{{ month }}"
-                    id="month_{{ month }}"
-                  />
-                  <label class="form-check-label" for="month_{{ month }}">
-                    {{ month }}
-                  </label>
-                </div>
+                <input
+                  class="btn-check custom-month-checkbox"
+                  type="checkbox"
+                  name="custom_months"
+                  value="{{ m.name }}"
+                  id="month_{{ m.name }}"
+                  autocomplete="off"
+                />
+                <label
+                  class="btn btn-outline-success w-100 py-2 fw-semibold d-flex flex-column align-items-center justify-content-center border-opacity-50"
+                  for="month_{{ m.name }}"
+                  style="font-size: 0.9rem"
+                >
+                  <i class="bi bi-calendar-event small opacity-75 mb-1"></i>
+                  {{ m.name }}
+                </label>
               </div>
               {% endfor %}
             </div>
-            <div class="form-text text-danger d-none" id="monthError">
-              Please select at least one month.
+            <div class="form-text text-danger d-none mt-1" id="monthError">
+              Please select at least one month from the calendar.
             </div>
           </div>
 
@@ -644,7 +683,7 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal: Popup View Savings Breakdown & Sum -->
+<!-- Modal 2: Popup View Savings Breakdown & Sum -->
 <div
   class="modal fade"
   id="viewSavingsModal"
@@ -687,9 +726,9 @@ endblock %} {% block extra_head %}
                   s.date_recorded else '-' }}
                 </td>
                 <td>
-                  <span class="badge bg-light text-dark border">
-                    {{ s.deposit_type | default('Deposit') }}
-                  </span>
+                  <span class="badge bg-light text-dark border"
+                    >{{ s.deposit_type | default('Deposit') }}</span
+                  >
                 </td>
                 <td class="text-end pe-4 fw-semibold text-success">
                   +{{ "{:,.2f}".format(s.amount | default(0)) }}
@@ -736,7 +775,7 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal 2: Loan Application Modal -->
+<!-- Modal 3: Loan Application Modal -->
 <div
   class="modal fade"
   id="applyLoanModal"
@@ -760,9 +799,7 @@ endblock %} {% block extra_head %}
 
       <form method="POST" action="{{ url_for('member.apply_loan') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
         <div class="modal-body p-4">
-          <!-- Section 1: Member Info (Auto-filled) -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-3">
             <i class="bi bi-person-check me-1"></i>1. Applicant Information
           </h6>
@@ -791,7 +828,6 @@ endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Section 2: Loan Details -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-3">
             <i class="bi bi-bank me-1"></i>2. Loan Parameters
           </h6>
@@ -848,7 +884,6 @@ endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Emergency Loan Disclaimer Alert -->
           <div
             id="emergencyDisclaimer"
             class="alert alert-warning border-warning d-flex align-items-center gap-2 mb-4 d-none"
@@ -864,7 +899,6 @@ endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Section 3: Guarantor Obligations -->
           <h6 class="fw-bold text-uppercase text-secondary small mb-1">
             <i class="bi bi-shield-check me-1"></i>3. Guarantor Details
           </h6>
@@ -928,7 +962,7 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal 3: Loan Repayment Modal -->
+<!-- Modal 4: Loan Repayment Modal -->
 <div class="modal fade" id="repayLoanModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
@@ -952,18 +986,17 @@ endblock %} {% block extra_head %}
               {% set active_loans_exist = namespace(value=false) %} {% for l in
               loans %} {% set balance = l.balance_remaining %} {% if balance > 0
               and l.status in ['Approved', 'Active', 'Defaulted'] %} {% set
-              active_loans_exist.value = true %} {# Jinja logic macro/formatting
-              for Principal #} {% if l.amount_requested >= 1000000 %} {% set
-              p_formatted = "{:,.1f}m".format(l.amount_requested / 1000000) |
-              replace('.0m', 'm') %} {% elif l.amount_requested >= 1000 %} {%
-              set p_formatted = "{:,.0f}k".format(l.amount_requested / 1000) %}
-              {% else %} {% set p_formatted =
-              "{:,.0f}".format(l.amount_requested) %} {% endif %} {# Jinja logic
-              formatting for Balance #} {% if balance >= 1000000 %} {% set
-              b_formatted = "{:,.1f}m".format(balance / 1000000) |
-              replace('.0m', 'm') %} {% elif balance >= 1000 %} {% set
-              b_formatted = "{:,.0f}k".format(balance / 1000) %} {% else %} {%
-              set b_formatted = "{:,.0f}".format(balance) %} {% endif %}
+              active_loans_exist.value = true %} {% if l.amount_requested >=
+              1000000 %} {% set p_formatted =
+              "{:,.1f}m".format(l.amount_requested / 1000000) | replace('.0m',
+              'm') %} {% elif l.amount_requested >= 1000 %} {% set p_formatted =
+              "{:,.0f}k".format(l.amount_requested / 1000) %} {% else %} {% set
+              p_formatted = "{:,.0f}".format(l.amount_requested) %} {% endif %}
+              {% if balance >= 1000000 %} {% set b_formatted =
+              "{:,.1f}m".format(balance / 1000000) | replace('.0m', 'm') %} {%
+              elif balance >= 1000 %} {% set b_formatted =
+              "{:,.0f}k".format(balance / 1000) %} {% else %} {% set b_formatted
+              = "{:,.0f}".format(balance) %} {% endif %}
 
               <option value="{{ l.id }}">
                 Loan: {{ p_formatted }}, Bal: {{ b_formatted }}
@@ -1013,7 +1046,6 @@ endblock %} {% block extra_head %}
     class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
   >
     <div class="modal-content border-0 shadow-lg">
-      <!-- Modal Header -->
       <div class="modal-header bg-dark text-white">
         <h5 class="modal-title fw-bold" id="profileModalLabel">
           <i class="bi bi-person-badge me-2"></i> User Profile Details
@@ -1026,9 +1058,7 @@ endblock %} {% block extra_head %}
         ></button>
       </div>
 
-      <!-- Modal Body -->
       <div class="modal-body p-4 bg-light">
-        <!-- Section 1: Credentials & Status -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-shield-lock me-1"></i> Account & Credentials
@@ -1067,7 +1097,6 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
-        <!-- Section 2: Bio Data -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-person-lines-fill me-1"></i> Personal Bio Data
@@ -1102,13 +1131,11 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
-        <!-- Section 3: Next of Kin & Emergency Contacts -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-people me-1"></i> Next of Kin & Emergency Contacts
           </div>
           <div class="card-body">
-            <!-- Primary Next of Kin -->
             <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
               Main Next of Kin
             </h6>
@@ -1127,7 +1154,6 @@ endblock %} {% block extra_head %}
               </div>
             </div>
 
-            <!-- Emergency Contact 1 -->
             <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
               Emergency Contact 1
             </h6>
@@ -1152,7 +1178,6 @@ endblock %} {% block extra_head %}
               </div>
             </div>
 
-            <!-- Emergency Contact 2 -->
             <h6 class="text-dark fw-bold border-bottom pb-1 mb-2">
               Emergency Contact 2
             </h6>
@@ -1179,7 +1204,6 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
-        <!-- Section 4: KYC Files / Outsider status -->
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-file-earmark-text me-1"></i> KYC & Account Setup
@@ -1210,7 +1234,6 @@ endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- Modal Footer -->
       <div class="modal-footer">
         <button
           type="button"
@@ -1248,7 +1271,99 @@ endblock %} {% block extra_head %}
       });
     }
 
-    // 2. Dynamic Loan Type Rules Handler
+    // 2. Flexible Savings Modal Period & Calendar-Grid Handler
+    const periodSelect = document.getElementById("savingPeriod");
+    const customMonthsContainer = document.getElementById(
+      "customMonthsContainer",
+    );
+    const amountInput = document.getElementById("depositAmount");
+    const ruleText = document.getElementById("depositRuleText");
+    const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
+    const selectedCountBadge = document.getElementById("selectedCountBadge");
+    const monthError = document.getElementById("monthError");
+    const savingsForm = document.querySelector("#saveFridayModal form");
+
+    function updateFormRules() {
+      if (!periodSelect || !amountInput) return;
+      const period = periodSelect.value;
+
+      if (period === "custom") {
+        if (customMonthsContainer)
+          customMonthsContainer.classList.remove("d-none");
+      } else {
+        if (customMonthsContainer)
+          customMonthsContainer.classList.add("d-none");
+        if (monthError) monthError.classList.add("d-none");
+      }
+
+      const checkedMonths = document.querySelectorAll(
+        ".custom-month-checkbox:checked",
+      );
+      const checkedCount = checkedMonths.length || 1;
+
+      if (selectedCountBadge) {
+        selectedCountBadge.textContent = `${checkedMonths.length} selected`;
+      }
+
+      if (period === "friday") {
+        amountInput.min = 2000;
+        amountInput.max = 25000;
+        if (ruleText) {
+          ruleText.textContent =
+            "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
+        }
+      } else if (period === "monthly") {
+        amountInput.min = 8000;
+        amountInput.max = 100000;
+        if (ruleText) {
+          ruleText.textContent =
+            "Rule: Monthly contributions must be between UGX 8,000 and UGX 100,000.";
+        }
+      } else if (period === "2_months") {
+        amountInput.min = 16000;
+        amountInput.max = 200000;
+        if (ruleText) {
+          ruleText.textContent =
+            "Rule: 2-Month contributions must be between UGX 16,000 and UGX 200,000.";
+        }
+      } else if (period === "custom") {
+        const minVal = 8000 * checkedCount;
+        const maxVal = 100000 * checkedCount;
+        amountInput.min = minVal;
+        amountInput.max = maxVal;
+        if (ruleText) {
+          ruleText.textContent = `Rule: For ${checkedCount} selected month(s), enter between UGX ${minVal.toLocaleString()} and UGX ${maxVal.toLocaleString()}.`;
+        }
+      }
+    }
+
+    if (periodSelect) {
+      periodSelect.addEventListener("change", updateFormRules);
+      updateFormRules();
+    }
+
+    monthCheckboxes.forEach((cb) => {
+      cb.addEventListener("change", () => {
+        if (monthError) monthError.classList.add("d-none");
+        updateFormRules();
+      });
+    });
+
+    if (savingsForm) {
+      savingsForm.addEventListener("submit", function (e) {
+        if (periodSelect && periodSelect.value === "custom") {
+          const checkedCount = document.querySelectorAll(
+            ".custom-month-checkbox:checked",
+          ).length;
+          if (checkedCount === 0) {
+            e.preventDefault();
+            if (monthError) monthError.classList.remove("d-none");
+          }
+        }
+      });
+    }
+
+    // 3. Dynamic Loan Type Rules Handler
     const loanTypeSelect = document.getElementById("loanTypeSelect");
     const tenureSelect = document.getElementById("tenureSelect");
     const interestRateInput = document.getElementById("interestRateInput");
@@ -1274,10 +1389,10 @@ endblock %} {% block extra_head %}
         }
         if (tenureSelect) {
           tenureSelect.innerHTML = `
-          <option value="1">1 Month</option>
-          <option value="2">2 Months</option>
-          <option value="3" selected>3 Months</option>
-        `;
+            <option value="1">1 Month</option>
+            <option value="2">2 Months</option>
+            <option value="3" selected>3 Months</option>
+          `;
         }
         if (emergencyDisclaimer) {
           emergencyDisclaimer.classList.add("d-none");
