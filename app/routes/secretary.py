@@ -46,9 +46,8 @@ def activate_member(user_id):
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    member.is_active_account = True  # Updated from is_active_account to sync with query filter
+    member.is_active_account = True  
     
-    # Send a welcome notification to the member's portal
     welcome_note = Notification(
         user_id=member.id,
         title="Account Activated",
@@ -63,20 +62,23 @@ def activate_member(user_id):
 
 
 # Reject / Delete Pending Application
-@secretary_bp.route('/member/reject/<int:user_id>', methods=['POST'])
+@secretary_bp.route('/reject_member/<int:user_id>', methods=['POST'])
 @login_required
 def reject_member(user_id):
-    if current_user.role not in ['secretary', 'chair']:
+    if current_user.role not in ['secretary', 'chair', 'admin']:
         flash('Unauthorized action.', 'danger')
-        return redirect(url_for('auth.login'))
-        
+        return redirect(url_for('secretary.dashboard'))
+
     user = User.query.get_or_404(user_id)
-    name = f"{user.fname} {user.lname}"
     
-    db.session.delete(user)
-    db.session.commit()
-    
-    flash(f'Membership application for {name} has been rejected and removed.', 'warning')
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'Registration request for {user.fname} {user.lname} has been rejected and removed.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error rejecting member: {str(e)}', 'danger')
+        
     return redirect(url_for('secretary.dashboard'))
 
 
@@ -89,8 +91,7 @@ def deactivate_member(user_id):
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    member.is_active_account = False  # Updated from is_active_account to sync with query filter
-    
+    member.is_active_account = False  
     db.session.commit()
 
     flash(f'Account for {member.fname} {member.lname} has been deactivated.', 'warning')
@@ -109,7 +110,6 @@ def send_broadcast():
     message = request.form.get('message')
     category = request.form.get('category', 'event')
 
-    # user_id=None signifies a broadcast for all members
     new_notif = Notification(user_id=None, title=title, message=message, category=category)
     db.session.add(new_notif)
     db.session.commit()
