@@ -107,7 +107,7 @@ def save_friday():
         month_count = len(custom_months_list)
         
         min_limit = 8000 * month_count
-        max_limit = 100000 * month_count
+        max_limit = 125000 * month_count
         period_label = f"Custom Savings ({custom_months_str})"
 
     # Validate amount against the calculated limits
@@ -231,3 +231,4 @@ def repay_loan():
 
     # Redirect back to whichever dashboard the officer was on (finance or member)
     return redirect(request.referrer or url_for('member.dashboard'))
+
