@@ -248,3 +248,47 @@ def admin_pay_fine(fine_id):
         flash(f'Error updating fine: {str(e)}', 'danger')
 
     return redirect(url_for('finance.dashboard'))
+
+@finance_bp.route('/savings/edit/<int:id>', methods=['POST'])
+@login_required
+def edit_savings(id):
+    # Fixed the typo from is__bp to is_finance
+    if not getattr(current_user, 'is_finance', False) and getattr(current_user, 'role', None) != 'finance':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance.dashboard')) # match your blueprint name here
+
+    saving = Savings.query.get_or_404(id)
+    
+    new_deposit_type = request.form.get('deposit_type')
+    new_amount = request.form.get('amount')
+
+    try:
+        saving.deposit_type = new_deposit_type
+        saving.amount = float(new_amount)
+        db.session.commit()
+        flash('Savings record updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating record: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+@finance_bp.route('/savings/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_savings(id):
+    if not getattr(current_user, 'is_finance', False) and getattr(current_user, 'role', None) != 'finance':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance_bp.dashboard'))
+
+    saving = Savings.query.get_or_404(id)
+
+    try:
+        db.session.delete(saving)
+        db.session.commit()
+        flash('Savings record deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting record: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
