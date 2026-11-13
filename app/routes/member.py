@@ -63,39 +63,52 @@ def dashboard():
     )
 
 
-# Handle Friday Savings Entry Request
+from datetime import datetime
+
 @member_bp.route('/save-friday', methods=['POST'])
 @login_required
 def save_friday():
     amount = float(request.form.get('amount', 0))
     saving_period = request.form.get('saving_period', 'friday')
     
-    # Handle custom months if selected
-    custom_months = request.form.getlist('custom_months') if saving_period == 'custom' else []
+    parsed_friday_date = None
+    custom_months_str = None
+    period_label = "Savings Deposit"
     
-    # Define baseline min/max limits per frequency unit (e.g., weekly = 2k-20k, monthly = 8k-80k)
     min_limit = 2000
     max_limit = 25000
-    period_label = "Friday Weekly Contribution"
-    
-    if saving_period == 'monthly':
-        min_limit = 8000
-        max_limit = 100000
-        period_label = "Monthly Savings"
-    elif saving_period == '2_months':
-        min_limit = 16000
-        max_limit = 200000
-        period_label = "2 Months Savings"
+
+    if saving_period == 'friday':
+        friday_date_str = request.form.get('friday_date')
+        if not friday_date_str:
+            flash('Please select a valid Friday date from the calendar.', 'danger')
+            return redirect(url_for('member.dashboard'))
+        
+        try:
+            parsed_friday_date = datetime.strptime(friday_date_str, '%Y-%m-%d').date()
+            if parsed_friday_date.weekday() != 4:
+                flash('Selected date must be a Friday.', 'danger')
+                return redirect(url_for('member.dashboard'))
+        except ValueError:
+            flash('Invalid date format received.', 'danger')
+            return redirect(url_for('member.dashboard'))
+            
+        period_label = f"Friday Weekly ({parsed_friday_date.strftime('%d %b %Y')})"
+        min_limit = 2000
+        max_limit = 25000
+
     elif saving_period == 'custom':
-        if not custom_months:
+        custom_months_list = request.form.getlist('custom_months')
+        if not custom_months_list:
             flash('Please select at least one month for custom savings.', 'danger')
             return redirect(url_for('member.dashboard'))
         
-        # Scale limits based on the number of selected months
-        month_count = len(custom_months)
+        custom_months_str = ", ".join(custom_months_list)
+        month_count = len(custom_months_list)
+        
         min_limit = 8000 * month_count
-        max_limit = 25000 * month_count
-        period_label = f"Custom Savings ({', '.join(custom_months)})"
+        max_limit = 100000 * month_count
+        period_label = f"Custom Savings ({custom_months_str})"
 
     # Validate amount against the calculated limits
     if amount < min_limit or amount > max_limit:
@@ -106,7 +119,9 @@ def save_friday():
     new_savings = Savings(
         user_id=current_user.id,
         amount=amount,
-        deposit_type=period_label
+        deposit_type=period_label,
+        friday_date=parsed_friday_date,
+        custom_months=custom_months_str
     )
     db.session.add(new_savings)
     db.session.commit()

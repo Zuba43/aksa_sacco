@@ -73,6 +73,8 @@ class Savings(db.Model):
     amount = db.Column(db.Float, nullable=False, default=0.0)
     deposit_type = db.Column(db.String(50), nullable=False, default='Monthly Share')
     date_recorded = db.Column(db.DateTime, default=datetime.utcnow)
+    friday_date = db.Column(db.Date, nullable=True)
+    custom_months = db.Column(db.String(100), nullable=True)
 
 
 
