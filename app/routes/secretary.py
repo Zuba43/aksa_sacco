@@ -82,19 +82,25 @@ def reject_member(user_id):
     return redirect(url_for('secretary.dashboard'))
 
 
-# Deactivate / Suspend Account
+
+# Permanently Delete / Remove Member Account
 @secretary_bp.route('/deactivate/<int:user_id>', methods=['POST'])
 @login_required
 def deactivate_member(user_id):
-    if current_user.role not in ['secretary', 'chair']:
+    if current_user.role not in ['secretary', 'chair', 'admin']:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    member.is_active_account = False  
-    db.session.commit()
+    
+    try:
+        db.session.delete(member)
+        db.session.commit()
+        flash(f'Member account for {member.fname} {member.lname} has been permanently deleted.', 'warning')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting member account: {str(e)}', 'danger')
 
-    flash(f'Account for {member.fname} {member.lname} has been deactivated.', 'warning')
     return redirect(url_for('secretary.dashboard'))
 
 
