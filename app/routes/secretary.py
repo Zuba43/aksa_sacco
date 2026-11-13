@@ -70,15 +70,33 @@ def reject_member(user_id):
         return redirect(url_for('secretary.dashboard'))
 
     user = User.query.get_or_404(user_id)
-    
+
     try:
+        # Delete children FIRST - otherwise MySQL blocks delete of parent (Error 1451)
+        # Use raw SQL so it works even if model names differ
+        db.session.execute(db.text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": user.id})
+        db.session.execute(db.text("DELETE FROM savings WHERE user_id = :uid"), {"uid": user.id})
+        # Loans table uses borrower_id in your app - try both column names
+        try:
+            db.session.execute(db.text("DELETE FROM loans WHERE borrower_id = :uid"), {"uid": user.id})
+        except Exception:
+            db.session.rollback()
+            db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": user.id})
+        # If you have other tables, add them here - safe to keep even if empty
+        for table in ["loan_repayments", "transactions", "minutes"]:
+            try:
+                db.session.execute(db.text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": user.id})
+            except Exception:
+                db.session.rollback()
+                pass
+
         db.session.delete(user)
         db.session.commit()
         flash(f'Registration request for {user.fname} {user.lname} has been rejected and removed.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error rejecting member: {str(e)}', 'danger')
-        
+
     return redirect(url_for('secretary.dashboard'))
 
 
@@ -92,11 +110,26 @@ def deactivate_member(user_id):
         return redirect(url_for('auth.login'))
 
     member = User.query.get_or_404(user_id)
-    
+
     try:
+        # Same fix - delete children first
+        db.session.execute(db.text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": member.id})
+        db.session.execute(db.text("DELETE FROM savings WHERE user_id = :uid"), {"uid": member.id})
+        try:
+            db.session.execute(db.text("DELETE FROM loans WHERE borrower_id = :uid"), {"uid": member.id})
+        except Exception:
+            db.session.rollback()
+            db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": member.id})
+        for table in ["loan_repayments", "transactions", "minutes"]:
+            try:
+                db.session.execute(db.text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": member.id})
+            except Exception:
+                db.session.rollback()
+                pass
+
         db.session.delete(member)
         db.session.commit()
-        flash(f'Member account for {member.fname} {member.lname} has been permanently deleted.', 'warning')
+        flash(f'Member account for {member.fname} {member.lname} has been permanently deleted.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting member account: {str(e)}', 'danger')
