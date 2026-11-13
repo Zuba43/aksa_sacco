@@ -45,17 +45,18 @@ endblock %} {% block content %}
               </span>
             </button>
 
-            <!-- Friday Savings -->
+            <!-- Savings Contribution Modal Trigger -->
             <button
               type="button"
               class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
               data-bs-toggle="modal"
               data-bs-target="#saveFridayModal"
             >
-              <i class="bi bi-piggy-bank text-primary me-2"></i>Friday Savings
+              <i class="bi bi-piggy-bank text-primary me-2"></i>Savings
+              Contribution
             </button>
 
-            <!-- Loan Application -->
+            <!-- Loan Application Modal Trigger -->
             <button
               type="button"
               class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
@@ -65,7 +66,7 @@ endblock %} {% block content %}
               <i class="bi bi-cash-stack text-warning me-2"></i>Loan Application
             </button>
 
-            <!-- Loan Repayment -->
+            <!-- Loan Repayment Modal Trigger -->
             <button
               type="button"
               class="btn btn-light text-start w-100 py-2 px-3 fw-semibold small rounded-2 text-dark"
@@ -95,7 +96,7 @@ endblock %} {% block content %}
 
             <hr class="my-2" />
 
-            <!-- Transaction History Summary -->
+            <!-- Transaction History Summary Modal Trigger -->
             <button
               type="button"
               class="btn btn-dark text-start w-100 py-2 px-3 fw-semibold small rounded-2 shadow-sm"
@@ -367,7 +368,7 @@ endblock %} {% block content %}
           </div>
         </div>
 
-        <!-- Tab 2: Loan Portfolio & Active Defaulters Oversight (FIXED LINE NUMBER BUG HERE) -->
+        <!-- Tab 2: Loan Portfolio & Active Defaulters Oversight -->
         <div class="tab-pane fade" id="defaulters" role="tabpanel">
           <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header bg-white py-3 border-0">
@@ -661,45 +662,171 @@ endblock %} {% block content %}
 
 <!-- ================= MODAL CONTAINERS ================= -->
 
-<!-- Modal 1: Friday Savings Deposit -->
-<div class="modal fade" id="saveFridayModal" tabindex="-1" aria-hidden="true">
+<!-- Modal: Flexible Savings Modal (ID FIXED to #saveFridayModal) -->
+<div class="modal fade" id="saveFridayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-success text-white py-3">
-        <h5 class="modal-title fw-bold">
-          <i class="bi bi-piggy-bank me-2"></i>Friday Savings Contribution
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold" id="savingsModalTitle">
+          <i class="bi bi-piggy-bank me-2"></i>Make a Deposit
         </h5>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
-          aria-label="Close"
         ></button>
       </div>
-      <form method="POST" action="{{ url_for('member.save_friday') }}">
+      <form
+        method="POST"
+        action="{{ url_for('member.save_friday') }}"
+        id="saveFridayForm"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="modal-body p-4">
-          <label class="form-label fw-semibold">Amount to Deposit (UGX)</label>
-          <input
-            type="number"
-            name="amount"
-            class="form-control form-control-lg"
-            min="2000"
-            max="20000"
-            step="500"
-            value="5000"
-            required
-          />
-          <div class="form-text mt-2">
-            Rule: Contributions must be between UGX 2,000 and UGX 20,000 every
-            Friday.
+          <!-- Saving Period Selection -->
+          <div class="mb-3">
+            <label for="savingPeriod" class="form-label fw-semibold"
+              >Saving Period</label
+            >
+            <select
+              name="saving_period"
+              id="savingPeriod"
+              class="form-select form-select-lg"
+              required
+            >
+              <option value="friday" selected>Friday (Weekly)</option>
+              <option value="custom">Custom (Select Months)</option>
+            </select>
+          </div>
+
+          <!-- Friday Calendar Picker (Shown when 'friday' is selected) -->
+          <div class="mb-3" id="fridayCalendarContainer">
+            <label class="form-label fw-semibold">Select Friday Date</label>
+
+            <!-- Hidden input that submits the selected Friday (YYYY-MM-DD) to Flask -->
+            <input
+              type="hidden"
+              name="friday_date"
+              id="selectedFridayDate"
+              required
+            />
+
+            <div class="border rounded p-3 bg-light">
+              <!-- Month Navigation Header -->
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  id="prevMonthBtn"
+                >
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="fw-bold text-dark" id="calendarMonthYear"></span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  id="nextMonthBtn"
+                >
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+
+              <!-- Calendar Grid -->
+              <div class="table-responsive">
+                <table class="table table-borderless table-sm text-center mb-0">
+                  <thead>
+                    <tr class="text-muted small">
+                      <th>Sun</th>
+                      <th>Mon</th>
+                      <th>Tue</th>
+                      <th>Wed</th>
+                      <th>Thu</th>
+                      <th class="text-success fw-bold">Fri</th>
+                      <th>Sat</th>
+                    </tr>
+                  </thead>
+                  <tbody id="calendarGridBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Selected Date Feedback -->
+              <div
+                class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center small"
+              >
+                <span class="text-muted">Selected Friday:</span>
+                <span class="fw-bold text-success" id="selectedFridayDisplay"
+                  >None selected</span
+                >
+              </div>
+            </div>
+            <div class="form-text text-danger d-none" id="fridayError">
+              Please select a Friday from the calendar.
+            </div>
+          </div>
+
+          <!-- Custom Months Checkboxes (Hidden by default) -->
+          <div class="mb-3 d-none" id="customMonthsContainer">
+            <label class="form-label fw-semibold">Select Months</label>
+            <div class="row g-2 border rounded p-2 bg-light mx-0">
+              {% set months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+              'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %} {% for month in months %}
+              <div class="col-4">
+                <div class="form-check">
+                  <input
+                    class="form-check-input custom-month-checkbox"
+                    type="checkbox"
+                    name="custom_months"
+                    value="{{ month }}"
+                    id="month_{{ month }}"
+                  />
+                  <label class="form-check-label" for="month_{{ month }}">
+                    {{ month }}
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="form-text text-danger d-none" id="monthError">
+              Please select at least one month.
+            </div>
+          </div>
+
+          <!-- Amount Input -->
+          <div class="mb-2">
+            <label for="depositAmount" class="form-label fw-semibold">
+              Amount to Deposit (UGX)
+            </label>
+            <input
+              type="number"
+              id="depositAmount"
+              name="amount"
+              class="form-control form-control-lg"
+              min="2000"
+              max="25000"
+              step="500"
+              value="5000"
+              required
+            />
+            <div class="form-text mt-2" id="depositRuleText">
+              Rule: Contributions must be between UGX 2,000 and UGX 25,000 every
+              Friday.
+            </div>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button type="submit" class="btn btn-success fw-bold px-4">
+          <button
+            type="submit"
+            class="btn btn-success fw-bold px-4"
+            id="submitDepositBtn"
+          >
             Confirm Deposit
           </button>
         </div>
@@ -1268,6 +1395,7 @@ endblock %} {% block content %}
 </div>
 {% endblock %} {% block extra_scripts %}
 <script>
+  // Filter members table in Role Management
   function filterRoleMembers() {
     const searchVal = document
       .getElementById("roleSearchInput")
@@ -1279,5 +1407,193 @@ endblock %} {% block content %}
       row.style.display = text.includes(searchVal) ? "" : "none";
     });
   }
+
+  // Toggle Savings Period View (Friday Calendar vs Custom Months)
+  const savingPeriodSelect = document.getElementById("savingPeriod");
+  const fridayContainer = document.getElementById("fridayCalendarContainer");
+  const customContainer = document.getElementById("customMonthsContainer");
+  const selectedFridayDate = document.getElementById("selectedFridayDate");
+  const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
+  const depositAmountInput = document.getElementById("depositAmount");
+  const depositRuleText = document.getElementById("depositRuleText");
+
+  savingPeriodSelect.addEventListener("change", function () {
+    const period = this.value;
+
+    if (period === "friday") {
+      fridayContainer.classList.remove("d-none");
+      customContainer.classList.add("d-none");
+      selectedFridayDate.required = true;
+      monthCheckboxes.forEach((cb) => (cb.required = false));
+
+      // Reset to weekly limits
+      depositAmountInput.min = 2000;
+      depositAmountInput.max = 25000;
+      depositRuleText.innerText =
+        "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
+    } else {
+      fridayContainer.classList.add("d-none");
+      customContainer.classList.remove("d-none");
+      selectedFridayDate.required = false;
+
+      updateCustomLimits();
+    }
+  });
+
+  // Update amounts dynamically based on number of selected custom months (4 weeks per month)
+  function updateCustomLimits() {
+    const checkedCount = document.querySelectorAll(
+      ".custom-month-checkbox:checked",
+    ).length;
+    const count = checkedCount > 0 ? checkedCount : 1; // Default multiplier 1 if none checked yet
+
+    // 1 month = 4 weeks -> Min: 2,000 * 4 = 8,000 | Max: 25,000 * 4 = 100,000
+    const minAmount = count * 8000;
+    const maxAmount = count * 100000;
+
+    depositAmountInput.min = minAmount;
+    depositAmountInput.max = maxAmount;
+    depositAmountInput.value = minAmount;
+
+    depositRuleText.innerText = `Rule: For ${checkedCount} selected month(s), amount must be between UGX ${minAmount.toLocaleString()} (${count} × 8,000) and UGX ${maxAmount.toLocaleString()} (${count} × 100,000).`;
+  }
+
+  monthCheckboxes.forEach((cb) => {
+    cb.addEventListener("change", updateCustomLimits);
+  });
+
+  // Interactive Friday Calendar Logic
+  let currentCalendarDate = new Date();
+  let selectedDateString = null;
+
+  function renderCalendar(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    document.getElementById("calendarMonthYear").innerText =
+      `${monthNames[month]} ${year}`;
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    const gridBody = document.getElementById("calendarGridBody");
+    gridBody.innerHTML = "";
+
+    let row = document.createElement("tr");
+    let dayCount = 0;
+
+    // Blank spaces for previous month offset
+    for (let i = 0; i < firstDayIndex; i++) {
+      let cell = document.createElement("td");
+      row.appendChild(cell);
+      dayCount++;
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+      if (dayCount % 7 === 0 && dayCount !== 0) {
+        gridBody.appendChild(row);
+        row = document.createElement("tr");
+      }
+
+      let cell = document.createElement("td");
+      let btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-sm w-100 rounded-0";
+      btn.innerText = day;
+
+      const currentCellDate = new Date(year, month, day);
+      const isFriday = currentCellDate.getDay() === 5;
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day,
+      ).padStart(2, "0")}`;
+
+      if (isFriday) {
+        btn.classList.add("btn-outline-success", "fw-bold");
+        btn.onclick = function () {
+          document
+            .querySelectorAll("#calendarGridBody button")
+            .forEach((b) => b.classList.remove("btn-success", "text-white"));
+          btn.classList.remove("btn-outline-success");
+          btn.classList.add("btn-success", "text-white");
+
+          selectedDateString = dateStr;
+          document.getElementById("selectedFridayDate").value = dateStr;
+          document.getElementById("selectedFridayDisplay").innerText =
+            currentCellDate.toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+          document.getElementById("fridayError").classList.add("d-none");
+        };
+
+        if (selectedDateString === dateStr) {
+          btn.classList.remove("btn-outline-success");
+          btn.classList.add("btn-success", "text-white");
+        }
+      } else {
+        btn.classList.add("btn-light", "text-muted");
+        btn.disabled = true;
+        btn.style.opacity = "0.4";
+      }
+
+      cell.appendChild(btn);
+      row.appendChild(cell);
+      dayCount++;
+    }
+
+    gridBody.appendChild(row);
+  }
+
+  document.getElementById("prevMonthBtn").addEventListener("click", () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendar(currentCalendarDate);
+  });
+
+  document.getElementById("nextMonthBtn").addEventListener("click", () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendar(currentCalendarDate);
+  });
+
+  // Initialize calendar on load
+  renderCalendar(currentCalendarDate);
+
+  // Form submission validation
+  document
+    .getElementById("saveFridayForm")
+    .addEventListener("submit", function (e) {
+      const period = document.getElementById("savingPeriod").value;
+      if (period === "friday") {
+        const fridayInput = document.getElementById("selectedFridayDate").value;
+        if (!fridayInput) {
+          e.preventDefault();
+          document.getElementById("fridayError").classList.remove("d-none");
+        }
+      } else if (period === "custom") {
+        const checkedMonths = document.querySelectorAll(
+          ".custom-month-checkbox:checked",
+        );
+        if (checkedMonths.length === 0) {
+          e.preventDefault();
+          document.getElementById("monthError").classList.remove("d-none");
+        } else {
+          document.getElementById("monthError").classList.add("d-none");
+        }
+      }
+    });
 </script>
 {% endblock %}
