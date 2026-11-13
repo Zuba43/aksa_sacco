@@ -654,45 +654,171 @@ endblock %} {% block content %}
 
 <!-- ================= MODAL CONTAINERS ================= -->
 
-<!-- Modal 1: Friday Savings Deposit -->
-<div class="modal fade" id="saveFridayModal" tabindex="-1" aria-hidden="true">
+<!-- Modal: Flexible Savings Modal (ID FIXED to #saveFridayModal) -->
+<div class="modal fade" id="saveFridayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-success text-white py-3">
-        <h5 class="modal-title fw-bold">
-          <i class="bi bi-piggy-bank me-2"></i>Friday Savings Contribution
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold" id="savingsModalTitle">
+          <i class="bi bi-piggy-bank me-2"></i>Make a Deposit
         </h5>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
-          aria-label="Close"
         ></button>
       </div>
-      <form method="POST" action="{{ url_for('member.save_friday') }}">
+      <form
+        method="POST"
+        action="{{ url_for('member.save_friday') }}"
+        id="saveFridayForm"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="modal-body p-4">
-          <label class="form-label fw-semibold">Amount to Deposit (UGX)</label>
-          <input
-            type="number"
-            name="amount"
-            class="form-control form-control-lg"
-            min="2000"
-            max="20000"
-            step="500"
-            value="5000"
-            required
-          />
-          <div class="form-text mt-2">
-            Rule: Contributions must be between UGX 2,000 and UGX 20,000 every
-            Friday.
+          <!-- Saving Period Selection -->
+          <div class="mb-3">
+            <label for="savingPeriod" class="form-label fw-semibold"
+              >Saving Period</label
+            >
+            <select
+              name="saving_period"
+              id="savingPeriod"
+              class="form-select form-select-lg"
+              required
+            >
+              <option value="friday" selected>Friday (Weekly)</option>
+              <option value="custom">Custom (Select Months)</option>
+            </select>
+          </div>
+
+          <!-- Friday Calendar Picker (Shown when 'friday' is selected) -->
+          <div class="mb-3" id="fridayCalendarContainer">
+            <label class="form-label fw-semibold">Select Friday Date</label>
+
+            <!-- Hidden input that submits the selected Friday (YYYY-MM-DD) to Flask -->
+            <input
+              type="hidden"
+              name="friday_date"
+              id="selectedFridayDate"
+              required
+            />
+
+            <div class="border rounded p-3 bg-light">
+              <!-- Month Navigation Header -->
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  id="prevMonthBtn"
+                >
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="fw-bold text-dark" id="calendarMonthYear"></span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  id="nextMonthBtn"
+                >
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+
+              <!-- Calendar Grid -->
+              <div class="table-responsive">
+                <table class="table table-borderless table-sm text-center mb-0">
+                  <thead>
+                    <tr class="text-muted small">
+                      <th>Sun</th>
+                      <th>Mon</th>
+                      <th>Tue</th>
+                      <th>Wed</th>
+                      <th>Thu</th>
+                      <th class="text-success fw-bold">Fri</th>
+                      <th>Sat</th>
+                    </tr>
+                  </thead>
+                  <tbody id="calendarGridBody">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Selected Date Feedback -->
+              <div
+                class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center small"
+              >
+                <span class="text-muted">Selected Friday:</span>
+                <span class="fw-bold text-success" id="selectedFridayDisplay"
+                  >None selected</span
+                >
+              </div>
+            </div>
+            <div class="form-text text-danger d-none" id="fridayError">
+              Please select a Friday from the calendar.
+            </div>
+          </div>
+
+          <!-- Custom Months Checkboxes (Hidden by default) -->
+          <div class="mb-3 d-none" id="customMonthsContainer">
+            <label class="form-label fw-semibold">Select Months</label>
+            <div class="row g-2 border rounded p-2 bg-light mx-0">
+              {% set months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+              'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %} {% for month in months %}
+              <div class="col-4">
+                <div class="form-check">
+                  <input
+                    class="form-check-input custom-month-checkbox"
+                    type="checkbox"
+                    name="custom_months"
+                    value="{{ month }}"
+                    id="month_{{ month }}"
+                  />
+                  <label class="form-check-label" for="month_{{ month }}">
+                    {{ month }}
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="form-text text-danger d-none" id="monthError">
+              Please select at least one month.
+            </div>
+          </div>
+
+          <!-- Amount Input -->
+          <div class="mb-2">
+            <label for="depositAmount" class="form-label fw-semibold">
+              Amount to Deposit (UGX)
+            </label>
+            <input
+              type="number"
+              id="depositAmount"
+              name="amount"
+              class="form-control form-control-lg"
+              min="2000"
+              max="25000"
+              step="500"
+              value="5000"
+              required
+            />
+            <div class="form-text mt-2" id="depositRuleText">
+              Rule: Contributions must be between UGX 2,000 and UGX 25,000 every
+              Friday.
+            </div>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button type="submit" class="btn btn-success fw-bold px-4">
+          <button
+            type="submit"
+            class="btn btn-success fw-bold px-4"
+            id="submitDepositBtn"
+          >
             Confirm Deposit
           </button>
         </div>
@@ -1109,4 +1235,287 @@ endblock %} {% block content %}
   </div>
 </div>
 
+{% endblock %} {% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Dynamic Interest Rate calculation for Loan Application modal
+    const loanTypeSelect = document.getElementById("loanTypeSelect");
+    const interestRateInput = document.getElementById("interestRateInput");
+
+    if (loanTypeSelect && interestRateInput) {
+      loanTypeSelect.addEventListener("change", function () {
+        interestRateInput.value = this.value === "emergency" ? "7%" : "10%";
+      });
+    }
+
+    // Flexible Savings Modal Elements
+    const savingPeriod = document.getElementById("savingPeriod");
+    const fridayContainer = document.getElementById("fridayCalendarContainer");
+    const customContainer = document.getElementById("customMonthsContainer");
+    const selectedFridayDateInput =
+      document.getElementById("selectedFridayDate");
+    const selectedFridayDisplay = document.getElementById(
+      "selectedFridayDisplay",
+    );
+    const depositAmountInput = document.getElementById("depositAmount");
+    const depositRuleText = document.getElementById("depositRuleText");
+    const fridayError = document.getElementById("fridayError");
+    const monthError = document.getElementById("monthError");
+    const saveFridayForm = document.getElementById("saveFridayForm");
+    const saveFridayModal = document.getElementById("saveFridayModal");
+    const customMonthCheckboxes = document.querySelectorAll(
+      ".custom-month-checkbox",
+    );
+
+    // Weekly constants
+    const WEEKLY_MIN = 2000;
+    const WEEKLY_MAX = 25000;
+
+    const shortMonthMap = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    // Helper: Count Fridays in a specific (year, monthIndex)
+    function countFridaysInMonth(year, monthIndex) {
+      let count = 0;
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        if (new Date(year, monthIndex, day).getDay() === 5) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    // Recalculate Min/Max and Rule Text when Custom Months change
+    function updateCustomMonthsLimits() {
+      const now = new Date();
+      const baseYear = now.getFullYear();
+      const baseMonth = now.getMonth();
+
+      let totalFridays = 0;
+      let selectedCount = 0;
+      let breakdownParts = [];
+
+      customMonthCheckboxes.forEach((cb) => {
+        if (cb.checked) {
+          selectedCount++;
+          const mShort = cb.value;
+          const mIndex = shortMonthMap[mShort];
+          // If selected month is earlier than current month (e.g., Jan/Feb while in Nov), assume next year
+          const targetYear = mIndex < baseMonth ? baseYear + 1 : baseYear;
+          const fridays = countFridaysInMonth(targetYear, mIndex);
+
+          totalFridays += fridays;
+          breakdownParts.push(`${mShort} (${fridays} Fri)`);
+        }
+      });
+
+      if (selectedCount === 0) {
+        depositAmountInput.min = WEEKLY_MIN;
+        depositAmountInput.max = WEEKLY_MAX;
+        depositRuleText.innerHTML =
+          "Select one or more months above to calculate your required deposit range (UGX 2,000 – 25,000 per Friday).";
+      } else {
+        const calcMin = totalFridays * WEEKLY_MIN;
+        const calcMax = totalFridays * WEEKLY_MAX;
+
+        depositAmountInput.min = calcMin;
+        depositAmountInput.max = calcMax;
+
+        // Auto-adjust value if it falls outside the new range
+        const currentVal = Number(depositAmountInput.value);
+        if (currentVal < calcMin) depositAmountInput.value = calcMin;
+        if (currentVal > calcMax) depositAmountInput.value = calcMax;
+
+        depositRuleText.innerHTML = `
+          <strong>Schedule:</strong> ${breakdownParts.join(", ")} = <strong>${totalFridays} Fridays</strong>.<br>
+          <strong>Allowed Range:</strong> UGX ${calcMin.toLocaleString()} – UGX ${calcMax.toLocaleString()}
+        `;
+      }
+    }
+
+    // Attach change listener to every month checkbox
+    customMonthCheckboxes.forEach((cb) => {
+      cb.addEventListener("change", function () {
+        monthError.classList.add("d-none");
+        updateCustomMonthsLimits();
+      });
+    });
+
+    // Toggle between Friday (Weekly) and Custom (Select Months)
+    if (savingPeriod) {
+      savingPeriod.addEventListener("change", function () {
+        if (this.value === "custom") {
+          fridayContainer.classList.add("d-none");
+          customContainer.classList.remove("d-none");
+          selectedFridayDateInput.removeAttribute("required");
+          updateCustomMonthsLimits();
+        } else {
+          fridayContainer.classList.remove("d-none");
+          customContainer.classList.add("d-none");
+          selectedFridayDateInput.setAttribute("required", "required");
+
+          // Reset back to single-Friday limits
+          depositAmountInput.min = WEEKLY_MIN;
+          depositAmountInput.max = WEEKLY_MAX;
+          if (Number(depositAmountInput.value) > WEEKLY_MAX) {
+            depositAmountInput.value = 5000;
+          }
+          depositRuleText.textContent =
+            "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
+
+          renderCalendar(currentYear, currentMonth);
+        }
+      });
+    }
+
+    // Calendar Picker State
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let selectedDateStr = "";
+
+    const prevMonthBtn = document.getElementById("prevMonthBtn");
+    const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+    function renderCalendar(year, month) {
+      const monthYearEl = document.getElementById("calendarMonthYear");
+      const gridBodyEl = document.getElementById("calendarGridBody");
+
+      if (!monthYearEl || !gridBodyEl) return;
+
+      monthYearEl.innerText = `${monthNames[month]} ${year}`;
+      gridBodyEl.innerHTML = "";
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      let date = 1;
+      let html = "";
+
+      for (let i = 0; i < 6; i++) {
+        let rowHtml = "<tr>";
+        let hasDaysInWeek = false;
+
+        for (let j = 0; j < 7; j++) {
+          if (i === 0 && j < firstDayIndex) {
+            rowHtml += `<td></td>`;
+          } else if (date > totalDays) {
+            rowHtml += `<td></td>`;
+          } else {
+            hasDaysInWeek = true;
+            const currentCellDate = new Date(year, month, date);
+            const dayOfWeek = currentCellDate.getDay();
+            const yyyy = year;
+            const mm = String(month + 1).padStart(2, "0");
+            const dd = String(date).padStart(2, "0");
+            const dateString = `${yyyy}-${mm}-${dd}`;
+
+            if (dayOfWeek === 5) {
+              const isSelected = selectedDateStr === dateString;
+              const btnClass = isSelected
+                ? "btn-success text-white"
+                : "btn-outline-success";
+              rowHtml += `<td><button type="button" class="btn btn-sm ${btnClass} py-0 px-2 rounded-circle friday-date-btn" data-date="${dateString}">${date}</button></td>`;
+            } else {
+              rowHtml += `<td class="text-muted small">${date}</td>`;
+            }
+            date++;
+          }
+        }
+        rowHtml += "</tr>";
+        if (hasDaysInWeek) html += rowHtml;
+        if (date > totalDays) break;
+      }
+
+      gridBodyEl.innerHTML = html;
+
+      gridBodyEl.querySelectorAll(".friday-date-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          selectedDateStr = this.getAttribute("data-date");
+          selectedFridayDateInput.value = selectedDateStr;
+          selectedFridayDisplay.textContent = selectedDateStr;
+          fridayError.classList.add("d-none");
+          renderCalendar(currentYear, currentMonth);
+        });
+      });
+    }
+
+    if (prevMonthBtn && nextMonthBtn) {
+      prevMonthBtn.addEventListener("click", function () {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+
+      nextMonthBtn.addEventListener("click", function () {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+    }
+
+    renderCalendar(currentYear, currentMonth);
+
+    if (saveFridayModal) {
+      saveFridayModal.addEventListener("shown.bs.modal", function () {
+        renderCalendar(currentYear, currentMonth);
+      });
+    }
+
+    // Form submission validation
+    if (saveFridayForm) {
+      saveFridayForm.addEventListener("submit", function (e) {
+        if (savingPeriod.value === "friday") {
+          if (!selectedFridayDateInput.value) {
+            e.preventDefault();
+            fridayError.classList.remove("d-none");
+          }
+        } else if (savingPeriod.value === "custom") {
+          const checkedMonths = document.querySelectorAll(
+            ".custom-month-checkbox:checked",
+          );
+          if (checkedMonths.length === 0) {
+            e.preventDefault();
+            monthError.classList.remove("d-none");
+          } else {
+            monthError.classList.add("d-none");
+          }
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
