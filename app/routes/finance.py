@@ -340,3 +340,95 @@ def delete_savings(id):
         flash(f'Error deleting record: {e}', 'danger')
 
     return redirect(url_for('finance.dashboard'))
+
+# ================= LOAN REPAYMENT EDIT & DELETE ROUTES =================
+
+@finance_bp.route('/repayment/edit/<int:id>', methods=['POST'])
+@login_required
+def edit_loan_repayment(id):
+    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    loan = Loan.query.get_or_404(id)
+    new_amount = request.form.get('amount_repaid')
+
+    try:
+        loan.amount_repaid = float(new_amount)
+        loan.check_and_update_status()
+        db.session.commit()
+        flash('Loan repayment record updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating repayment: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+@finance_bp.route('/repayment/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_loan_repayment(id):
+    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    loan = Loan.query.get_or_404(id)
+
+    try:
+        loan.amount_repaid = 0.0
+        loan.check_and_update_status()
+        db.session.commit()
+        flash('Loan repayment contribution cleared successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error clearing repayment: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+# ================= FINES & FEES EDIT & DELETE ROUTES =================
+
+@finance_bp.route('/fine/edit/<int:id>', methods=['POST'])
+@login_required
+def edit_fine(id):
+    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    fine = FineFee.query.get_or_404(id)
+    new_fee_type = request.form.get('fee_type')
+    new_amount = request.form.get('amount')
+    new_status = request.form.get('status')
+
+    try:
+        fine.fee_type = new_fee_type
+        fine.amount = float(new_amount)
+        if new_status:
+            fine.status = new_status
+        db.session.commit()
+        flash('Fine or fee record updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating fine/fee: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
+
+
+@finance_bp.route('/fine/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_fine(id):
+    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('finance.dashboard'))
+
+    fine = FineFee.query.get_or_404(id)
+
+    try:
+        db.session.delete(fine)
+        db.session.commit()
+        flash('Fine or fee record deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting fine/fee: {e}', 'danger')
+
+    return redirect(url_for('finance.dashboard'))
