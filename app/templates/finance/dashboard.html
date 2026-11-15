@@ -270,56 +270,96 @@ SACCO{% endblock %} {% block extra_head %}
       </div>
 
       <!-- Top Metrics Bar -->
-      <div class="row g-3 mb-4">
-        <!-- 1. Actual Growth -->
-        <div class="col-sm-6 col-xl-3">
+      <div
+        class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 mb-4"
+      >
+        <!-- 1. Total Savings -->
+        <div class="col">
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-primary text-white p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
-                  Actual Growth
+                  Total Savings
                 </div>
-                <div class="fs-4 fw-bold">
-                  UGX {{ "{:,.2f}".format(actual_growth|default(0.0)) }}
+                <div class="fs-5 fw-bold">
+                  UGX {{ "{:,.2f}".format(total_savings|default(0.0)) }}
                 </div>
               </div>
-              <i class="bi bi-graph-up fs-1 opacity-50"></i>
+              <i class="bi bi-piggy-bank fs-1 opacity-50"></i>
             </div>
           </div>
         </div>
 
-        <!-- 2. Projected Growth -->
-        <div class="col-sm-6 col-xl-3">
+        <!-- 2. Unpaid Loans -->
+        <div class="col">
+          <div
+            class="card metric-card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Unpaid Loans
+                </div>
+                <div class="fs-5 fw-bold">
+                  UGX {{ "{:,.2f}".format(unpaid_loans|default(0.0)) }}
+                </div>
+              </div>
+              <i class="bi bi-exclamation-octagon fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Membership Fees -->
+        <div class="col">
+          <div
+            class="card metric-card border-0 shadow-sm rounded-3 bg-info text-dark p-3 h-100"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-dark-50 text-uppercase fw-bold">
+                  Membership Fees
+                </div>
+                <div class="fs-5 fw-bold">
+                  UGX {{ "{:,.2f}".format(membership_fees|default(0.0)) }}
+                </div>
+              </div>
+              <i class="bi bi-person-badge fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Total Fines & Fees -->
+        <div class="col">
+          <div
+            class="card metric-card border-0 shadow-sm rounded-3 bg-secondary text-white p-3 h-100"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Total Fines &amp; Fees
+                </div>
+                <div class="fs-5 fw-bold">
+                  UGX {{ "{:,.2f}".format(total_fines_fees|default(0.0)) }}
+                </div>
+              </div>
+              <i class="bi bi-receipt-cutoff fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Profits (Interests) -->
+        <div class="col">
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
           >
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
-                  Projected Growth
+                  Profits (Interests)
                 </div>
-                <div class="fs-4 fw-bold">
-                  UGX {{ "{:,.2f}".format(projected_growth|default(0.0)) }}
-                </div>
-              </div>
-              <i class="bi bi-graph-up-arrow fs-1 opacity-50"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Profits (Loan Interest Only) -->
-        <div class="col-sm-6 col-xl-3">
-          <div
-            class="card metric-card border-0 shadow-sm rounded-3 bg-warning text-dark p-3 h-100"
-          >
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="small text-dark-50 text-uppercase fw-bold">
-                  Loan Profits (Interest)
-                </div>
-                <div class="fs-4 fw-bold">
+                <div class="fs-5 fw-bold">
                   UGX {{ "{:,.2f}".format(loan_profits|default(0.0)) }}
                 </div>
               </div>
@@ -327,27 +367,7 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
           </div>
         </div>
-
-        <!-- 4. Unpaid Loan Balance -->
-        <div class="col-sm-6 col-xl-3">
-          <div
-            class="card metric-card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
-          >
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="small text-white-50 text-uppercase fw-bold">
-                  Unpaid Loan Balance
-                </div>
-                <div class="fs-4 fw-bold">
-                  UGX {{ "{:,.2f}".format(unpaid_loan_balance|default(0.0)) }}
-                </div>
-              </div>
-              <i class="bi bi-exclamation-octagon fs-1 opacity-50"></i>
-            </div>
-          </div>
-        </div>
       </div>
-
       <!-- SECTION 1: Loan Status & Risk Breakdown -->
       <div class="row g-4 mb-4">
         <div class="col-lg-4">
@@ -1080,8 +1100,8 @@ SACCO{% endblock %} {% block extra_head %}
               name="repayment_amount"
               class="form-control form-control-lg"
               placeholder="e.g. 50000"
-              min="1000"
-              step="500"
+              min="100"
+              step="1"
               required
             />
           </div>
