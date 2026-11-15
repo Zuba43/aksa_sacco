@@ -60,10 +60,18 @@ endblock %} {% block extra_head %}
         class="d-flex align-items-center gap-2 mb-4 px-2 border-bottom border-secondary border-opacity-25 pb-3"
       >
         <div
-          class="bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center"
-          style="width: 40px; height: 40px"
+          class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-primary text-white flex-shrink-0"
+          style="width: 42px; height: 42px"
         >
+          {% if current_user.passport_photo %}
+          <img
+            src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
+            alt="Profile Picture"
+            class="w-100 h-100 object-fit-cover"
+          />
+          {% else %}
           <i class="bi bi-person-circle fs-5"></i>
+          {% endif %}
         </div>
         <div>
           <div class="fw-bold text-white small">
@@ -1114,6 +1122,7 @@ endblock %} {% block extra_head %}
       </div>
 
       <div class="modal-body p-4 bg-light">
+        <!-- Account & Credentials -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-shield-lock me-1"></i> Account & Credentials
@@ -1152,6 +1161,7 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
+        <!-- Personal Bio Data -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-person-lines-fill me-1"></i> Personal Bio Data
@@ -1186,6 +1196,7 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
+        <!-- Next of Kin & Emergency Contacts -->
         <div class="card border-0 shadow-sm mb-3">
           <div class="card-header bg-white fw-bold text-primary">
             <i class="bi bi-people me-1"></i> Next of Kin & Emergency Contacts
@@ -1259,31 +1270,130 @@ endblock %} {% block extra_head %}
           </div>
         </div>
 
+        <!-- KYC & Account Setup Meta (Editable Documents) -->
         <div class="card border-0 shadow-sm">
-          <div class="card-header bg-white fw-bold text-primary">
-            <i class="bi bi-file-earmark-text me-1"></i> KYC & Account Setup
-            Meta
+          <div
+            class="card-header bg-white fw-bold text-primary d-flex justify-content-between align-items-center"
+          >
+            <span>
+              <i class="bi bi-file-earmark-text me-1"></i> KYC & Account Setup
+              Meta
+            </span>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              data-bs-toggle="collapse"
+              data-bs-target="#editKycDocsCollapse"
+              aria-expanded="false"
+            >
+              <i class="bi bi-pencil-square me-1"></i> Edit Documents
+            </button>
           </div>
+
           <div class="card-body">
-            <div class="row g-3">
+            <!-- Current Status & Preview Links (Pointing to uploads/kyc/) -->
+            <div class="row g-3 align-items-center">
               <div class="col-md-4">
                 <small class="text-muted d-block">Is Outsider?</small>
                 <span class="badge bg-secondary"
                   >{{ 'Yes' if current_user.is_outsider else 'No' }}</span
                 >
               </div>
+
               <div class="col-md-4">
-                <small class="text-muted d-block">Passport Photo File</small>
-                <span class="text-break text-muted"
-                  >{{ current_user.passport_photo or 'Not uploaded' }}</span
+                <small class="text-muted d-block mb-1">Passport Photo</small>
+                {% if current_user.passport_photo %}
+                <a
+                  href="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
+                  target="_blank"
+                  class="btn btn-sm btn-outline-info"
                 >
+                  <i class="bi bi-image me-1"></i> View Photo
+                </a>
+                {% else %}
+                <span class="badge bg-warning text-dark">Not uploaded</span>
+                {% endif %}
               </div>
+
               <div class="col-md-4">
-                <small class="text-muted d-block">ID Scan File</small>
-                <span class="text-break text-muted"
-                  >{{ current_user.id_scan or 'Not uploaded' }}</span
+                <small class="text-muted d-block mb-1">ID Scan</small>
+                {% if current_user.id_scan %}
+                <a
+                  href="{{ url_for('static', filename='uploads/kyc/' ~ current_user.id_scan) }}"
+                  target="_blank"
+                  class="btn btn-sm btn-outline-secondary"
                 >
+                  <i class="bi bi-file-earmark-pdf me-1"></i> View ID Scan
+                </a>
+                {% else %}
+                <span class="badge bg-warning text-dark">Not uploaded</span>
+                {% endif %}
               </div>
+            </div>
+
+            <!-- Collapsible Upload Form -->
+            <div class="collapse mt-3 pt-3 border-top" id="editKycDocsCollapse">
+              <form
+                method="POST"
+                action="{{ url_for('auth.update_kyc_documents') }}"
+                enctype="multipart/form-data"
+              >
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ csrf_token() }}"
+                />
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label
+                      for="passportPhotoInput"
+                      class="form-label small fw-semibold"
+                    >
+                      Upload New Passport Photo (JPG/PNG)
+                    </label>
+                    <input
+                      type="file"
+                      class="form-control form-control-sm"
+                      id="passportPhotoInput"
+                      name="passport_photo"
+                      accept=".jpg,.jpeg,.png,.webp"
+                    />
+                  </div>
+
+                  <div class="col-md-6">
+                    <label
+                      for="idScanInput"
+                      class="form-label small fw-semibold"
+                    >
+                      Upload New ID Scan (PDF/JPG/PNG)
+                    </label>
+                    <input
+                      type="file"
+                      class="form-control form-control-sm"
+                      id="idScanInput"
+                      name="id_scan"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                  </div>
+
+                  <div class="col-12 d-flex justify-content-end gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-light border"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#editKycDocsCollapse"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-primary fw-semibold px-3"
+                    >
+                      <i class="bi bi-cloud-arrow-up me-1"></i> Save Documents
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
