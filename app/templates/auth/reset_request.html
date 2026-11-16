@@ -1,0 +1,102 @@
+{% extends "base.html" %} {% block title %}Reset Password - AKSA SACCO{%
+endblock %} {% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="bg-primary p-4 text-white text-center">
+          <i class="bi bi-shield-lock fs-1"></i>
+          <h4 class="fw-bold mb-0 mt-2">Password Recovery</h4>
+          <p class="small text-white-50 mb-0">
+            Provide your Phone/NIN or Email to receive a verification code
+          </p>
+        </div>
+        <div class="card-body p-4">
+          <!-- Flash Messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category in ['error', 'danger'] else 'success' }} alert-dismissible fade show small"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+
+          <form method="POST" action="{{ url_for('auth.reset_request') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <!-- Phone Number or NIN Field -->
+            <div class="mb-3">
+              <label for="phone_nin" class="form-label fw-semibold"
+                >Phone Number or NIN</label
+              >
+              <div class="input-group">
+                <span class="input-group-text bg-light"
+                  ><i class="bi bi-person-badge"></i
+                ></span>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="phone_nin"
+                  name="phone_nin"
+                  placeholder="e.g. 0770000000 or CMxxxxxxxxxxxx"
+                />
+              </div>
+              <div class="form-text text-muted" style="font-size: 0.75rem">
+                Enter registered phone number or National ID number.
+              </div>
+            </div>
+
+            <div class="text-center text-muted my-2 small fw-bold">— OR —</div>
+
+            <!-- Email Address Field -->
+            <div class="mb-4">
+              <label for="email" class="form-label fw-semibold"
+                >Email Address</label
+              >
+              <div class="input-group">
+                <span class="input-group-text bg-light"
+                  ><i class="bi bi-envelope"></i
+                ></span>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  name="email"
+                  placeholder="e.g. member@example.com"
+                />
+              </div>
+              <div class="form-text text-muted" style="font-size: 0.75rem">
+                We will send the 6-digit OTP code to this email.
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg w-100 fw-bold shadow-sm mb-3"
+            >
+              <i class="bi bi-send me-1"></i> Send Verification Code
+            </button>
+
+            <div class="text-center">
+              <a
+                href="{{ url_for('auth.login') }}"
+                class="small fw-semibold text-primary text-decoration-none"
+              >
+                <i class="bi bi-arrow-left me-1"></i> Back to Sign In
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

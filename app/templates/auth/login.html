@@ -63,7 +63,9 @@ block content %}
                 {{ form.remember(class="form-check-input") }} {{
                 form.remember.label(class="form-check-label small") }}
               </div>
-              <a href="#" class="small text-primary text-decoration-none"
+              <a
+                href="{{ url_for('auth.reset_request') }}"
+                class="small text-primary text-decoration-none"
                 >Forgot password?</a
               >
             </div>

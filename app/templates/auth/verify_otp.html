@@ -1,0 +1,135 @@
+{% extends "base.html" %} {% block title %}Verify OTP - AKSA SACCO{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="bg-success p-4 text-white text-center">
+          <i class="bi bi-key fs-1"></i>
+          <h4 class="fw-bold mb-0 mt-2">Enter Verification Code</h4>
+          <p class="small text-white-50 mb-0">
+            Please enter the 6-digit code sent to your contact
+          </p>
+        </div>
+        <div class="card-body p-4 text-center">
+          <!-- Flash Messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category in ['error', 'danger'] else 'success' }} alert-dismissible fade show small text-start"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+
+          <form method="POST" action="{{ url_for('auth.verify_otp') }}">
+            <!-- CSRF Token Added Here -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <!-- 6-Digit OTP Boxes with Auto-tabbing -->
+            <div class="d-flex justify-content-center gap-2 mb-4 otp-inputs">
+              <input
+                type="text"
+                name="digit1"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+                autofocus
+              />
+              <input
+                type="text"
+                name="digit2"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+              />
+              <input
+                type="text"
+                name="digit3"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+              />
+              <input
+                type="text"
+                name="digit4"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+              />
+              <input
+                type="text"
+                name="digit5"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+              />
+              <input
+                type="text"
+                name="digit6"
+                maxlength="1"
+                class="form-control text-center fs-3 fw-bold rounded-3"
+                style="width: 48px; height: 56px"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-success btn-lg w-100 fw-bold shadow-sm mb-3"
+            >
+              <i class="bi bi-check-circle me-1"></i> Verify Code
+            </button>
+
+            <div
+              class="d-flex justify-content-between align-items-center small text-muted px-2"
+            >
+              <a
+                href="{{ url_for('auth.reset_request') }}"
+                class="text-decoration-none"
+                >Change details</a
+              >
+              <a
+                href="{{ url_for('auth.reset_request') }}"
+                class="text-decoration-none fw-semibold"
+                >Resend Code</a
+              >
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-Tab Script for OTP Inputs -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const inputs = document.querySelectorAll(".otp-inputs input");
+    inputs.forEach((input, index) => {
+      input.addEventListener("input", (e) => {
+        if (e.target.value.length === 1 && index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        }
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && input.value === "" && index > 0) {
+          inputs[index - 1].focus();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

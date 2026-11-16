@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app,session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User
 from werkzeug.utils import secure_filename
 from app.routes.forms import LoginForm, RegistrationForm
-from app import db
+from flask_mail import Message
+from app import db, mail
+import random
+from datetime import datetime, timedelta
 import uuid
 import os
 
@@ -200,3 +203,129 @@ def update_kyc_documents():
         flash(f"Failed to upload documents: {str(e)}", "danger")
 
     return redirect(request.referrer or url_for("member.dashboard"))
+
+@auth_bp.route('/reset-password', methods=['GET', 'POST'])
+def reset_request():
+    if request.method == 'POST':
+        phone_nin = request.form.get('phone_nin', '').strip()
+        email_input = request.form.get('email', '').strip()
+        
+        if not phone_nin and not email_input:
+            flash('Please enter either your Phone/NIN or your Email address.', 'danger')
+            return redirect(url_for('auth.reset_request'))
+        
+        # Query database using whichever field was provided
+        user = None
+        if phone_nin:
+            user = User.query.filter(
+                (User.phone == phone_nin) | (User.nin == phone_nin)
+            ).first()
+        elif email_input:
+            user = User.query.filter_by(email=email_input).first()
+        
+        if not user:
+            flash('No active account found matching those credentials in AKSA SACCO.', 'danger')
+            return redirect(url_for('auth.reset_request'))
+        
+        # Generate 6-digit OTP
+        otp_code = str(random.randint(100000, 999999))
+        
+        # Store in session
+        session['reset_user_id'] = user.id
+        session['reset_email'] = user.email
+        session['reset_otp'] = otp_code
+        session['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=10)).timestamp()
+        
+        # Send OTP via Flask-Mail to user's registered email
+        try:
+            msg = Message(
+                subject="AKSA SACCO - Password Reset Verification Code",
+                recipients=[user.email]
+            )
+            msg.body = f"""Hello {user.fname} {user.lname},
+
+                You requested a password reset for your AKSA SACCO account.
+
+                Your 6-digit verification code is: {otp_code}
+
+                This code expires in 10 minutes. If you did not request this, please ignore this message.
+
+                Best regards,
+                AKSA SACCO Treasury Team
+"""
+            mail.send(msg)
+            
+            flash(f'A verification code has been sent securely to {user.email}.', 'success')
+            return redirect(url_for('auth.verify_otp'))
+            
+        except Exception as e:
+            flash('Failed to send verification email. Please try again later.', 'danger')
+            print(f"MAIL ERROR: {str(e)}")
+            return redirect(url_for('auth.reset_request'))
+
+    return render_template('auth/reset_request.html')
+
+@auth_bp.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    # Ensure user initiated the reset process
+    if 'reset_otp' not in session or 'reset_email' not in session:
+        flash('Please initiate password recovery first.', 'warning')
+        return redirect(url_for('auth.reset_request'))
+        
+    # Check if OTP has expired
+    if datetime.utcnow().timestamp() > session.get('otp_expiry', 0):
+        session.pop('reset_otp', None)
+        flash('Verification code has expired. Please request a new one.', 'danger')
+        return redirect(url_for('auth.reset_request'))
+
+    if request.method == 'POST':
+        # Collect 6 digits from the multi-input form
+        entered_otp = "".join([
+            request.form.get('digit1', ''),
+            request.form.get('digit2', ''),
+            request.form.get('digit3', ''),
+            request.form.get('digit4', ''),
+            request.form.get('digit5', ''),
+            request.form.get('digit6', '')
+        ]).strip()
+
+        if entered_otp == session.get('reset_otp'):
+            flash('Code verified successfully! Please set your new password.', 'success')
+            session['otp_verified'] = True
+            # Clear raw otp from session for security
+            session.pop('reset_otp', None)
+            return redirect(url_for('auth.new_password'))
+        else:
+            flash('Invalid verification code. Please check and try again.', 'danger')
+
+    return render_template('auth/verify_otp.html')
+
+@auth_bp.route('/new-password', methods=['GET', 'POST'])
+def new_password():
+    # Ensure OTP was successfully verified
+    if not session.get('otp_verified') or 'reset_user_id' not in session:
+        flash('Unauthorized access. Please verify your OTP first.', 'danger')
+        return redirect(url_for('auth.reset_request'))
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not password or password != confirm_password:
+            flash('Passwords do not match or are empty.', 'danger')
+            return redirect(url_for('auth.new_password'))
+
+        user = User.query.get(session.get('reset_user_id'))
+        if user:
+            user.set_password(password)
+            db.session.commit()
+            
+            # Clear recovery session data
+            session.pop('reset_user_id', None)
+            session.pop('reset_email', None)
+            session.pop('otp_verified', None)
+            
+            flash('Password reset successful! You can now log in with your new password.', 'success')
+            return redirect(url_for('auth.login'))
+
+    return render_template('auth/new_password.html')
