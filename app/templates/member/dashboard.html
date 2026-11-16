@@ -252,7 +252,31 @@ endblock %} {% block extra_head %}
           <i class="bi bi-list fs-5"></i> Menu
         </button>
       </div>
-
+      <!-- Flash Messages Container -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm"
+          role="alert"
+        >
+          <div class="d-flex align-items-center">
+            <i
+              class="bi {{ 'bi-check-circle-fill text-success' if category == 'success' else 'bi-exclamation-triangle-fill text-danger' if category == 'error' or category == 'danger' else 'bi-info-circle-fill text-info' }} fs-5 me-2"
+            ></i>
+            <div>{{ message }}</div>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
       <!-- Top Bar Greeting Only -->
       <div
         class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
@@ -440,7 +464,7 @@ endblock %} {% block extra_head %}
 
               <div class="p-3 bg-light border-top border-bottom">
                 <h6 class="fw-bold text-uppercase small text-muted mb-0">
-                  Recent 5 Transactions (Fees, Fines & Repayments)
+                  Recent 5 Transactions (Savings, Fees, Fines & Repayments)
                 </h6>
               </div>
               {% if recent_transactions %}
@@ -456,7 +480,9 @@ endblock %} {% block extra_head %}
                     </tr>
                   </thead>
                   <tbody>
-                    {% for t in recent_transactions %}
+                    {% for t in recent_transactions %} {% set is_positive =
+                    t.is_credit or 'saving' in t.type|lower or 'membership' in
+                    t.type|lower %}
                     <tr>
                       <td>
                         {{ t.date.strftime('%d %b %Y, %H:%M') if t.date else
@@ -468,9 +494,9 @@ endblock %} {% block extra_head %}
                         >
                       </td>
                       <td
-                        class="text-end fw-bold {{ 'text-success' if t.is_credit else 'text-danger' }}"
+                        class="text-end fw-bold {{ 'text-success' if is_positive else 'text-danger' }}"
                       >
-                        {{ '+' if t.is_credit else '-' }}{{
+                        {{ '+' if is_positive else '-' }}{{
                         "{:,.2f}".format(t.amount | default(0)) }}
                       </td>
                     </tr>
@@ -480,7 +506,7 @@ endblock %} {% block extra_head %}
               </div>
               {% else %}
               <div class="p-3 text-center text-muted small">
-                No recent fees, fines, or repayment activity.
+                No recent transaction activity.
               </div>
               {% endif %}
             </div>
