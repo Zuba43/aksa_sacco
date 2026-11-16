@@ -93,6 +93,31 @@ endblock %} {% block content %}
 
     <!-- MAIN SECRETARY CONTENT AREA -->
     <div class="col-lg-9 col-xl-10">
+      <!-- Flash Messages Container -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm"
+          role="alert"
+        >
+          <div class="d-flex align-items-center">
+            <i
+              class="bi {{ 'bi-check-circle-fill text-success' if category == 'success' else 'bi-exclamation-triangle-fill text-danger' if category == 'error' or category == 'danger' else 'bi-info-circle-fill text-info' }} fs-5 me-2"
+            ></i>
+            <div>{{ message }}</div>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
       <!-- Top Greeting Banner -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -257,7 +282,7 @@ endblock %} {% block content %}
                           </form>
                           <form
                             method="POST"
-                            action="{{ url_for('secretary.reject_member', user_id=m.id) }}"
+                            action="{{ url_for('secretary.deactivae', user_id=m.id) }}"
                             onsubmit="
                               return confirm(
                                 'Rejecting will delete this registration request. Are you sure?',
@@ -337,7 +362,7 @@ endblock %} {% block content %}
                           action="{{ url_for('secretary.deactivate_member', user_id=am.id) }}"
                           onsubmit="
                             return confirm(
-                              'Are you sure you want to deactivate this member?',
+                              'WARNING: This will permanently delete this member account and all associated data from the database. Are you sure?',
                             );
                           "
                         >
@@ -348,9 +373,9 @@ endblock %} {% block content %}
                           />
                           <button
                             type="submit"
-                            class="btn btn-outline-warning btn-sm"
+                            class="btn btn-outline-danger btn-sm"
                           >
-                            <i class="bi bi-person-x me-1"></i> Deactivate
+                            <i class="bi bi-person-x me-1"></i> Delete Account
                           </button>
                         </form>
                       </td>

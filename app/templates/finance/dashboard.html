@@ -249,6 +249,31 @@ SACCO{% endblock %} {% block extra_head %}
           <i class="bi bi-list fs-5"></i> Menu
         </button>
       </div>
+      <!-- Flash Messages Container -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm"
+          role="alert"
+        >
+          <div class="d-flex align-items-center">
+            <i
+              class="bi {{ 'bi-check-circle-fill text-success' if category == 'success' else 'bi-exclamation-triangle-fill text-danger' if category == 'error' or category == 'danger' else 'bi-info-circle-fill text-info' }} fs-5 me-2"
+            ></i>
+            <div>{{ message }}</div>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
 
       <!-- Header Banner -->
       <div
