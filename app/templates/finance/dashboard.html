@@ -1400,7 +1400,7 @@ SACCO{% endblock %} {% block extra_head %}
       <div class="modal-body p-3 p-md-4">
         <p class="text-muted small mb-3">
           Comprehensive audit log of all savings contributions, loan repayments,
-          member fines, and institutional expenses.
+          membership fees, member fines, and institutional expenses.
         </p>
 
         <!-- Compact Horizontal Pill Navigation -->
@@ -1431,6 +1431,18 @@ SACCO{% endblock %} {% block extra_head %}
               role="tab"
             >
               <i class="bi bi-cash-stack me-1"></i> Loan Repayments
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link fw-semibold btn-sm px-3 py-2 rounded-2 text-dark"
+              id="all-membership-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#allMembershipTab"
+              type="button"
+              role="tab"
+            >
+              <i class="bi bi-person-badge me-1"></i> Membership Fees
             </button>
           </li>
           <li class="nav-item" role="presentation">
@@ -1612,6 +1624,123 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
           </div>
 
+          <!-- Membership Fees Tab (Finance Inflow) -->
+          <div class="tab-pane fade" id="allMembershipTab" role="tabpanel">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Member Name</th>
+                    <th>Fee Type</th>
+                    <th>Date Recorded</th>
+                    <th>Status</th>
+                    <th class="text-end">Inflow Amount (UGX)</th>
+                    <th class="text-center">Action</th>
+                    {% if current_user.is_finance or current_user.role ==
+                    'finance' %}
+                    <th class="text-end">Actions</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set has_membership = namespace(value=false) %} {% set
+                  fee_source = all_membership_fees if all_membership_fees is
+                  defined else all_fines_transactions|default([]) %} {% for item
+                  in fee_source %} {% set f = item[0] %} {% set u = item[1] %}
+                  {% if all_membership_fees is defined or (f.fee_type and
+                  'membership' in f.fee_type|lower) %} {% set
+                  has_membership.value = true %}
+                  <tr>
+                    <td class="fw-bold">
+                      {% if u %}{{ u.fname }} {{ u.lname }}
+                      <small class="text-muted d-block"
+                        >@{{ u.username }}{% if u.phone %} | {{ u.phone }}{%
+                        endif %}</small
+                      >
+                      {% else %}Unknown{% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-success bg-opacity-10 text-success"
+                        >{{ f.fee_type or 'Membership Fee' }}</span
+                      >
+                    </td>
+                    <td>
+                      {{ f.date_recorded.strftime('%Y-%m-%d %H:%M') if
+                      f.date_recorded else 'N/A' }}
+                    </td>
+                    <td>
+                      {% if f.status == 'Paid' %}
+                      <span class="badge bg-success">Paid</span>
+                      {% else %}
+                      <span class="badge bg-danger">Unpaid</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end fw-bold text-success">
+                      +{{ "{:,.2f}".format(f.amount) }}
+                    </td>
+                    <td class="text-center">
+                      {% if f.status != 'Paid' %}
+                      <form
+                        method="POST"
+                        action="{{ url_for('finance.admin_pay_fine', fine_id=f.id) }}"
+                        class="d-inline"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="{{ csrf_token() }}"
+                        />
+                        <button
+                          type="submit"
+                          class="btn btn-sm btn-outline-success py-0 px-2 fw-semibold"
+                          style="font-size: 0.75rem"
+                        >
+                          <i class="bi bi-check-circle me-1"></i> Mark Paid
+                        </button>
+                      </form>
+                      {% else %}
+                      <span class="badge bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check2-all me-1"></i>Received
+                      </span>
+                      {% endif %}
+                    </td>
+
+                    {% if current_user.is_finance or current_user.role ==
+                    'finance' %}
+                    <td class="text-end">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary me-1 py-0 px-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editFineModal{{ f.id }}"
+                        title="Edit Membership Fee"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger py-0 px-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteFineModal{{ f.id }}"
+                        title="Delete Membership Fee"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                    {% endif %}
+                  </tr>
+                  {% endif %} {% endfor %} {% if not has_membership.value %}
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-3">
+                      No membership fees recorded yet.
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- All Fines & Fees Tab -->
           <div class="tab-pane fade" id="allFinesTab" role="tabpanel">
             <div class="table-responsive">
@@ -1631,8 +1760,10 @@ SACCO{% endblock %} {% block extra_head %}
                   </tr>
                 </thead>
                 <tbody>
-                  {% for item in all_fines_transactions|default([]) %} {% set f
-                  = item[0] %} {% set u = item[1] %}
+                  {% set has_other_fines = namespace(value=false) %} {% for item
+                  in all_fines_transactions|default([]) %} {% set f = item[0] %}
+                  {% set u = item[1] %} {% if not (f.fee_type and 'membership'
+                  in f.fee_type|lower) %} {% set has_other_fines.value = true %}
                   <tr>
                     <td class="fw-bold">
                       {% if u %}{{ u.fname }} {{ u.lname }}
@@ -1707,13 +1838,13 @@ SACCO{% endblock %} {% block extra_head %}
                     </td>
                     {% endif %}
                   </tr>
-                  {% else %}
+                  {% endif %} {% endfor %} {% if not has_other_fines.value %}
                   <tr>
                     <td colspan="7" class="text-center text-muted py-3">
                       No fines or fees recorded.
                     </td>
                   </tr>
-                  {% endfor %}
+                  {% endif %}
                 </tbody>
               </table>
             </div>
