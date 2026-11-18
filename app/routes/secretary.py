@@ -72,30 +72,29 @@ def reject_member(user_id):
     user = User.query.get_or_404(user_id)
 
     try:
-        # Explicitly delete child dependencies in order to bypass foreign key constraints
+        # Temporarily disable foreign key checks to prevent 1451 errors
+        db.session.execute(db.text("SET foreign_key_checks = 0"))
+
+        # Clean up related records across tables using valid columns
         db.session.execute(db.text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": user.id})
         db.session.execute(db.text("DELETE FROM savings WHERE user_id = :uid"), {"uid": user.id})
-        
-        try:
-            db.session.execute(db.text("DELETE FROM loans WHERE borrower_id = :uid"), {"uid": user.id})
-        except Exception:
-            db.session.rollback()
-            db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": user.id})
+        db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": user.id})
+        db.session.execute(db.text("DELETE FROM fines_fees WHERE user_id = :uid"), {"uid": user.id})
+        db.session.execute(db.text("DELETE FROM expenses WHERE recorded_by = :uid"), {"uid": user.id})
 
-        for table in ["fine_fees", "expenses", "loan_repayments", "transactions", "minutes"]:
-            try:
-                db.session.execute(db.text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": user.id})
-            except Exception:
-                db.session.rollback()
-                pass
-
-        db.session.flush() # Flush changes before deleting parent user
+        # Delete the user record
         db.session.delete(user)
+        db.session.commit()
+
+        # Re-enable foreign key checks
+        db.session.execute(db.text("SET foreign_key_checks = 1"))
         db.session.commit()
         
         flash(f'Registration request for {user.fname} {user.lname} has been rejected and removed.', 'success')
     except Exception as e:
         db.session.rollback()
+        db.session.execute(db.text("SET foreign_key_checks = 1"))
+        db.session.commit()
         flash(f'Error rejecting member: {str(e)}', 'danger')
 
     return redirect(url_for('secretary.dashboard'))
@@ -113,29 +112,29 @@ def deactivate_member(user_id):
     member = User.query.get_or_404(user_id)
 
     try:
+        # Temporarily disable foreign key checks to prevent 1451 errors
+        db.session.execute(db.text("SET foreign_key_checks = 0"))
+
+        # Clean up related records across tables using valid columns
         db.session.execute(db.text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": member.id})
         db.session.execute(db.text("DELETE FROM savings WHERE user_id = :uid"), {"uid": member.id})
-        
-        try:
-            db.session.execute(db.text("DELETE FROM loans WHERE borrower_id = :uid"), {"uid": member.id})
-        except Exception:
-            db.session.rollback()
-            db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": member.id})
+        db.session.execute(db.text("DELETE FROM loans WHERE user_id = :uid"), {"uid": member.id})
+        db.session.execute(db.text("DELETE FROM fines_fees WHERE user_id = :uid"), {"uid": member.id})
+        db.session.execute(db.text("DELETE FROM expenses WHERE recorded_by = :uid"), {"uid": member.id})
 
-        for table in ["fine_fees", "expenses", "loan_repayments", "transactions", "minutes"]:
-            try:
-                db.session.execute(db.text(f"DELETE FROM {table} WHERE user_id = :uid"), {"uid": member.id})
-            except Exception:
-                db.session.rollback()
-                pass
-
-        db.session.flush()
+        # Delete the member record
         db.session.delete(member)
+        db.session.commit()
+
+        # Re-enable foreign key checks
+        db.session.execute(db.text("SET foreign_key_checks = 1"))
         db.session.commit()
         
         flash(f'Member account for {member.fname} {member.lname} has been permanently deleted.', 'success')
     except Exception as e:
         db.session.rollback()
+        db.session.execute(db.text("SET foreign_key_checks = 1"))
+        db.session.commit()
         flash(f'Error deleting member account: {str(e)}', 'danger')
 
     return redirect(url_for('secretary.dashboard'))
