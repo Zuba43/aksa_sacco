@@ -992,7 +992,7 @@ endblock %} {% block extra_head %}
             <i class="bi bi-shield-check me-1"></i>3. Guarantor Details
           </h6>
           <p class="text-muted mb-3" style="font-size: 0.8rem">
-            * An official email with loan specifications will be sent to your
+            - An official email with loan specifications will be sent to your
             guarantor notifying them of their guarantee obligation.
           </p>
 
@@ -1066,7 +1066,11 @@ endblock %} {% block extra_head %}
           aria-label="Close"
         ></button>
       </div>
-      <form method="POST" action="{{ url_for('member.repay_loan') }}">
+      <form
+        method="POST"
+        action="{{ url_for('member.repay_loan') }}"
+        id="repayLoanForm"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="modal-body p-4">
           <div class="mb-3">
@@ -1114,7 +1118,11 @@ endblock %} {% block extra_head %}
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button type="submit" class="btn btn-warning fw-bold px-4">
+          <button
+            type="submit"
+            class="btn btn-warning fw-bold px-4"
+            id="submitRepayBtn"
+          >
             Submit Repayment
           </button>
         </div>
@@ -1438,10 +1446,400 @@ endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- JavaScript to handle dynamic loan form rules and mobile auto-close -->
+<!-- Processing Spinner / Alert Modal (Shared by Deposits & Repayments) -->
+<div
+  class="modal fade"
+  id="processingModal"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  tabindex="-1"
+>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow text-center p-4">
+      <div
+        class="spinner-border text-success mx-auto mb-3"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h6 class="fw-bold text-dark mb-1" id="processingTitle">
+        Processing Transaction
+      </h6>
+      <p class="text-muted small mb-0" id="processingText">
+        Please wait while we record your transaction...
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // 1. Mobile Menu Auto-close
+    // 1. Dynamic Interest Rate calculation for Loan Application modal
+    const loanTypeSelect = document.getElementById("loanTypeSelect");
+    const interestRateInput = document.getElementById("interestRateInput");
+    const emergencyDisclaimer = document.getElementById("emergencyDisclaimer");
+    const tenureSelect = document.getElementById("tenureSelect");
+
+    function updateLoanRules() {
+      if (!loanTypeSelect) return;
+      const selectedType = loanTypeSelect.value;
+
+      if (selectedType === "emergency") {
+        if (interestRateInput) interestRateInput.value = "7%";
+        if (tenureSelect) {
+          tenureSelect.innerHTML = `<option value="1" selected>1 Month (Strict limit)</option>`;
+        }
+        if (emergencyDisclaimer) emergencyDisclaimer.classList.remove("d-none");
+      } else {
+        if (interestRateInput) interestRateInput.value = "10%";
+        if (tenureSelect) {
+          tenureSelect.innerHTML = `
+            <option value="1">1 Month</option>
+            <option value="2">2 Months</option>
+            <option value="3" selected>3 Months</option>
+          `;
+        }
+        if (emergencyDisclaimer) emergencyDisclaimer.classList.add("d-none");
+      }
+    }
+
+    if (loanTypeSelect) {
+      loanTypeSelect.addEventListener("change", updateLoanRules);
+      updateLoanRules();
+    }
+
+    // 2. Flexible Savings Modal Elements & Logic
+    const savingPeriod = document.getElementById("savingPeriod");
+    const fridayContainer = document.getElementById("fridayCalendarContainer");
+    const customContainer = document.getElementById("customMonthsContainer");
+    const selectedFridayDateInput =
+      document.getElementById("selectedFridayDate");
+    const selectedFridayDisplay = document.getElementById(
+      "selectedFridayDisplay",
+    );
+    const depositAmountInput = document.getElementById("depositAmount");
+    const depositRuleText = document.getElementById("depositRuleText");
+    const fridayError = document.getElementById("fridayError");
+    const monthError = document.getElementById("monthError");
+    const saveFridayForm =
+      document.getElementById("saveFridayForm") ||
+      document.querySelector("#saveFridayModal form");
+    const saveFridayModal = document.getElementById("saveFridayModal");
+    const customMonthCheckboxes = document.querySelectorAll(
+      ".custom-month-checkbox",
+    );
+    const selectedCountBadge = document.getElementById("selectedCountBadge");
+
+    const WEEKLY_MIN = 2000;
+    const WEEKLY_MAX = 25000;
+
+    const shortMonthMap = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    function countFridaysInMonth(year, monthIndex) {
+      let count = 0;
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        if (new Date(year, monthIndex, day).getDay() === 5) count++;
+      }
+      return count;
+    }
+
+    function updateCustomMonthsLimits() {
+      if (!depositAmountInput) return;
+      const now = new Date();
+      const baseYear = now.getFullYear();
+      const baseMonth = now.getMonth();
+
+      let totalFridays = 0;
+      let selectedCount = 0;
+      let breakdownParts = [];
+
+      customMonthCheckboxes.forEach((cb) => {
+        if (cb.checked) {
+          selectedCount++;
+          const mShort = cb.value;
+          const mIndex = shortMonthMap[mShort];
+          const targetYear = mIndex < baseMonth ? baseYear + 1 : baseYear;
+          const fridays = countFridaysInMonth(targetYear, mIndex);
+
+          totalFridays += fridays;
+          breakdownParts.push(`${mShort} (${fridays} Fri)`);
+        }
+      });
+
+      if (selectedCountBadge) {
+        selectedCountBadge.textContent = `${selectedCount} selected`;
+      }
+
+      if (selectedCount === 0) {
+        depositAmountInput.min = WEEKLY_MIN;
+        depositAmountInput.max = WEEKLY_MAX;
+        if (depositRuleText) {
+          depositRuleText.textContent =
+            "Select one or more months above to calculate your required deposit range.";
+        }
+      } else {
+        const calcMin = totalFridays * WEEKLY_MIN;
+        const calcMax = totalFridays * WEEKLY_MAX;
+
+        depositAmountInput.min = calcMin;
+        depositAmountInput.max = calcMax;
+
+        const currentVal = Number(depositAmountInput.value);
+        if (currentVal < calcMin) depositAmountInput.value = calcMin;
+        if (currentVal > calcMax) depositAmountInput.value = calcMax;
+
+        if (depositRuleText) {
+          depositRuleText.innerHTML = `
+            <strong>Schedule:</strong> ${breakdownParts.join(", ")} = <strong>${totalFridays} Fridays</strong>.<br>
+            <strong>Allowed Range:</strong> UGX ${calcMin.toLocaleString()} – UGX ${calcMax.toLocaleString()}
+          `;
+        }
+      }
+    }
+
+    customMonthCheckboxes.forEach((cb) => {
+      cb.addEventListener("change", function () {
+        if (monthError) monthError.classList.add("d-none");
+        updateCustomMonthsLimits();
+      });
+    });
+
+    if (savingPeriod) {
+      savingPeriod.addEventListener("change", function () {
+        if (this.value === "custom") {
+          if (fridayContainer) fridayContainer.classList.add("d-none");
+          if (customContainer) customContainer.classList.remove("d-none");
+          if (selectedFridayDateInput)
+            selectedFridayDateInput.removeAttribute("required");
+          updateCustomMonthsLimits();
+        } else {
+          if (fridayContainer) fridayContainer.classList.remove("d-none");
+          if (customContainer) customContainer.classList.add("d-none");
+          if (selectedFridayDateInput)
+            selectedFridayDateInput.setAttribute("required", "required");
+
+          depositAmountInput.min = WEEKLY_MIN;
+          depositAmountInput.max = WEEKLY_MAX;
+          if (Number(depositAmountInput.value) > WEEKLY_MAX) {
+            depositAmountInput.value = 5000;
+          }
+          if (depositRuleText) {
+            depositRuleText.textContent =
+              "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
+          }
+          renderCalendar(currentYear, currentMonth);
+        }
+      });
+    }
+
+    // Calendar Picker State
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let selectedDateStr = "";
+
+    const prevMonthBtn = document.getElementById("prevMonthBtn");
+    const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+    function renderCalendar(year, month) {
+      const monthYearEl = document.getElementById("calendarMonthYear");
+      const gridBodyEl = document.getElementById("calendarGridBody");
+
+      if (!monthYearEl || !gridBodyEl) return;
+
+      monthYearEl.innerText = `${monthNames[month]} ${year}`;
+      gridBodyEl.innerHTML = "";
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      let date = 1;
+      let html = "";
+
+      for (let i = 0; i < 6; i++) {
+        let rowHtml = "<tr>";
+        let hasDaysInWeek = false;
+
+        for (let j = 0; j < 7; j++) {
+          if (i === 0 && j < firstDayIndex) {
+            rowHtml += `<td></td>`;
+          } else if (date > totalDays) {
+            rowHtml += `<td></td>`;
+          } else {
+            hasDaysInWeek = true;
+            const currentCellDate = new Date(year, month, date);
+            const dayOfWeek = currentCellDate.getDay();
+            const yyyy = year;
+            const mm = String(month + 1).padStart(2, "0");
+            const dd = String(date).padStart(2, "0");
+            const dateString = `${yyyy}-${mm}-${dd}`;
+
+            if (dayOfWeek === 5) {
+              const isSelected = selectedDateStr === dateString;
+              const btnClass = isSelected
+                ? "btn-success text-white"
+                : "btn-outline-success";
+              rowHtml += `<td><button type="button" class="btn btn-sm ${btnClass} py-0 px-2 rounded-circle friday-date-btn" data-date="${dateString}">${date}</button></td>`;
+            } else {
+              rowHtml += `<td class="text-muted small">${date}</td>`;
+            }
+            date++;
+          }
+        }
+        rowHtml += "</tr>";
+        if (hasDaysInWeek) html += rowHtml;
+        if (date > totalDays) break;
+      }
+
+      gridBodyEl.innerHTML = html;
+
+      gridBodyEl.querySelectorAll(".friday-date-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          selectedDateStr = this.getAttribute("data-date");
+          if (selectedFridayDateInput)
+            selectedFridayDateInput.value = selectedDateStr;
+          if (selectedFridayDisplay)
+            selectedFridayDisplay.textContent = selectedDateStr;
+          if (fridayError) fridayError.classList.add("d-none");
+          renderCalendar(currentMonth, currentYear);
+        });
+      });
+    }
+
+    if (prevMonthBtn && nextMonthBtn) {
+      prevMonthBtn.addEventListener("click", function () {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+
+      nextMonthBtn.addEventListener("click", function () {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+    }
+
+    renderCalendar(currentYear, currentMonth);
+
+    if (saveFridayModal) {
+      saveFridayModal.addEventListener("shown.bs.modal", function () {
+        renderCalendar(currentYear, currentMonth);
+      });
+    }
+
+    // 3. Savings Deposit Form Anti-Double-Submission Protection
+    const submitDepositBtn = document.getElementById("submitDepositBtn");
+    if (saveFridayForm) {
+      saveFridayForm.addEventListener("submit", function (e) {
+        if (savingPeriod && savingPeriod.value === "friday") {
+          if (selectedFridayDateInput && !selectedFridayDateInput.value) {
+            e.preventDefault();
+            if (fridayError) fridayError.classList.remove("d-none");
+            return;
+          }
+        } else if (savingPeriod && savingPeriod.value === "custom") {
+          const checkedMonths = document.querySelectorAll(
+            ".custom-month-checkbox:checked",
+          );
+          if (checkedMonths.length === 0) {
+            e.preventDefault();
+            if (monthError) monthError.classList.remove("d-none");
+            return;
+          } else {
+            if (monthError) monthError.classList.add("d-none");
+          }
+        }
+
+        if (submitDepositBtn) {
+          submitDepositBtn.disabled = true;
+          submitDepositBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Processing...`;
+        }
+
+        const mainModalEl = document.getElementById("saveFridayModal");
+        const mainModalInstance = bootstrap.Modal.getInstance(mainModalEl);
+        if (mainModalInstance) {
+          mainModalInstance.hide();
+        }
+
+        document.getElementById("processingTitle").textContent =
+          "Processing Deposit";
+        document.getElementById("processingText").textContent =
+          "Please wait while we record your deposit transaction...";
+
+        const processingModal = new bootstrap.Modal(
+          document.getElementById("processingModal"),
+        );
+        processingModal.show();
+      });
+    }
+
+    // 4. Loan Repayment Form Anti-Double-Submission Protection
+    const repayLoanForm = document.getElementById("repayLoanForm");
+    const submitRepayBtn = document.getElementById("submitRepayBtn");
+
+    if (repayLoanForm) {
+      repayLoanForm.addEventListener("submit", function (e) {
+        if (submitRepayBtn) {
+          submitRepayBtn.disabled = true;
+          submitRepayBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Processing...`;
+        }
+
+        const repayModalEl = document.getElementById("repayLoanModal");
+        const repayModalInstance = bootstrap.Modal.getInstance(repayModalEl);
+        if (repayModalInstance) {
+          repayModalInstance.hide();
+        }
+
+        document.getElementById("processingTitle").textContent =
+          "Processing Repayment";
+        document.getElementById("processingText").textContent =
+          "Please wait while we post your loan installment...";
+
+        const processingModal = new bootstrap.Modal(
+          document.getElementById("processingModal"),
+        );
+        processingModal.show();
+      });
+    }
+
+    // 5. Mobile Menu Auto-close
     const sidebarMenu = document.getElementById("sidebarMenu");
     if (sidebarMenu) {
       const sidebarLinks = sidebarMenu.querySelectorAll(
@@ -1462,102 +1860,6 @@ endblock %} {% block extra_head %}
       });
     }
 
-    // 2. Flexible Savings Modal Period & Calendar-Grid Handler
-    const periodSelect = document.getElementById("savingPeriod");
-    const fridayCalendarContainer = document.getElementById(
-      "fridayCalendarContainer",
-    );
-    const customMonthsContainer = document.getElementById(
-      "customMonthsContainer",
-    );
-    const amountInput = document.getElementById("depositAmount");
-    const ruleText = document.getElementById("depositRuleText");
-    const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
-    const selectedCountBadge = document.getElementById("selectedCountBadge");
-    const monthError = document.getElementById("monthError");
-    const savingsForm = document.querySelector("#saveFridayModal form");
-
-    // Calendar DOM elements
-    const calendarMonthYear = document.getElementById("calendarMonthYear");
-    const calendarGridBody = document.getElementById("calendarGridBody");
-    const prevMonthBtn = document.getElementById("prevMonthBtn");
-    const nextMonthBtn = document.getElementById("nextMonthBtn");
-    const selectedFridayInput = document.getElementById("selectedFridayDate");
-    const selectedFridayDisplay = document.getElementById(
-      "selectedFridayDisplay",
-    );
-    const fridayError = document.getElementById("fridayError");
-
-    let currentDate = new Date();
-    let currentMonth = currentDate.getMonth();
-    let currentYear = currentDate.getFullYear();
-    let selectedDateStr = "";
-
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
-    function updateFormRules() {
-      if (!periodSelect || !amountInput) return;
-      const period = periodSelect.value;
-
-      if (period === "custom") {
-        if (customMonthsContainer)
-          customMonthsContainer.classList.remove("d-none");
-        if (fridayCalendarContainer)
-          fridayCalendarContainer.classList.add("d-none");
-        if (selectedFridayInput)
-          selectedFridayInput.removeAttribute("required");
-        if (fridayError) fridayError.classList.add("d-none");
-      } else if (period === "friday") {
-        if (fridayCalendarContainer)
-          fridayCalendarContainer.classList.remove("d-none");
-        if (customMonthsContainer)
-          customMonthsContainer.classList.add("d-none");
-        if (selectedFridayInput)
-          selectedFridayInput.setAttribute("required", "required");
-        if (monthError) monthError.classList.add("d-none");
-      }
-
-      const checkedMonths = document.querySelectorAll(
-        ".custom-month-checkbox:checked",
-      );
-      const checkedCount = checkedMonths.length || 1;
-
-      if (selectedCountBadge) {
-        selectedCountBadge.textContent = `${checkedMonths.length} selected`;
-      }
-
-      if (period === "friday") {
-        amountInput.min = 2000;
-        amountInput.max = 25000;
-        if (ruleText) {
-          ruleText.textContent =
-            "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
-        }
-      } else if (period === "custom") {
-        const minVal = 8000 * checkedCount;
-        const maxVal = 100000 * checkedCount;
-        amountInput.min = minVal;
-        amountInput.max = maxVal;
-        if (ruleText) {
-          ruleText.textContent = `Rule: For ${checkedCount} selected month(s), enter between UGX ${minVal.toLocaleString()} and UGX ${maxVal.toLocaleString()}.`;
-        }
-      }
-    }
-
-    // Calendar Functions
     function autoSelectDefaultFriday() {
       const today = new Date();
       const year = today.getFullYear();
@@ -1565,201 +1867,39 @@ endblock %} {% block extra_head %}
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       for (let day = today.getDate(); day <= daysInMonth; day++) {
-        const checkDate = new Date(year, month, day);
-        if (checkDate.getDay() === 5) {
+        if (new Date(year, month, day).getDay() === 5) {
           selectDate(year, month, day);
           return;
         }
       }
       for (let day = 1; day <= 7; day++) {
-        const checkDate = new Date(year, month, day);
-        if (checkDate.getDay() === 5) {
+        if (new Date(year, month, day).getDay() === 5) {
           selectDate(year, month, day);
           return;
         }
       }
     }
 
-    function formatDateValue(year, month, day) {
-      const m = String(month + 1).padStart(2, "0");
-      const d = String(day).padStart(2, "0");
-      return `${year}-${m}-${d}`;
-    }
-
     function selectDate(year, month, day) {
-      selectedDateStr = formatDateValue(year, month, day);
-      if (selectedFridayInput) selectedFridayInput.value = selectedDateStr;
-
-      const dateObj = new Date(year, month, day);
+      selectedDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      if (selectedFridayDateInput)
+        selectedFridayDateInput.value = selectedDateStr;
       if (selectedFridayDisplay) {
-        selectedFridayDisplay.textContent = dateObj.toLocaleDateString(
-          "en-GB",
-          {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          },
-        );
+        selectedFridayDisplay.textContent = new Date(
+          year,
+          month,
+          day,
+        ).toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
       }
       if (fridayError) fridayError.classList.add("d-none");
       renderCalendar(currentMonth, currentYear);
     }
 
-    function renderCalendar(month, year) {
-      if (!calendarMonthYear || !calendarGridBody) return;
-      calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
-      calendarGridBody.innerHTML = "";
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      let date = 1;
-      for (let i = 0; i < 6; i++) {
-        const row = document.createElement("tr");
-        let hasDays = false;
-
-        for (let j = 0; j < 7; j++) {
-          const cell = document.createElement("td");
-          cell.className = "p-1";
-
-          if (i === 0 && j < firstDay) {
-            cell.textContent = "";
-          } else if (date > daysInMonth) {
-            cell.textContent = "";
-          } else {
-            hasDays = true;
-            const cellDate = date;
-            const dateStr = formatDateValue(year, month, cellDate);
-            const isFriday = j === 5;
-
-            if (isFriday) {
-              const btn = document.createElement("button");
-              btn.type = "button";
-              btn.textContent = cellDate;
-              const isSelected = dateStr === selectedDateStr;
-
-              btn.className = isSelected
-                ? "btn btn-sm btn-success fw-bold w-100 rounded-circle"
-                : "btn btn-sm btn-outline-success fw-semibold w-100 rounded-circle";
-
-              btn.addEventListener("click", () =>
-                selectDate(year, month, cellDate),
-              );
-              cell.appendChild(btn);
-            } else {
-              const span = document.createElement("span");
-              span.textContent = cellDate;
-              span.className = "d-inline-block text-muted opacity-50 py-1";
-              cell.appendChild(span);
-            }
-            date++;
-          }
-          row.appendChild(cell);
-        }
-
-        if (hasDays) {
-          calendarGridBody.appendChild(row);
-        }
-      }
-    }
-
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener("click", () => {
-        currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
-        }
-        renderCalendar(currentMonth, currentYear);
-      });
-    }
-
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener("click", () => {
-        currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
-        }
-        renderCalendar(currentMonth, currentYear);
-      });
-    }
-
-    if (periodSelect) {
-      periodSelect.addEventListener("change", updateFormRules);
-      updateFormRules();
-    }
-
-    monthCheckboxes.forEach((cb) => {
-      cb.addEventListener("change", () => {
-        if (monthError) monthError.classList.add("d-none");
-        updateFormRules();
-      });
-    });
-
-    if (savingsForm) {
-      savingsForm.addEventListener("submit", function (e) {
-        if (periodSelect && periodSelect.value === "friday") {
-          if (selectedFridayInput && !selectedFridayInput.value) {
-            e.preventDefault();
-            if (fridayError) fridayError.classList.remove("d-none");
-          }
-        } else if (periodSelect && periodSelect.value === "custom") {
-          const checkedCount = document.querySelectorAll(
-            ".custom-month-checkbox:checked",
-          ).length;
-          if (checkedCount === 0) {
-            e.preventDefault();
-            if (monthError) monthError.classList.remove("d-none");
-          }
-        }
-      });
-    }
-
-    // 3. Dynamic Loan Type Rules Handler
-    const loanTypeSelect = document.getElementById("loanTypeSelect");
-    const tenureSelect = document.getElementById("tenureSelect");
-    const interestRateInput = document.getElementById("interestRateInput");
-    const emergencyDisclaimer = document.getElementById("emergencyDisclaimer");
-
-    function updateLoanRules() {
-      if (!loanTypeSelect) return;
-      const selectedType = loanTypeSelect.value;
-
-      if (selectedType === "emergency") {
-        if (interestRateInput) {
-          interestRateInput.value = "7%";
-        }
-        if (tenureSelect) {
-          tenureSelect.innerHTML = `<option value="1" selected>1 Month (Strict limit)</option>`;
-        }
-        if (emergencyDisclaimer) {
-          emergencyDisclaimer.classList.remove("d-none");
-        }
-      } else {
-        if (interestRateInput) {
-          interestRateInput.value = "10%";
-        }
-        if (tenureSelect) {
-          tenureSelect.innerHTML = `
-            <option value="1">1 Month</option>
-            <option value="2">2 Months</option>
-            <option value="3" selected>3 Months</option>
-          `;
-        }
-        if (emergencyDisclaimer) {
-          emergencyDisclaimer.classList.add("d-none");
-        }
-      }
-    }
-
-    if (loanTypeSelect) {
-      loanTypeSelect.addEventListener("change", updateLoanRules);
-      updateLoanRules();
-    }
-
-    // Initialize Calendar on load
     autoSelectDefaultFriday();
     renderCalendar(currentMonth, currentYear);
   });
