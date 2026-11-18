@@ -155,17 +155,20 @@ class Loan(db.Model):
         return max(0.0, self.total_due - self.total_repaid)
 
     def check_and_update_status(self):
-        if self.status in ["Fully Paid", "Rejected", "Pending"]:
+        # Force 'Fully Paid' immediately if the balance is cleared
+        if self.balance_remaining <= 0:
+            self.status = "Fully Paid"
+            return self.status
+
+        if self.status in ["Rejected", "Fully Paid"]:
             return self.status
 
         now = datetime.utcnow()
         delta_days = (now - self.date_applied).days
 
-        if self.balance_remaining <= 0:
-            self.status = "Fully Paid"
-        elif self.status in ["Approved", "Active"] and delta_days >= 90:
+        if self.status in ["Approved", "Active", "Pending"] and delta_days >= 90:
             self.status = "Defaulted"
-        elif self.status == "Approved" and self.amount_repaid > 0:
+        elif self.status in ["Pending", "Approved"] and self.amount_repaid > 0:
             self.status = "Active"
 
         return self.status
