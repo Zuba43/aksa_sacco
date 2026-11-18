@@ -77,9 +77,9 @@ SACCO{% endblock %} {% block extra_head %}
           <div class="fw-bold text-white small">
             {{ current_user.fname }} {{ current_user.lname }}
           </div>
-          <span class="badge bg-info text-dark text-uppercase small"
-            >{{ current_user.role }}</span
-          >
+          <span class="badge bg-info text-dark text-uppercase small">
+            {{ current_user.role }}
+          </span>
         </div>
       </div>
 
@@ -249,6 +249,7 @@ SACCO{% endblock %} {% block extra_head %}
           <i class="bi bi-list fs-5"></i> Menu
         </button>
       </div>
+
       <!-- Flash Messages Container -->
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %}
@@ -309,7 +310,6 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-primary text-white p-3 h-100"
           >
-            <!-- Mobile View (2x2 Compact) -->
             <div class="d-md-none text-center py-1">
               <div class="fs-4 fw-bold lh-1 mb-1">
                 {{ total_savings|default(0.0)|compact_num }}
@@ -321,8 +321,6 @@ SACCO{% endblock %} {% block extra_head %}
                 Total Savings
               </div>
             </div>
-
-            <!-- Desktop View -->
             <div
               class="d-none d-md-flex justify-content-between align-items-center"
             >
@@ -344,7 +342,6 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
           >
-            <!-- Mobile View (2x2 Compact) -->
             <div class="d-md-none text-center py-1">
               <div class="fs-4 fw-bold lh-1 mb-1">
                 {{ unpaid_loans|default(0.0)|compact_num }}
@@ -356,8 +353,6 @@ SACCO{% endblock %} {% block extra_head %}
                 Unpaid Loans
               </div>
             </div>
-
-            <!-- Desktop View -->
             <div
               class="d-none d-md-flex justify-content-between align-items-center"
             >
@@ -379,7 +374,6 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-info text-dark p-3 h-100"
           >
-            <!-- Mobile View (2x2 Compact) -->
             <div class="d-md-none text-center py-1">
               <div class="fs-4 fw-bold lh-1 mb-1">
                 {{ membership_fees|default(0.0)|compact_num }}
@@ -391,8 +385,6 @@ SACCO{% endblock %} {% block extra_head %}
                 Membership Fees
               </div>
             </div>
-
-            <!-- Desktop View -->
             <div
               class="d-none d-md-flex justify-content-between align-items-center"
             >
@@ -414,7 +406,6 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-secondary text-white p-3 h-100"
           >
-            <!-- Mobile View (2x2 Compact) -->
             <div class="d-md-none text-center py-1">
               <div class="fs-4 fw-bold lh-1 mb-1">
                 {{ total_fines_fees|default(0.0)|compact_num }}
@@ -426,8 +417,6 @@ SACCO{% endblock %} {% block extra_head %}
                 Total Fines &amp; Fees
               </div>
             </div>
-
-            <!-- Desktop View -->
             <div
               class="d-none d-md-flex justify-content-between align-items-center"
             >
@@ -444,7 +433,7 @@ SACCO{% endblock %} {% block extra_head %}
           </div>
         </div>
 
-        <!-- 5. Profits (Interests) - Hidden on mobile to maintain strict 2x2 (4 cards) -->
+        <!-- 5. Profits (Interests) -->
         <div class="col d-none d-md-block">
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
@@ -464,7 +453,7 @@ SACCO{% endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- SECTION 1: Loan Status & Risk Breakdown -->
+      <!-- SECTION 1: Loan Status & Risk Breakdown & Trends -->
       <div class="row g-4 mb-4">
         <div class="col-lg-4">
           <div class="card border-0 shadow-sm rounded-3 h-100">
@@ -567,115 +556,118 @@ SACCO{% endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- Top Members Savings Leaderboard Card -->
-      <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-          <div
-            class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-          >
-            <h6 class="fw-bold mb-0">
-              <i class="bi bi-trophy me-2 text-warning"></i>Top Members Savings
-              Leaderboard
-            </h6>
-            <span
-              class="badge bg-light text-dark border small"
-              id="pageIndicator"
-              >Page 1</span
+      <!-- SECTION 3: Top Members Savings Leaderboard Card -->
+      <div class="row g-4 mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div
+              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
             >
-          </div>
-
-          <div class="card-body p-0">
-            <div class="list-group list-group-flush" id="saversList">
-              {% for user, total_savings in top_savers|default([]) %}
-              <div
-                class="list-group-item px-3 py-3 saver-item"
-                data-index="{{ loop.index0 }}"
-                style="{% if loop.index0 >= 5 %}display: none;{% endif %}"
+              <h6 class="fw-bold mb-0">
+                <i class="bi bi-trophy me-2 text-warning"></i>Top Members
+                Savings Leaderboard
+              </h6>
+              <span
+                class="badge bg-light text-dark border small"
+                id="pageIndicator"
+                >Page 1</span
               >
-                <div class="d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center">
-                    <!-- Profile Picture / KYC Passport Photo -->
-                    {% if user.passport_photo %}
-                    <img
-                      src="{{ url_for('static', filename='uploads/kyc/' + user.passport_photo) }}"
-                      alt="{{ user.fname }}"
-                      class="rounded-circle me-3"
-                      style="width: 45px; height: 45px; object-fit: cover"
-                    />
-                    {% elif user.profile_pic %}
-                    <img
-                      src="{{ url_for('static', filename='uploads/kyc/' + user.profile_pic) }}"
-                      alt="{{ user.fname }}"
-                      class="rounded-circle me-3"
-                      style="width: 45px; height: 45px; object-fit: cover"
-                    />
-                    {% else %}
-                    <!-- Fallback Initials Avatar if no photo exists -->
-                    <div
-                      class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3"
-                      style="width: 45px; height: 45px; font-size: 0.95rem"
-                    >
-                      {{ user.fname[:1] }}{{ user.lname[:1] }}
-                    </div>
-                    {% endif %}
+            </div>
 
-                    <div>
-                      <div class="fw-bold text-dark">
-                        {{ user.fname }} {{ user.lname }}
-                      </div>
-                      <small class="text-muted"
-                        ><i class="bi bi-telephone me-1"></i>{{ user.phone or
-                        'No phone' }}</small
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush" id="saversList">
+                {% for user, total_savings in top_savers|default([]) %}
+                <div
+                  class="list-group-item px-3 py-3 saver-item"
+                  data-index="{{ loop.index0 }}"
+                  style="{% if loop.index0 >= 5 %}display: none;{% endif %}"
+                >
+                  <div
+                    class="d-flex align-items-center justify-content-between"
+                  >
+                    <div class="d-flex align-items-center">
+                      <!-- Profile Picture / KYC Passport Photo -->
+                      {% if user.passport_photo %}
+                      <img
+                        src="{{ url_for('static', filename='uploads/kyc/' ~ user.passport_photo) }}"
+                        alt="{{ user.fname }}"
+                        class="rounded-circle me-3"
+                        style="width: 45px; height: 45px; object-fit: cover"
+                      />
+                      {% elif user.profile_pic %}
+                      <img
+                        src="{{ url_for('static', filename='uploads/kyc/' ~ user.profile_pic) }}"
+                        alt="{{ user.fname }}"
+                        class="rounded-circle me-3"
+                        style="width: 45px; height: 45px; object-fit: cover"
+                      />
+                      {% else %}
+                      <div
+                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3"
+                        style="width: 45px; height: 45px; font-size: 0.95rem"
                       >
-                    </div>
-                  </div>
+                        {{ user.fname[:1] }}{{ user.lname[:1] }}
+                      </div>
+                      {% endif %}
 
-                  <div class="text-end">
-                    <div
-                      class="small text-muted text-uppercase fw-semibold"
-                      style="font-size: 0.7rem"
-                    >
-                      Total Savings
+                      <div>
+                        <div class="fw-bold text-dark">
+                          {{ user.fname }} {{ user.lname }}
+                        </div>
+                        <small class="text-muted"
+                          ><i class="bi bi-telephone me-1"></i>{{ user.phone or
+                          'No phone' }}</small
+                        >
+                      </div>
                     </div>
-                    <div class="fw-bold text-success fs-6">
-                      UGX {{
-                      "{:,.2f}".format(total_savings|default(0.0))|compact_num
-                      }}
+
+                    <div class="text-end">
+                      <div
+                        class="small text-muted text-uppercase fw-semibold"
+                        style="font-size: 0.7rem"
+                      >
+                        Total Savings
+                      </div>
+                      <div class="fw-bold text-success fs-6">
+                        UGX {{
+                        "{:,.2f}".format(total_savings|default(0.0))|compact_num
+                        }}
+                      </div>
                     </div>
                   </div>
                 </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                  No member savings records available.
+                </div>
+                {% endfor %}
               </div>
-              {% else %}
-              <div class="text-center py-5 text-muted">
-                No member savings records available.
-              </div>
-              {% endfor %}
             </div>
-          </div>
 
-          <!-- Card Footer Pagination Controls -->
-          {% if top_savers and top_savers|length > 5 %}
-          <div
-            class="card-footer bg-white py-2 border-0 d-flex justify-content-between align-items-center"
-          >
-            <button
-              class="btn btn-outline-secondary btn-sm px-3"
-              id="prevBtn"
-              onclick="changePage(-1)"
-              disabled
+            <!-- Card Footer Pagination Controls -->
+            {% if top_savers and top_savers|length > 5 %}
+            <div
+              class="card-footer bg-white py-2 border-0 d-flex justify-content-between align-items-center"
             >
-              <i class="bi bi-chevron-left me-1"></i> Previous
-            </button>
-            <small class="text-muted fw-semibold">Showing 5 per page</small>
-            <button
-              class="btn btn-outline-primary btn-sm px-3"
-              id="nextBtn"
-              onclick="changePage(1)"
-            >
-              Next <i class="bi bi-chevron-right ms-1"></i>
-            </button>
+              <button
+                class="btn btn-outline-secondary btn-sm px-3"
+                id="prevBtn"
+                onclick="changePage(-1)"
+                disabled
+              >
+                <i class="bi bi-chevron-left me-1"></i> Previous
+              </button>
+              <small class="text-muted fw-semibold">Showing 5 per page</small>
+              <button
+                class="btn btn-outline-primary btn-sm px-3"
+                id="nextBtn"
+                onclick="changePage(1)"
+              >
+                Next <i class="bi bi-chevron-right ms-1"></i>
+              </button>
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
         </div>
       </div>
     </main>
@@ -684,7 +676,7 @@ SACCO{% endblock %} {% block extra_head %}
 
 <!-- ================= MODAL CONTAINERS ================= -->
 
-<!-- Modal: Flexible Savings Modal (ID FIXED to #saveFridayModal) -->
+<!-- Modal 1: Flexible Savings Modal -->
 <div class="modal fade" id="saveFridayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
@@ -705,7 +697,6 @@ SACCO{% endblock %} {% block extra_head %}
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="modal-body p-4">
-          <!-- Saving Period Selection -->
           <div class="mb-3">
             <label for="savingPeriod" class="form-label fw-semibold"
               >Saving Period</label
@@ -721,20 +712,15 @@ SACCO{% endblock %} {% block extra_head %}
             </select>
           </div>
 
-          <!-- Friday Calendar Picker (Shown when 'friday' is selected) -->
           <div class="mb-3" id="fridayCalendarContainer">
             <label class="form-label fw-semibold">Select Friday Date</label>
-
-            <!-- Hidden input that submits the selected Friday (YYYY-MM-DD) to Flask -->
             <input
               type="hidden"
               name="friday_date"
               id="selectedFridayDate"
               required
             />
-
             <div class="border rounded p-3 bg-light">
-              <!-- Month Navigation Header -->
               <div
                 class="d-flex justify-content-between align-items-center mb-2"
               >
@@ -754,8 +740,6 @@ SACCO{% endblock %} {% block extra_head %}
                   <i class="bi bi-chevron-right"></i>
                 </button>
               </div>
-
-              <!-- Calendar Grid -->
               <div class="table-responsive">
                 <table class="table table-borderless table-sm text-center mb-0">
                   <thead>
@@ -769,13 +753,9 @@ SACCO{% endblock %} {% block extra_head %}
                       <th>Sat</th>
                     </tr>
                   </thead>
-                  <tbody id="calendarGridBody">
-                    <!-- Populated dynamically via JS -->
-                  </tbody>
+                  <tbody id="calendarGridBody"></tbody>
                 </table>
               </div>
-
-              <!-- Selected Date Feedback -->
               <div
                 class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center small"
               >
@@ -790,7 +770,6 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Custom Months Checkboxes (Hidden by default) -->
           <div class="mb-3 d-none" id="customMonthsContainer">
             <label class="form-label fw-semibold">Select Months</label>
             <div class="row g-2 border rounded p-2 bg-light mx-0">
@@ -805,9 +784,9 @@ SACCO{% endblock %} {% block extra_head %}
                     value="{{ month }}"
                     id="month_{{ month }}"
                   />
-                  <label class="form-check-label" for="month_{{ month }}">
-                    {{ month }}
-                  </label>
+                  <label class="form-check-label" for="month_{{ month }}"
+                    >{{ month }}</label
+                  >
                 </div>
               </div>
               {% endfor %}
@@ -817,11 +796,10 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Amount Input -->
           <div class="mb-2">
-            <label for="depositAmount" class="form-label fw-semibold">
-              Amount to Deposit (UGX)
-            </label>
+            <label for="depositAmount" class="form-label fw-semibold"
+              >Amount to Deposit (UGX)</label
+            >
             <input
               type="number"
               id="depositAmount"
@@ -857,7 +835,7 @@ SACCO{% endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- Modal 2: Popup View Savings Breakdown -->
+<!-- Modal 2: View Savings Breakdown -->
 <div class="modal fade" id="viewSavingsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow">
@@ -1088,13 +1066,6 @@ SACCO{% endblock %} {% block extra_head %}
           active_loans.append(l) %} {% endif %} {% endfor %} {% if active_loans
           | length == 1 %} {% set single_loan = active_loans[0] %}
           <input type="hidden" name="loan_id" value="{{ single_loan.id }}" />
-
-          {% set balance = single_loan.balance_calc %} {% if balance >= 1000000
-          %} {% set b_formatted = "{:,.1f}m".format(balance / 1000000) |
-          replace('.0m', 'm') %} {% elif balance >= 1000 %} {% set b_formatted =
-          "{:,.0f}k".format(balance / 1000) %} {% else %} {% set b_formatted =
-          "{:,.0f}".format(balance) %} {% endif %}
-
           <div
             class="alert alert-light border mb-3 d-flex justify-content-between align-items-center"
           >
@@ -1107,10 +1078,11 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
             <div class="text-end">
               <span class="small text-muted d-block">Outstanding Balance</span>
-              <span class="fw-bold text-danger">UGX {{ b_formatted }}</span>
+              <span class="fw-bold text-danger"
+                >UGX {{ single_loan.balance_calc|compact_num }}</span
+              >
             </div>
           </div>
-
           {% elif active_loans | length > 1 %}
           <div class="mb-3">
             <label class="form-label fw-semibold">Select Active Loan</label>
@@ -1118,20 +1090,13 @@ SACCO{% endblock %} {% block extra_head %}
               <option value="" disabled selected>
                 Choose loan with balance...
               </option>
-              {% for l in active_loans %} {% set balance = l.balance_calc %} {%
-              if balance >= 1000000 %} {% set b_formatted =
-              "{:,.1f}m".format(balance / 1000000) | replace('.0m', 'm') %} {%
-              elif balance >= 1000 %} {% set b_formatted =
-              "{:,.0f}k".format(balance / 1000) %} {% else %} {% set b_formatted
-              = "{:,.0f}".format(balance) %} {% endif %}
-
+              {% for l in active_loans %}
               <option value="{{ l.id }}">
-                Loan #{{ l.id }} (Balance: UGX {{ b_formatted }})
+                Loan #{{ l.id }} (Balance: UGX {{ l.balance_calc|compact_num }})
               </option>
               {% endfor %}
             </select>
           </div>
-
           {% else %}
           <div class="alert alert-info mb-0 text-center">
             <i class="bi bi-info-circle me-1"></i> You currently have no active
@@ -1231,7 +1196,7 @@ SACCO{% endblock %} {% block extra_head %}
                 required
               />
               <div class="form-text">
-                Specify the historical date when the loan was originally issued.
+                Specify historical date when the loan was originally issued.
               </div>
             </div>
             <div class="col-md-6">
@@ -1540,7 +1505,6 @@ SACCO{% endblock %} {% block extra_head %}
                     <td class="text-end fw-bold text-success">
                       +{{ "{:,.2f}".format(s.amount) }}
                     </td>
-
                     {% if current_user.is_finance or current_user.role ==
                     'finance' %}
                     <td class="text-end">
@@ -1623,7 +1587,6 @@ SACCO{% endblock %} {% block extra_head %}
                     <td class="text-end fw-bold text-warning">
                       +{{ "{:,.2f}".format(loan.amount_repaid) }}
                     </td>
-
                     {% if current_user.is_finance or current_user.role ==
                     'finance' %}
                     <td class="text-end">
@@ -1660,7 +1623,7 @@ SACCO{% endblock %} {% block extra_head %}
             </div>
           </div>
 
-          <!-- Membership Fees Tab (Finance Inflow) -->
+          <!-- Membership Fees Tab -->
           <div class="tab-pane fade" id="allMembershipTab" role="tabpanel">
             <div class="table-responsive">
               <table class="table table-sm table-hover align-middle mb-0">
@@ -1735,12 +1698,11 @@ SACCO{% endblock %} {% block extra_head %}
                         </button>
                       </form>
                       {% else %}
-                      <span class="badge bg-success bg-opacity-10 text-success">
-                        <i class="bi bi-check2-all me-1"></i>Received
-                      </span>
+                      <span class="badge bg-success bg-opacity-10 text-success"
+                        ><i class="bi bi-check2-all me-1"></i>Received</span
+                      >
                       {% endif %}
                     </td>
-
                     {% if current_user.is_finance or current_user.role ==
                     'finance' %}
                     <td class="text-end">
@@ -1849,7 +1811,6 @@ SACCO{% endblock %} {% block extra_head %}
                       <span class="text-muted small">—</span>
                       {% endif %}
                     </td>
-
                     {% if current_user.is_finance or current_user.role ==
                     'finance' %}
                     <td class="text-end">
@@ -1900,8 +1861,7 @@ SACCO{% endblock %} {% block extra_head %}
   </div>
 </div>
 
-<!-- ================= INDEPENDENT ROW ACTION MODALS (Placed outside transactionHistoryModal to prevent DOM/click freeze) ================= -->
-
+<!-- ================= INDEPENDENT ROW ACTION MODALS ================= -->
 {% if current_user.is_finance or current_user.role == 'finance' %}
 
 <!-- 1. Savings Modals Loop -->
@@ -2290,12 +2250,7 @@ loan.amount_repaid > 0 %}
         type: "bar",
         data: {
           labels: [
-            "Month -5",
-            "Month -4",
-            "Month -3",
-            "Month -2",
-            "Previous Month",
-            "Current Month (New FY)",
+            "Month -5", "Month -4", "Month -3", "Month -2", "Previous Month", "Current Month (New FY)"
           ],
           datasets: [
             {
@@ -2319,29 +2274,7 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // 3. Pie Chart: Loan Purpose Breakdown
-    const ctxPurpose = document.getElementById("purposePieChart");
-    if (ctxPurpose) {
-      new Chart(ctxPurpose.getContext("2d"), {
-        type: "pie",
-        data: {
-          labels: ["Tuition", "Emergency (Startup)", "General (Others)"],
-          datasets: [
-            {
-              data: [
-                {{ tuition_total|default(0) }},
-                {{ startup_total|default(0) }},
-                {{ others_total|default(0) }}
-              ],
-              backgroundColor: ["#0d6efd", "#ffc107", "#6c757d"],
-            },
-          ],
-        },
-        options: { responsive: true, maintainAspectRatio: false },
-      });
-    }
-
-    // 4. Flexible Savings Modal Period & Calendar Handler
+    // 3. Flexible Savings Modal Period & Calendar Handler
     const periodSelect = document.getElementById("savingPeriod");
     const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
     const customMonthsContainer = document.getElementById("customMonthsContainer");
@@ -2351,7 +2284,6 @@ loan.amount_repaid > 0 %}
     const savingsForm = document.querySelector("#saveFridayModal form");
     const monthError = document.getElementById("monthError");
 
-    // Calendar DOM elements
     const calendarMonthYear = document.getElementById("calendarMonthYear");
     const calendarGridBody = document.getElementById("calendarGridBody");
     const prevMonthBtn = document.getElementById("prevMonthBtn");
@@ -2401,7 +2333,6 @@ loan.amount_repaid > 0 %}
       }
     }
 
-    // Calendar Functions
     function autoSelectDefaultFriday() {
       const today = new Date();
       const year = today.getFullYear();
@@ -2437,10 +2368,7 @@ loan.amount_repaid > 0 %}
       const dateObj = new Date(year, month, day);
       if (selectedFridayDisplay) {
         selectedFridayDisplay.textContent = dateObj.toLocaleDateString("en-GB", {
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-          year: "numeric"
+          weekday: "short", day: "numeric", month: "short", year: "numeric"
         });
       }
       if (fridayError) fridayError.classList.add("d-none");
@@ -2496,20 +2424,14 @@ loan.amount_repaid > 0 %}
           }
           row.appendChild(cell);
         }
-
-        if (hasDays) {
-          calendarGridBody.appendChild(row);
-        }
+        if (hasDays) calendarGridBody.appendChild(row);
       }
     }
 
     if (prevMonthBtn) {
       prevMonthBtn.addEventListener("click", () => {
         currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
-        }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar(currentMonth, currentYear);
       });
     }
@@ -2517,10 +2439,7 @@ loan.amount_repaid > 0 %}
     if (nextMonthBtn) {
       nextMonthBtn.addEventListener("click", () => {
         currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
-        }
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         renderCalendar(currentMonth, currentYear);
       });
     }
@@ -2554,7 +2473,7 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // 5. Loan Type Rules Handler (Modal 3)
+    // 4. Loan Type Rules Handler
     const loanTypeSelect = document.getElementById("loanTypeSelect");
     const tenureSelect = document.getElementById("tenureSelect");
     const interestRateInput = document.getElementById("interestRateInput");
@@ -2585,7 +2504,7 @@ loan.amount_repaid > 0 %}
       updateLoanRules();
     }
 
-    // 6. Robust Modal Backdrop Clean-up Fix for Blurry/Locked Screens
+    // 5. Robust Modal Backdrop Clean-up Fix
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
       modal.addEventListener('hidden.bs.modal', function () {
@@ -2601,23 +2520,7 @@ loan.amount_repaid > 0 %}
     renderCalendar(currentMonth, currentYear);
   });
 
-  // Client-side filtering function for table
-  function filterLoans() {
-    const statusVal = document.getElementById("statusFilter").value.toLowerCase();
-    const searchVal = document.getElementById("searchInput").value.toLowerCase();
-    const rows = document.querySelectorAll("#loansTable tbody tr");
-
-    rows.forEach((row) => {
-      const status = (row.getAttribute("data-status") || "").toLowerCase();
-      const text = row.innerText.toLowerCase();
-
-      const matchesStatus = statusVal === "all" || status.includes(statusVal);
-      const matchesSearch = text.includes(searchVal);
-
-      row.style.display = matchesStatus && matchesSearch ? "" : "none";
-    });
-  }
-  //members card population
+  // Top Members Leaderboard Pagination Script
   let currentPage = 0;
   const itemsPerPage = 5;
   const saverItems = document.querySelectorAll('.saver-item');
@@ -2635,7 +2538,6 @@ loan.amount_repaid > 0 %}
       }
     });
 
-    // Update indicator and buttons
     const indicator = document.getElementById('pageIndicator');
     if (indicator) {
       indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
@@ -2654,5 +2556,10 @@ loan.amount_repaid > 0 %}
     if (currentPage >= totalPages) currentPage = totalPages - 1;
     updatePagination();
   }
+
+  // Initial pagination call on load
+  document.addEventListener("DOMContentLoaded", () => {
+    updatePagination();
+  });
 </script>
 {% endblock %}
