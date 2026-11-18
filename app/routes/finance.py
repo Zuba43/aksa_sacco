@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from datetime import datetime
 from app.models import User, Loan, Savings, Expense, FineFee
 from app import db
@@ -54,7 +54,7 @@ def dashboard():
         .scalar()
         or 0.0
     )
-    #member card population
+
     top_savers = (
         db.session.query(
             User,
@@ -67,77 +67,70 @@ def dashboard():
     )
 
     total_fines_fees = (
-    db.session.query(func.sum(FineFee.amount))
-    .filter(~func.lower(FineFee.fee_type).like("%membership%"))
-    .scalar() or 0.0
-)
+        db.session.query(func.sum(FineFee.amount))
+        .filter(~func.lower(FineFee.fee_type).like("%membership%"))
+        .scalar() or 0.0
+    )
 
     # 2. Loan Calculations & Profits
-    total_disbursed = 0.0
     unpaid_loans = 0.0
     loan_profits = 0.0  # Total interest expected or earned on loans
-    total_repayments_collected = 0.0
 
     for loan in all_loans:
-        total_due = loan.total_due
         loan.total_repaid_calc = loan.amount_repaid
         loan.balance_calc = loan.balance_remaining
 
-        total_repayments_collected += loan.amount_repaid or 0.0
-
         if loan.status in ["Approved", "Active", "Fully Paid", "Defaulted"]:
-            total_disbursed += loan.amount_requested
             loan_profits += loan.amount_requested * (loan.interest_rate / 100.0)
 
         if loan.status in ["Approved", "Active", "Defaulted"]:
             unpaid_loans += loan.balance_calc
 
-    # 3. Growth Metrics Calculations
-    actual_growth = total_savings + total_repayments_collected + total_fines_fees
-    projected_growth = actual_growth + unpaid_loans + loan_profits
+    # 3. Financial Year Cashflow Chart Data (Starting November 06)
+    now = datetime.utcnow()
+    if now.month > 11 or (now.month == 11 and now.day >= 6):
+        fy_start_year = now.year
+    else:
+        fy_start_year = now.year - 1
+        
+    fy_start_date = datetime(fy_start_year, 11, 6)
+
+    fy_labels = []
+    fy_disbursements = []
+    fy_repayments = []
+
+    curr = datetime(fy_start_date.year, fy_start_date.month, 1)
+    while curr <= datetime(now.year, now.month, 1):
+        fy_labels.append(curr.strftime("%b %Y"))
+        
+        m_disbursements = db.session.query(func.coalesce(func.sum(Loan.amount_requested), 0.0)).filter(
+            extract('year', Loan.date_applied) == curr.year,
+            extract('month', Loan.date_applied) == curr.month,
+            Loan.date_applied >= fy_start_date
+        ).scalar()
+        
+        m_repayments = db.session.query(func.coalesce(func.sum(Loan.amount_repaid), 0.0)).filter(
+            extract('year', Loan.date_applied) == curr.year,
+            extract('month', Loan.date_applied) == curr.month,
+            Loan.date_applied >= fy_start_date
+        ).scalar()
+        
+        fy_disbursements.append(m_disbursements)
+        fy_repayments.append(m_repayments)
+        
+        if curr.month == 12:
+            curr = datetime(curr.year + 1, 1, 1)
+        else:
+            curr = datetime(curr.year, curr.month + 1, 1)
 
     # 4. Risk & Status Breakdown Counts
     performing_count = Loan.query.filter(
         Loan.status.in_(["Approved", "Active"])
     ).count()
     fully_paid_count = Loan.query.filter_by(status="Fully Paid").count()
-    pending_count = Loan.query.filter_by(status="Pending").count()
     default_count = Loan.query.filter_by(status="Defaulted").count()
 
-    npl_amount = (
-        db.session.query(func.sum(Loan.amount_requested))
-        .filter(Loan.status == "Defaulted")
-        .scalar()
-        or 0.0
-    )
-
-    npl_ratio = (npl_amount / total_disbursed * 100) if total_disbursed > 0 else 0.0
-
-    # 5. Purpose Breakdown
-    tuition_total = (
-        db.session.query(func.sum(Loan.amount_requested))
-        .filter(Loan.loan_type == "emergency")
-        .scalar()
-        or 0.0
-    )
-    startup_total = (
-        db.session.query(func.sum(Loan.amount_requested))
-        .filter(Loan.loan_type == "Business startup")
-        .scalar()
-        or 0.0
-    )
-    others_total = (
-        db.session.query(func.sum(Loan.amount_requested))
-        .filter(Loan.loan_type == "general")
-        .scalar()
-        or 0.0
-    )
-
-    tuition_count = Loan.query.filter_by(loan_type="emergency").count()
-    startup_count = Loan.query.filter_by(loan_type="Business startup").count()
-    others_count = Loan.query.filter_by(loan_type="general").count()
-
-    # 6. Personal Member Data for Logged-In Officer (Wallet Modal)
+    # 5. Personal Member Data for Logged-In Officer (Wallet Modal)
     personal_savings = (
         Savings.query.filter_by(user_id=current_user.id)
         .order_by(Savings.date_recorded.desc())
@@ -145,7 +138,7 @@ def dashboard():
     )
     current_user_savings = sum(s.amount for s in personal_savings)
 
-    # 7. All Global Transactions for All Members (Ordered Alphabetically by First Name)
+    # 6. All Global Transactions for All Members
     all_savings_transactions = (
         db.session.query(Savings, User)
         .join(User, Savings.user_id == User.id)
@@ -171,38 +164,25 @@ def dashboard():
 
     return render_template(
         "finance/dashboard.html",
-        # --- 5 Top Metric Cards ---
         total_savings=total_savings,
         unpaid_loans=unpaid_loans,
         membership_fees=membership_fees,
         total_fines_fees=total_fines_fees,
         loan_profits=loan_profits,
-        # --- Supporting Dashboard Variables ---
-        actual_growth=actual_growth,
-        projected_growth=projected_growth,
-        unpaid_loan_balance=unpaid_loans,
-        all_fines_transactions=all_fines_transactions,
-        all_expenses_transactions=all_expenses_transactions,
-        total_disbursed=total_disbursed,
         performing_count=performing_count,
-        top_savers=top_savers,
         fully_paid_count=fully_paid_count,
-        pending_count=pending_count,
         default_count=default_count,
-        npl_amount=npl_amount,
-        npl_ratio=npl_ratio,
-        tuition_total=tuition_total,
-        startup_total=startup_total,
-        others_total=others_total,
-        tuition_count=tuition_count,
-        startup_count=startup_count,
-        others_count=others_count,
+        top_savers=top_savers,
         all_loans=all_loans,
         savings=personal_savings,
         current_user_savings=current_user_savings,
         all_savings_transactions=all_savings_transactions,
-        all_repayments_transactions=[],
+        all_fines_transactions=all_fines_transactions,
+        all_expenses_transactions=all_expenses_transactions,
         all_members=all_members,
+        fy_labels=fy_labels,
+        fy_disbursements=fy_disbursements,
+        fy_repayments=fy_repayments,
     )
 
 # ================= ADMIN / TREASURER ACTION ROUTES =================

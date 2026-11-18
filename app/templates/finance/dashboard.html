@@ -455,6 +455,7 @@ SACCO{% endblock %} {% block extra_head %}
 
       <!-- SECTION 1: Loan Status & Risk Breakdown & Trends -->
       <div class="row g-4 mb-4">
+        <!-- 1. Portfolio Risk Classification Card (4 Columns) -->
         <div class="col-lg-4">
           <div class="card border-0 shadow-sm rounded-3 h-100">
             <div class="card-header bg-white py-3 border-0">
@@ -517,27 +518,18 @@ SACCO{% endblock %} {% block extra_head %}
                   ></div>
                 </div>
               </div>
-
-              <hr class="my-3" />
-
-              <div
-                class="chart-container"
-                style="position: relative; height: 160px"
-              >
-                <canvas id="riskDoughnutChart"></canvas>
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- SECTION 2: Trends Over Time -->
+        <!-- 2. Monthly Disbursement vs. Repayment Column Chart Card (8 Columns) -->
         <div class="col-lg-8">
           <div class="card border-0 shadow-sm rounded-3 h-100">
             <div
               class="card-header bg-white py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2"
             >
               <h6 class="fw-bold mb-0">
-                <i class="bi bi-graph-up me-2 text-primary"></i>Monthly
+                <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Monthly
                 Disbursement vs. Repayment Cashflow
               </h6>
               <span class="badge bg-warning text-dark border"
@@ -556,9 +548,10 @@ SACCO{% endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- SECTION 3: Top Members Savings Leaderboard Card -->
+      <!-- SECTION 3: Side-by-Side Leaderboard & Loans Portfolio Status -->
       <div class="row g-4 mb-4">
-        <div class="col-12">
+        <!-- 1. Top Members Savings Leaderboard Card (Width: 6 cols on large screens) -->
+        <div class="col-lg-6">
           <div class="card border-0 shadow-sm rounded-3 h-100">
             <div
               class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
@@ -667,6 +660,101 @@ SACCO{% endblock %} {% block extra_head %}
               </button>
             </div>
             {% endif %}
+          </div>
+        </div>
+
+        <!-- 2. Loans & Status Portfolio Card (Width: 6 cols on large screens) -->
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div
+              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+            >
+              <h6 class="fw-bold mb-0">
+                <i class="bi bi-cash-stack me-2 text-primary"></i>Loans Status
+                Portfolio
+              </h6>
+              <span
+                class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small"
+              >
+                {{ all_loans|length }} Total Loans
+              </span>
+            </div>
+
+            <div class="card-body p-0">
+              <div
+                class="table-responsive"
+                style="max-height: 380px; overflow-y: auto"
+              >
+                <table
+                  class="table table-hover align-middle mb-0 text-now0wrap"
+                  style="font-size: 0.875rem"
+                >
+                  <thead class="table-light sticky-top">
+                    <tr>
+                      <th class="ps-3">Borrower / Type</th>
+                      <th>Status</th>
+                      <th class="text-end">Total Due</th>
+                      <th class="text-end">Repaid</th>
+                      <th class="text-end pe-3">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for loan in all_loans|default([]) %}
+                    <tr>
+                      <td class="ps-3">
+                        <div class="fw-bold text-dark">
+                          {% if loan.user %}{{ loan.user.fname }} {{
+                          loan.user.lname }}{% else %}Unknown{% endif %}
+                        </div>
+                        <small
+                          class="text-muted text-uppercase"
+                          style="font-size: 0.7rem"
+                        >
+                          {{ loan.loan_type }}
+                        </small>
+                      </td>
+                      <td>
+                        {% if loan.status == 'Fully Paid' %}
+                        <span
+                          class="badge bg-success bg-opacity-10 text-success"
+                          >Fully Paid</span
+                        >
+                        {% elif loan.status in ['Approved', 'Active'] %}
+                        <span
+                          class="badge bg-primary bg-opacity-10 text-primary"
+                          >Active</span
+                        >
+                        {% elif loan.status == 'Defaulted' %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger"
+                          >Defaulted</span
+                        >
+                        {% else %}
+                        <span class="badge bg-warning bg-opacity-10 text-dark"
+                          >{{ loan.status }}</span
+                        >
+                        {% endif %}
+                      </td>
+                      <td class="text-end fw-semibold">
+                        UGX {{ "{:,.0f}".format(loan.total_due) }}
+                      </td>
+                      <td class="text-end text-success fw-semibold">
+                        UGX {{ "{:,.0f}".format(loan.amount_repaid or 0.0) }}
+                      </td>
+                      <td class="text-end pe-3 fw-bold text-danger">
+                        UGX {{ "{:,.0f}".format(loan.balance_remaining) }}
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="5" class="text-center py-4 text-muted">
+                        No loan records found.
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1863,7 +1951,6 @@ SACCO{% endblock %} {% block extra_head %}
 
 <!-- ================= INDEPENDENT ROW ACTION MODALS ================= -->
 {% if current_user.is_finance or current_user.role == 'finance' %}
-
 <!-- 1. Savings Modals Loop -->
 {% for item in all_savings_transactions|default([]) %} {% set s = item[0] %} {%
 set u = item[1] %}
@@ -2221,60 +2308,51 @@ loan.amount_repaid > 0 %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // 1. Doughnut Chart: Risk Breakdown
-    const ctxRisk = document.getElementById("riskDoughnutChart");
-    if (ctxRisk) {
-      new Chart(ctxRisk.getContext("2d"), {
-        type: "doughnut",
-        data: {
-          labels: ["Performing / Active", "Fully Paid", "Defaulted / At-Risk"],
-          datasets: [
-            {
-              data: [
-                {{ performing_count|default(0) }},
-                {{ fully_paid_count|default(0) }},
-                {{ default_count|default(0) }}
-              ],
-              backgroundColor: ["#198754", "#0d6efd", "#dc3545"],
-            },
-          ],
-        },
-        options: { responsive: true, maintainAspectRatio: false },
-      });
-    }
-
-    // 2. Combo Bar/Line Chart: Cash Flows
+    // Side-by-Side Grouped Column Chart: Cash Flows (Current Financial Year starting Nov 6)
     const ctxFlow = document.getElementById("cashflowComboChart");
     if (ctxFlow) {
       new Chart(ctxFlow.getContext("2d"), {
         type: "bar",
         data: {
-          labels: [
-            "Month -5", "Month -4", "Month -3", "Month -2", "Previous Month", "Current Month (New FY)"
-          ],
+          labels: {{ fy_labels | default(['Nov 2026']) | tojson | safe }},
           datasets: [
             {
               type: "bar",
               label: "Disbursements (UGX)",
-              data: [7500000, 9200000, 10500000, 8800000, 11000000, 100000],
+              data: {{ fy_disbursements | default([0]) | tojson | safe }},
               backgroundColor: "#0d6efd",
+              borderRadius: 4,
             },
             {
-              type: "line",
+              type: "bar",
               label: "Repayments Collected (UGX)",
-              data: [6000000, 8100000, 9400000, 7500000, 9800000, 50000],
-              borderColor: "#198754",
+              data: {{ fy_repayments | default([0]) | tojson | safe }},
               backgroundColor: "#198754",
-              fill: false,
-              tension: 0.3,
+              borderRadius: 4,
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            }
+          }
+        },
       });
     }
 
-    // 3. Flexible Savings Modal Period & Calendar Handler
+    // 2. Flexible Savings Modal Period & Calendar Handler
     const periodSelect = document.getElementById("savingPeriod");
     const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
     const customMonthsContainer = document.getElementById("customMonthsContainer");
@@ -2473,7 +2551,7 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // 4. Loan Type Rules Handler
+    // 3. Loan Type Rules Handler
     const loanTypeSelect = document.getElementById("loanTypeSelect");
     const tenureSelect = document.getElementById("tenureSelect");
     const interestRateInput = document.getElementById("interestRateInput");
@@ -2504,7 +2582,7 @@ loan.amount_repaid > 0 %}
       updateLoanRules();
     }
 
-    // 5. Robust Modal Backdrop Clean-up Fix
+    // 4. Robust Modal Backdrop Clean-up Fix
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
       modal.addEventListener('hidden.bs.modal', function () {
