@@ -136,6 +136,28 @@ def deactivate_member(user_id):
 
     return redirect(url_for('secretary.dashboard'))
 
+# Temporarily Deactivate / Suspend Account (Keep record, block login)
+@secretary_bp.route('/suspend/<int:user_id>', methods=['POST'])
+@login_required
+def deactivate_account(user_id):
+    if current_user.role not in ['secretary', 'chair', 'admin']:
+        flash('Unauthorized action.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    member = User.query.get_or_404(user_id)
+    member.is_active_account = False  # Set to False to lock them out
+    
+    suspend_note = Notification(
+        user_id=member.id,
+        title="Account Suspended",
+        message="Your AKSA SACCO membership has been temporarily deactivated by the Secretary. Please contact administration for details.",
+        category="reminder"
+    )
+    db.session.add(suspend_note)
+    db.session.commit()
+
+    flash(f'Account for {member.fname} {member.lname} has been deactivated.', 'warning')
+    return redirect(url_for('secretary.dashboard'))
 
 # Broadcast Notification (Events / General Announcements to All Members)
 @secretary_bp.route('/send-broadcast', methods=['POST'])

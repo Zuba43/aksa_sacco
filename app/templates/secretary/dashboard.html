@@ -241,7 +241,7 @@ endblock %} {% block content %}
                       <td>
                         {% if m.passport_photo %}
                         <a
-                          href="{{ url_for('static', filename='uploads/' ~ m.passport_photo) }}"
+                          href="{{ url_for('static', filename='uploads/kyc' ~ m.passport_photo) }}"
                           target="_blank"
                           class="btn btn-sm btn-outline-info me-1"
                         >
@@ -249,7 +249,7 @@ endblock %} {% block content %}
                         </a>
                         {% endif %} {% if m.id_scan %}
                         <a
-                          href="{{ url_for('static', filename='uploads/' ~ m.id_scan) }}"
+                          href="{{ url_for('static', filename='uploads/kyc' ~ m.id_scan) }}"
                           target="_blank"
                           class="btn btn-sm btn-outline-secondary"
                         >
@@ -282,7 +282,7 @@ endblock %} {% block content %}
                           </form>
                           <form
                             method="POST"
-                            action="{{ url_for('secretary.deactivae', user_id=m.id) }}"
+                            action="{{ url_for('secretary.reject_member', user_id=m.id) }}"
                             onsubmit="
                               return confirm(
                                 'Rejecting will delete this registration request. Are you sure?',
@@ -337,7 +337,7 @@ endblock %} {% block content %}
                       <th>Phone / Email</th>
                       <th>NIN & District</th>
                       <th>Account Status</th>
-                      <th>Action</th>
+                      <th class="text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -355,29 +355,63 @@ endblock %} {% block content %}
                         <div>NIN: {{ am.nin }}</div>
                         <small class="text-muted">{{ am.home_district }}</small>
                       </td>
-                      <td><span class="badge bg-success">Active</span></td>
                       <td>
-                        <form
-                          method="POST"
-                          action="{{ url_for('secretary.deactivate_member', user_id=am.id) }}"
-                          onsubmit="
-                            return confirm(
-                              'WARNING: This will permanently delete this member account and all associated data from the database. Are you sure?',
-                            );
-                          "
-                        >
-                          <input
-                            type="hidden"
-                            name="csrf_token"
-                            value="{{ csrf_token() }}"
-                          />
-                          <button
-                            type="submit"
-                            class="btn btn-outline-danger btn-sm"
+                        {% if am.is_active_account %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Deactivated</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1">
+                          <!-- Deactivate / Suspend Account Form -->
+                          <form
+                            method="POST"
+                            action="{{ url_for('secretary.deactivate_account', user_id=am.id) }}"
+                            onsubmit="
+                              return confirm(
+                                'Are you sure you want to temporarily deactivate this member account?',
+                              );
+                            "
                           >
-                            <i class="bi bi-person-x me-1"></i> Delete Account
-                          </button>
-                        </form>
+                            <input
+                              type="hidden"
+                              name="csrf_token"
+                              value="{{ csrf_token() }}"
+                            />
+                            <button
+                              type="submit"
+                              class="btn btn-outline-warning btn-sm"
+                              title="Temporarily Deactivate Account"
+                            >
+                              <i class="bi bi-pause-circle me-1"></i> Deactivate
+                            </button>
+                          </form>
+
+                          <!-- Permanent Delete Account Form -->
+                          <form
+                            method="POST"
+                            action="{{ url_for('secretary.deactivate_member', user_id=am.id) }}"
+                            onsubmit="
+                              return confirm(
+                                'WARNING: This will permanently delete this member account and all associated data from the database. Are you sure?',
+                              );
+                            "
+                          >
+                            <input
+                              type="hidden"
+                              name="csrf_token"
+                              value="{{ csrf_token() }}"
+                            />
+                            <button
+                              type="submit"
+                              class="btn btn-outline-danger btn-sm"
+                              title="Permanently Delete Account"
+                            >
+                              <i class="bi bi-person-x me-1"></i> Delete
+                            </button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                     {% endfor %}
@@ -393,7 +427,6 @@ endblock %} {% block content %}
             </div>
           </div>
         </div>
-
         <!-- Tab 3: Broadcast Event & Meeting Notifications -->
         <div class="tab-pane fade" id="notif" role="tabpanel">
           <div class="card border-0 shadow-sm rounded-3">
