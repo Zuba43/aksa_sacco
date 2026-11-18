@@ -597,14 +597,14 @@ SACCO{% endblock %} {% block extra_head %}
                     <!-- Profile Picture / KYC Passport Photo -->
                     {% if user.passport_photo %}
                     <img
-                      src="{{ url_for('static', filename='uploads/' + user.passport_photo) }}"
+                      src="{{ url_for('static', filename='uploads/kyc/' + user.passport_photo) }}"
                       alt="{{ user.fname }}"
                       class="rounded-circle me-3"
                       style="width: 45px; height: 45px; object-fit: cover"
                     />
                     {% elif user.profile_pic %}
                     <img
-                      src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}"
+                      src="{{ url_for('static', filename='uploads/kyc/' + user.profile_pic) }}"
                       alt="{{ user.fname }}"
                       class="rounded-circle me-3"
                       style="width: 45px; height: 45px; object-fit: cover"
