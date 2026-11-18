@@ -303,15 +303,29 @@ SACCO{% endblock %} {% block extra_head %}
       </div>
 
       <!-- Top Metrics Bar -->
-      <div
-        class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 mb-4"
-      >
+      <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 g-md-3 mb-4">
         <!-- 1. Total Savings -->
         <div class="col">
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-primary text-white p-3 h-100"
           >
-            <div class="d-flex justify-content-between align-items-center">
+            <!-- Mobile View (2x2 Compact) -->
+            <div class="d-md-none text-center py-1">
+              <div class="fs-4 fw-bold lh-1 mb-1">
+                {{ total_savings|default(0.0)|compact_num }}
+              </div>
+              <div
+                class="small text-white-50 fw-semibold"
+                style="font-size: 0.75rem"
+              >
+                Total Savings
+              </div>
+            </div>
+
+            <!-- Desktop View -->
+            <div
+              class="d-none d-md-flex justify-content-between align-items-center"
+            >
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Total Savings
@@ -330,7 +344,23 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
           >
-            <div class="d-flex justify-content-between align-items-center">
+            <!-- Mobile View (2x2 Compact) -->
+            <div class="d-md-none text-center py-1">
+              <div class="fs-4 fw-bold lh-1 mb-1">
+                {{ unpaid_loans|default(0.0)|compact_num }}
+              </div>
+              <div
+                class="small text-white-50 fw-semibold"
+                style="font-size: 0.75rem"
+              >
+                Unpaid Loans
+              </div>
+            </div>
+
+            <!-- Desktop View -->
+            <div
+              class="d-none d-md-flex justify-content-between align-items-center"
+            >
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Unpaid Loans
@@ -349,7 +379,23 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-info text-dark p-3 h-100"
           >
-            <div class="d-flex justify-content-between align-items-center">
+            <!-- Mobile View (2x2 Compact) -->
+            <div class="d-md-none text-center py-1">
+              <div class="fs-4 fw-bold lh-1 mb-1">
+                {{ membership_fees|default(0.0)|compact_num }}
+              </div>
+              <div
+                class="small text-dark opacity-75 fw-semibold"
+                style="font-size: 0.75rem"
+              >
+                Membership Fees
+              </div>
+            </div>
+
+            <!-- Desktop View -->
+            <div
+              class="d-none d-md-flex justify-content-between align-items-center"
+            >
               <div>
                 <div class="small text-dark-50 text-uppercase fw-bold">
                   Membership Fees
@@ -368,7 +414,23 @@ SACCO{% endblock %} {% block extra_head %}
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-secondary text-white p-3 h-100"
           >
-            <div class="d-flex justify-content-between align-items-center">
+            <!-- Mobile View (2x2 Compact) -->
+            <div class="d-md-none text-center py-1">
+              <div class="fs-4 fw-bold lh-1 mb-1">
+                {{ total_fines_fees|default(0.0)|compact_num }}
+              </div>
+              <div
+                class="small text-white-50 fw-semibold"
+                style="font-size: 0.75rem"
+              >
+                Total Fines &amp; Fees
+              </div>
+            </div>
+
+            <!-- Desktop View -->
+            <div
+              class="d-none d-md-flex justify-content-between align-items-center"
+            >
               <div>
                 <div class="small text-white-50 text-uppercase fw-bold">
                   Total Fines &amp; Fees
@@ -382,8 +444,8 @@ SACCO{% endblock %} {% block extra_head %}
           </div>
         </div>
 
-        <!-- 5. Profits (Interests) -->
-        <div class="col">
+        <!-- 5. Profits (Interests) - Hidden on mobile to maintain strict 2x2 (4 cards) -->
+        <div class="col d-none d-md-block">
           <div
             class="card metric-card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
           >
@@ -505,166 +567,115 @@ SACCO{% endblock %} {% block extra_head %}
         </div>
       </div>
 
-      <!-- SECTION 3: Loan Purpose Segmentation & Detailed Filter Table -->
-      <div class="row g-4">
-        <!-- Purpose Distribution -->
-        <div class="col-lg-4">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-header bg-white py-3 border-0">
-              <h6 class="fw-bold mb-0">
-                <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Loan
-                Purpose Distribution
-              </h6>
-            </div>
-            <div class="card-body">
-              <div
-                class="chart-container"
-                style="position: relative; height: 210px"
-              >
-                <canvas id="purposePieChart"></canvas>
-              </div>
-              <div class="mt-3 small">
-                <div class="d-flex justify-content-between border-bottom py-1">
-                  <span>🎓 Tuition:</span>
-                  <span class="fw-bold"
-                    >UGX {{ "{:,.2f}".format(tuition_total|default(0.0)) }} ({{
-                    tuition_count|default(0) }})</span
-                  >
-                </div>
-                <div class="d-flex justify-content-between border-bottom py-1">
-                  <span>🚨 Emergency (Startup):</span>
-                  <span class="fw-bold"
-                    >UGX {{ "{:,.2f}".format(startup_total|default(0.0)) }} ({{
-                    startup_count|default(0) }})</span
-                  >
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span>📂 General (Others):</span>
-                  <span class="fw-bold"
-                    >UGX {{ "{:,.2f}".format(others_total|default(0.0)) }} ({{
-                    others_count|default(0) }})</span
-                  >
-                </div>
-              </div>
-            </div>
+      <!-- Top Members Savings Leaderboard Card -->
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+          <div
+            class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+          >
+            <h6 class="fw-bold mb-0">
+              <i class="bi bi-trophy me-2 text-warning"></i>Top Members Savings
+              Leaderboard
+            </h6>
+            <span
+              class="badge bg-light text-dark border small"
+              id="pageIndicator"
+              >Page 1</span
+            >
           </div>
-        </div>
 
-        <!-- Interactive Portfolio Table -->
-        <div class="col-lg-8">
-          <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-header bg-white py-3 border-0">
-              <div class="row g-2 align-items-center">
-                <div class="col-12 col-md-4">
-                  <h6 class="fw-bold mb-0">
-                    <i class="bi bi-funnel me-2 text-primary"></i>Loan Portfolio
-                    Filter
-                  </h6>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                  <select
-                    id="statusFilter"
-                    class="form-select form-select-sm"
-                    onchange="filterLoans()"
-                  >
-                    <option value="ALL">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Active">Active</option>
-                    <option value="Fully Paid">Fully Paid</option>
-                    <option value="Defaulted">Defaulted</option>
-                  </select>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                  <input
-                    type="text"
-                    id="searchInput"
-                    class="form-control form-control-sm"
-                    placeholder="Search borrower/purpose..."
-                    onkeyup="filterLoans()"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="card-body p-0">
-              <div class="table-responsive">
-                <table
-                  class="table table-hover align-middle mb-0"
-                  id="loansTable"
-                >
-                  <thead class="table-light">
-                    <tr>
-                      <th>Borrower</th>
-                      <th>Category</th>
-                      <th>Principal</th>
-                      <th>Total Repaid</th>
-                      <th>Outstanding Balance</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for loan in all_loans|default([]) %}
-                    <tr data-status="{{ loan.status }}">
-                      <td>
-                        <div class="fw-bold">
-                          {% if loan.user %}{{ loan.user.fname }} {{
-                          loan.user.lname }}{% else %}Unknown{% endif %}
-                        </div>
-                        <small class="text-muted"
-                          >{% if loan.user %}{{ loan.user.phone }}{% endif
-                          %}</small
-                        >
-                      </td>
-                      <td>
-                        {% if loan.loan_type == 'Business startup' %}
-                        <span class="badge bg-warning text-dark border"
-                          >Emergency</span
-                        >
-                        {% elif loan.loan_type == 'Others' %}
-                        <span class="badge bg-secondary border">General</span>
-                        {% else %}
-                        <span class="badge bg-info text-dark border"
-                          >{{ loan.loan_type }}</span
-                        >
-                        {% endif %}
-                      </td>
-                      <td class="fw-semibold">
-                        UGX {{ "{:,.2f}".format(loan.amount_requested) }}
-                      </td>
-                      <td class="text-success fw-semibold">
-                        UGX {{
-                        "{:,.2f}".format(loan.total_repaid_calc|default(0.0)) }}
-                      </td>
-                      <td class="text-danger fw-bold">
-                        UGX {{ "{:,.2f}".format(loan.balance_calc|default(0.0))
-                        }}
-                      </td>
-                      <td>
-                        {% if loan.status in ['Approved', 'Active'] %}
-                        <span class="badge bg-success">{{ loan.status }}</span>
-                        {% elif loan.status == 'Fully Paid' %}
-                        <span class="badge bg-primary">{{ loan.status }}</span>
-                        {% elif loan.status == 'Pending' %}
-                        <span class="badge bg-warning text-dark"
-                          >{{ loan.status }}</span
-                        >
-                        {% else %}
-                        <span class="badge bg-danger">{{ loan.status }}</span>
-                        {% endif %}
-                      </td>
-                    </tr>
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush" id="saversList">
+              {% for user, total_savings in top_savers|default([]) %}
+              <div
+                class="list-group-item px-3 py-3 saver-item"
+                data-index="{{ loop.index0 }}"
+                style="{% if loop.index0 >= 5 %}display: none;{% endif %}"
+              >
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <!-- Profile Picture / KYC Passport Photo -->
+                    {% if user.passport_photo %}
+                    <img
+                      src="{{ url_for('static', filename='uploads/' + user.passport_photo) }}"
+                      alt="{{ user.fname }}"
+                      class="rounded-circle me-3"
+                      style="width: 45px; height: 45px; object-fit: cover"
+                    />
+                    {% elif user.profile_pic %}
+                    <img
+                      src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}"
+                      alt="{{ user.fname }}"
+                      class="rounded-circle me-3"
+                      style="width: 45px; height: 45px; object-fit: cover"
+                    />
                     {% else %}
-                    <tr>
-                      <td colspan="6" class="text-center py-4 text-muted">
-                        No loan records available in the database.
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                    <!-- Fallback Initials Avatar if no photo exists -->
+                    <div
+                      class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3"
+                      style="width: 45px; height: 45px; font-size: 0.95rem"
+                    >
+                      {{ user.fname[:1] }}{{ user.lname[:1] }}
+                    </div>
+                    {% endif %}
+
+                    <div>
+                      <div class="fw-bold text-dark">
+                        {{ user.fname }} {{ user.lname }}
+                      </div>
+                      <small class="text-muted"
+                        ><i class="bi bi-telephone me-1"></i>{{ user.phone or
+                        'No phone' }}</small
+                      >
+                    </div>
+                  </div>
+
+                  <div class="text-end">
+                    <div
+                      class="small text-muted text-uppercase fw-semibold"
+                      style="font-size: 0.7rem"
+                    >
+                      Total Savings
+                    </div>
+                    <div class="fw-bold text-success fs-6">
+                      UGX {{
+                      "{:,.2f}".format(total_savings|default(0.0))|compact_num
+                      }}
+                    </div>
+                  </div>
+                </div>
               </div>
+              {% else %}
+              <div class="text-center py-5 text-muted">
+                No member savings records available.
+              </div>
+              {% endfor %}
             </div>
           </div>
+
+          <!-- Card Footer Pagination Controls -->
+          {% if top_savers and top_savers|length > 5 %}
+          <div
+            class="card-footer bg-white py-2 border-0 d-flex justify-content-between align-items-center"
+          >
+            <button
+              class="btn btn-outline-secondary btn-sm px-3"
+              id="prevBtn"
+              onclick="changePage(-1)"
+              disabled
+            >
+              <i class="bi bi-chevron-left me-1"></i> Previous
+            </button>
+            <small class="text-muted fw-semibold">Showing 5 per page</small>
+            <button
+              class="btn btn-outline-primary btn-sm px-3"
+              id="nextBtn"
+              onclick="changePage(1)"
+            >
+              Next <i class="bi bi-chevron-right ms-1"></i>
+            </button>
+          </div>
+          {% endif %}
         </div>
       </div>
     </main>
@@ -2605,6 +2616,43 @@ loan.amount_repaid > 0 %}
 
       row.style.display = matchesStatus && matchesSearch ? "" : "none";
     });
+  }
+  //members card population
+  let currentPage = 0;
+  const itemsPerPage = 5;
+  const saverItems = document.querySelectorAll('.saver-item');
+  const totalPages = Math.ceil(saverItems.length / itemsPerPage);
+
+  function updatePagination() {
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+
+    saverItems.forEach((item, index) => {
+      if (index >= start && index < end) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    // Update indicator and buttons
+    const indicator = document.getElementById('pageIndicator');
+    if (indicator) {
+      indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+    }
+
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    if (prevBtn) prevBtn.disabled = currentPage === 0;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+  }
+
+  function changePage(direction) {
+    currentPage += direction;
+    if (currentPage < 0) currentPage = 0;
+    if (currentPage >= totalPages) currentPage = totalPages - 1;
+    updatePagination();
   }
 </script>
 {% endblock %}

@@ -5,7 +5,32 @@ from datetime import datetime
 from app.models import User, Loan, Savings, Expense, FineFee
 from app import db
 
+
 finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
+
+@finance_bp.app_template_filter("compact_num")
+def compact_num(value):
+    if value is None:
+        val = 0.0
+    elif isinstance(value, (int, float)):
+        val = float(value)
+    else:
+        try:
+            # Clean commas and whitespace from strings like '425,000.00'
+            cleaned = str(value).replace(',', '').strip()
+            val = float(cleaned) if cleaned else 0.0
+        except (ValueError, TypeError):
+            val = 0.0
+
+    if val >= 1_000_000_000:
+        return f"{val / 1_000_000_000:.2f}".rstrip("0").rstrip(".") + "B"
+    elif val >= 1_000_000:
+        return f"{val / 1_000_000:.2f}".rstrip("0").rstrip(".") + "M"
+    elif val >= 1_000:
+        return f"{val / 1_000:.1f}".rstrip("0").rstrip(".") + "K"
+    return f"{val:,.0f}"
+
+
 @finance_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -29,11 +54,23 @@ def dashboard():
         .scalar()
         or 0.0
     )
+    #member card population
+    top_savers = (
+        db.session.query(
+            User,
+            func.coalesce(func.sum(Savings.amount), 0.0).label("total_savings")
+        )
+        .outerjoin(Savings, User.id == Savings.user_id)
+        .group_by(User.id)
+        .order_by(func.sum(Savings.amount).desc())
+        .all()
+    )
 
-    # Total Fines & Fees (all records in FineFee table)
-    # Note: If you want this card to exclude membership fees, add:
-    # .filter(~func.lower(FineFee.fee_type).like("%membership%"))
-    total_fines_fees = db.session.query(func.sum(FineFee.amount)).scalar() or 0.0
+    total_fines_fees = (
+    db.session.query(func.sum(FineFee.amount))
+    .filter(~func.lower(FineFee.fee_type).like("%membership%"))
+    .scalar() or 0.0
+)
 
     # 2. Loan Calculations & Profits
     total_disbursed = 0.0
@@ -148,6 +185,7 @@ def dashboard():
         all_expenses_transactions=all_expenses_transactions,
         total_disbursed=total_disbursed,
         performing_count=performing_count,
+        top_savers=top_savers,
         fully_paid_count=fully_paid_count,
         pending_count=pending_count,
         default_count=default_count,
