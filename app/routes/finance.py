@@ -23,11 +23,11 @@ def compact_num(value):
             val = 0.0
 
     if val >= 1_000_000_000:
-        return f"{val / 1_000_000_000:.2f}".rstrip("0").rstrip(".") + "B"
+        return f"{val / 1_000_000_000:.3f}".rstrip("0").rstrip(".") + "B"
     elif val >= 1_000_000:
-        return f"{val / 1_000_000:.2f}".rstrip("0").rstrip(".") + "M"
+        return f"{val / 1_000_000:.3f}".rstrip("0").rstrip(".") + "M"
     elif val >= 1_000:
-        return f"{val / 1_000:.1f}".rstrip("0").rstrip(".") + "K"
+        return f"{val / 1_000:.2f}".rstrip("0").rstrip(".") + "K"
     return f"{val:,.0f}"
 
 
