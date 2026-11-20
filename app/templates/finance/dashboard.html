@@ -452,7 +452,37 @@ SACCO{% endblock %} {% block extra_head %}
           </div>
         </div>
       </div>
-
+<!-- 5. Profits (Interests) -->
+        <div class="col-12 col-md">
+          <div
+            class="card metric-card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
+          >
+            <div class="d-md-none text-center py-1">
+              <div class="fs-4 fw-bold lh-1 mb-1">
+                {{ loan_profits|default(0.0)|compact_num }}
+              </div>
+              <div
+                class="small text-white-50 fw-semibold"
+                style="font-size: 0.75rem"
+              >
+                Profits (Interests)
+              </div>
+            </div>
+            <div
+              class="d-none d-md-flex justify-content-between align-items-center"
+            >
+              <div>
+                <div class="small text-white-50 text-uppercase fw-bold">
+                  Profits (Interests)
+                </div>
+                <div class="fs-5 fw-bold">
+                  UGX {{ "{:,.2f}".format(loan_profits|default(0.0)) }}
+                </div>
+              </div>
+              <i class="bi bi-cash-coin fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
       <!-- SECTION 1: Loan Status & Risk Breakdown & Trends -->
       <div class="row g-4 mb-4">
         <!-- 1. Portfolio Risk Classification Card (4 Columns) -->
