@@ -1,12 +1,20 @@
+from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from sqlalchemy import func, extract
-from datetime import datetime
 from app.models import User, Loan, Savings, Expense, FineFee
 from app import db
 
 
-finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
+finance_bp = Blueprint("finance", __name__, url_prefix="/finance")
+
+
+def _can_manage_finance():
+    return (
+        getattr(current_user, "role", None) in ["finance", "treasurer", "chair"]
+        or bool(getattr(current_user, "is_finance", False))
+    )
+
 
 @finance_bp.app_template_filter("compact_num")
 def compact_num(value):
@@ -17,7 +25,7 @@ def compact_num(value):
     else:
         try:
             # Clean commas and whitespace from strings like '425,000.00'
-            cleaned = str(value).replace(',', '').strip()
+            cleaned = str(value).replace(",", "").strip()
             val = float(cleaned) if cleaned else 0.0
         except (ValueError, TypeError):
             val = 0.0
@@ -34,7 +42,7 @@ def compact_num(value):
 @finance_bp.route("/dashboard")
 @login_required
 def dashboard():
-    if current_user.role not in ["finance", "treasurer", "chair"]:
+    if not _can_manage_finance():
         flash("Access restricted to Finance & Treasury Officers.", "danger")
         return redirect(url_for("auth.login"))
 
@@ -58,7 +66,7 @@ def dashboard():
     top_savers = (
         db.session.query(
             User,
-            func.coalesce(func.sum(Savings.amount), 0.0).label("total_savings")
+            func.coalesce(func.sum(Savings.amount), 0.0).label("total_savings"),
         )
         .outerjoin(Savings, User.id == Savings.user_id)
         .group_by(User.id)
@@ -69,7 +77,8 @@ def dashboard():
     total_fines_fees = (
         db.session.query(func.sum(FineFee.amount))
         .filter(~func.lower(FineFee.fee_type).like("%membership%"))
-        .scalar() or 0.0
+        .scalar()
+        or 0.0
     )
 
     # 2. Loan Calculations & Profits
@@ -92,7 +101,7 @@ def dashboard():
         fy_start_year = now.year
     else:
         fy_start_year = now.year - 1
-        
+
     fy_start_date = datetime(fy_start_year, 11, 6)
 
     fy_labels = []
@@ -102,22 +111,30 @@ def dashboard():
     curr = datetime(fy_start_date.year, fy_start_date.month, 1)
     while curr <= datetime(now.year, now.month, 1):
         fy_labels.append(curr.strftime("%b %Y"))
-        
-        m_disbursements = db.session.query(func.coalesce(func.sum(Loan.amount_requested), 0.0)).filter(
-            extract('year', Loan.date_applied) == curr.year,
-            extract('month', Loan.date_applied) == curr.month,
-            Loan.date_applied >= fy_start_date
-        ).scalar()
-        
-        m_repayments = db.session.query(func.coalesce(func.sum(Loan.amount_repaid), 0.0)).filter(
-            extract('year', Loan.date_applied) == curr.year,
-            extract('month', Loan.date_applied) == curr.month,
-            Loan.date_applied >= fy_start_date
-        ).scalar()
-        
+
+        m_disbursements = (
+            db.session.query(func.coalesce(func.sum(Loan.amount_requested), 0.0))
+            .filter(
+                extract("year", Loan.date_applied) == curr.year,
+                extract("month", Loan.date_applied) == curr.month,
+                Loan.date_applied >= fy_start_date,
+            )
+            .scalar()
+        )
+
+        m_repayments = (
+            db.session.query(func.coalesce(func.sum(Loan.amount_repaid), 0.0))
+            .filter(
+                extract("year", Loan.date_applied) == curr.year,
+                extract("month", Loan.date_applied) == curr.month,
+                Loan.date_applied >= fy_start_date,
+            )
+            .scalar()
+        )
+
         fy_disbursements.append(m_disbursements)
         fy_repayments.append(m_repayments)
-        
+
         if curr.month == 12:
             curr = datetime(curr.year + 1, 1, 1)
         else:
@@ -185,24 +202,25 @@ def dashboard():
         fy_repayments=fy_repayments,
     )
 
+
 # ================= ADMIN / TREASURER ACTION ROUTES =================
 
-@finance_bp.route('/admin/record-loan', methods=['POST'])
+@finance_bp.route("/admin/record-loan", methods=["POST"])
 @login_required
 def admin_record_loan():
-    if current_user.role not in ['finance', 'treasurer', 'chair']:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized action.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     try:
-        user_id = request.form.get('user_id')
-        loan_type = request.form.get('loan_type', 'General')
-        amount_requested = float(request.form.get('amount_requested', 0))
-        status = request.form.get('status', 'Active')
+        user_id = request.form.get("user_id")
+        loan_type = request.form.get("loan_type", "General")
+        amount_requested = float(request.form.get("amount_requested", 0))
+        status = request.form.get("status", "Active")
 
-        date_applied_str = request.form.get('date_applied')
+        date_applied_str = request.form.get("date_applied")
         if date_applied_str:
-            loan_date = datetime.strptime(date_applied_str, '%Y-%m-%dT%H:%M')
+            loan_date = datetime.strptime(date_applied_str, "%Y-%m-%dT%H:%M")
         else:
             loan_date = datetime.utcnow()
 
@@ -216,33 +234,33 @@ def admin_record_loan():
             guarantor_name="Pre-Deployment Record",
             guarantor_email="N/A",
             guarantor_phone="N/A",
-            date_applied=loan_date
+            date_applied=loan_date,
         )
         db.session.add(new_loan)
         db.session.commit()
-        flash('Historical loan successfully recorded with custom issuance date.', 'success')
+        flash("Historical loan successfully recorded with custom issuance date.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error recording loan: {str(e)}', 'danger')
+        flash(f"Error recording loan: {str(e)}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
-@finance_bp.route('/admin/make-expense', methods=['POST'])
+@finance_bp.route("/admin/make-expense", methods=["POST"])
 @login_required
 def admin_make_expense():
-    if current_user.role not in ['finance', 'treasurer', 'chair']:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized action.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     try:
-        title = request.form.get('title')
-        amount = float(request.form.get('amount', 0))
-        category = request.form.get('category', 'Administrative')
-        
-        date_str = request.form.get('date_recorded')
+        title = request.form.get("title")
+        amount = float(request.form.get("amount", 0))
+        category = request.form.get("category", "Administrative")
+
+        date_str = request.form.get("date_recorded")
         if date_str:
-            date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
+            date_recorded = datetime.strptime(date_str, "%Y-%m-%d")
         else:
             date_recorded = datetime.utcnow()
 
@@ -251,33 +269,33 @@ def admin_make_expense():
             amount=amount,
             category=category,
             recorded_by=current_user.id,
-            date_recorded=date_recorded
+            date_recorded=date_recorded,
         )
         db.session.add(new_expense)
         db.session.commit()
-        flash('Operational expense logged successfully.', 'success')
+        flash("Operational expense logged successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error logging expense: {str(e)}', 'danger')
+        flash(f"Error logging expense: {str(e)}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
-@finance_bp.route('/admin/record-fine', methods=['POST'])
+@finance_bp.route("/admin/record-fine", methods=["POST"])
 @login_required
 def admin_record_fine():
-    if current_user.role not in ['finance', 'treasurer', 'chair']:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized action.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     try:
-        user_id = request.form.get('user_id')
-        fee_type = request.form.get('fee_type', 'Penalty')
-        amount = float(request.form.get('amount', 0))
-        
-        date_str = request.form.get('date_recorded')
+        user_id = request.form.get("user_id")
+        fee_type = request.form.get("fee_type", "Penalty")
+        amount = float(request.form.get("amount", 0))
+
+        date_str = request.form.get("date_recorded")
         if date_str:
-            date_recorded = datetime.strptime(date_str, '%Y-%m-%d')
+            date_recorded = datetime.strptime(date_str, "%Y-%m-%d")
         else:
             date_recorded = datetime.utcnow()
 
@@ -285,110 +303,111 @@ def admin_record_fine():
             user_id=user_id,
             fee_type=fee_type,
             amount=amount,
-            status='Unpaid',
-            date_recorded=date_recorded
+            status="Unpaid",
+            date_recorded=date_recorded,
         )
         db.session.add(new_fine)
         db.session.commit()
-        flash('Fine or fee recorded successfully.', 'success')
+        flash("Fine or fee recorded successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error recording fine: {str(e)}', 'danger')
+        flash(f"Error recording fine: {str(e)}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
-@finance_bp.route('/admin/pay-fine/<int:fine_id>', methods=['POST'])
+
+@finance_bp.route("/admin/pay-fine/<int:fine_id>", methods=["POST"])
 @login_required
 def admin_pay_fine(fine_id):
-    if current_user.role not in ['finance', 'treasurer', 'chair']:
-        flash('Unauthorized action.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized action.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     fine = FineFee.query.get_or_404(fine_id)
     try:
-        fine.status = 'Paid'
+        fine.status = "Paid"
         db.session.commit()
-        flash(f'Fine #{fine.id} marked as Paid successfully.', 'success')
+        flash(f"Fine #{fine.id} marked as Paid successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error updating fine: {str(e)}', 'danger')
+        flash(f"Error updating fine: {str(e)}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
-@finance_bp.route('/savings/edit/<int:id>', methods=['POST'])
+
+@finance_bp.route("/savings/edit/<int:id>", methods=["POST"])
 @login_required
 def edit_savings(id):
-    # Fixed the typo from is__bp to is_finance
-    if not getattr(current_user, 'is_finance', False) and getattr(current_user, 'role', None) != 'finance':
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance.dashboard')) # match your blueprint name here
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     saving = Savings.query.get_or_404(id)
-    
-    new_deposit_type = request.form.get('deposit_type')
-    new_amount = request.form.get('amount')
+    new_deposit_type = request.form.get("deposit_type")
+    new_amount = request.form.get("amount")
 
     try:
         saving.deposit_type = new_deposit_type
         saving.amount = float(new_amount)
         db.session.commit()
-        flash('Savings record updated successfully!', 'success')
+        flash("Savings record updated successfully!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error updating record: {e}', 'danger')
+        flash(f"Error updating record: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
-@finance_bp.route('/savings/delete/<int:id>', methods=['POST'])
+@finance_bp.route("/savings/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_savings(id):
-    if not getattr(current_user, 'is_finance', False) and getattr(current_user, 'role', None) != 'finance':
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance_bp.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     saving = Savings.query.get_or_404(id)
 
     try:
         db.session.delete(saving)
         db.session.commit()
-        flash('Savings record deleted successfully.', 'success')
+        flash("Savings record deleted successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting record: {e}', 'danger')
+        flash(f"Error deleting record: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
+
 
 # ================= LOAN REPAYMENT EDIT & DELETE ROUTES =================
 
-@finance_bp.route('/repayment/edit/<int:id>', methods=['POST'])
+@finance_bp.route("/repayment/edit/<int:id>", methods=["POST"])
 @login_required
 def edit_loan_repayment(id):
-    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     loan = Loan.query.get_or_404(id)
-    new_amount = request.form.get('amount_repaid')
+    new_amount = request.form.get("amount_repaid")
 
     try:
         loan.amount_repaid = float(new_amount)
         loan.check_and_update_status()
         db.session.commit()
-        flash('Loan repayment record updated successfully!', 'success')
+        flash("Loan repayment record updated successfully!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error updating repayment: {e}', 'danger')
+        flash(f"Error updating repayment: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
-@finance_bp.route('/repayment/delete/<int:id>', methods=['POST'])
+@finance_bp.route("/repayment/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_loan_repayment(id):
-    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     loan = Loan.query.get_or_404(id)
 
@@ -396,27 +415,27 @@ def delete_loan_repayment(id):
         loan.amount_repaid = 0.0
         loan.check_and_update_status()
         db.session.commit()
-        flash('Loan repayment contribution cleared successfully.', 'success')
+        flash("Loan repayment contribution cleared successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error clearing repayment: {e}', 'danger')
+        flash(f"Error clearing repayment: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
 # ================= FINES & FEES EDIT & DELETE ROUTES =================
 
-@finance_bp.route('/fine/edit/<int:id>', methods=['POST'])
+@finance_bp.route("/fine/edit/<int:id>", methods=["POST"])
 @login_required
 def edit_fine(id):
-    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     fine = FineFee.query.get_or_404(id)
-    new_fee_type = request.form.get('fee_type')
-    new_amount = request.form.get('amount')
-    new_status = request.form.get('status')
+    new_fee_type = request.form.get("fee_type")
+    new_amount = request.form.get("amount")
+    new_status = request.form.get("status")
 
     try:
         fine.fee_type = new_fee_type
@@ -424,29 +443,104 @@ def edit_fine(id):
         if new_status:
             fine.status = new_status
         db.session.commit()
-        flash('Fine or fee record updated successfully!', 'success')
+        flash("Fine or fee record updated successfully!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error updating fine/fee: {e}', 'danger')
+        flash(f"Error updating fine/fee: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
 
 
-@finance_bp.route('/fine/delete/<int:id>', methods=['POST'])
+@finance_bp.route("/fine/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_fine(id):
-    if current_user.role not in ['finance', 'treasurer', 'chair'] and not getattr(current_user, 'is_finance', False):
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('finance.dashboard'))
+    if not _can_manage_finance():
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for("finance.dashboard"))
 
     fine = FineFee.query.get_or_404(id)
 
     try:
         db.session.delete(fine)
         db.session.commit()
-        flash('Fine or fee record deleted successfully.', 'success')
+        flash("Fine or fee record deleted successfully.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting fine/fee: {e}', 'danger')
+        flash(f"Error deleting fine/fee: {e}", "danger")
 
-    return redirect(url_for('finance.dashboard'))
+    return redirect(url_for("finance.dashboard"))
+
+
+# ================= LOAN PORTFOLIO EDIT & DELETE ROUTES =================
+
+@finance_bp.route("/loans/<int:id>/edit", methods=["POST"])
+@login_required
+def edit_loan(id):
+    if not _can_manage_finance():
+        flash("Unauthorized access to loan records.", "danger")
+        return redirect(url_for("finance.dashboard"))
+
+    loan = Loan.query.get_or_404(id)
+
+    try:
+        loan_type = (request.form.get("loan_type") or loan.loan_type).strip()
+        amount_requested = float(request.form.get("amount_requested", loan.amount_requested))
+        tenure_months = int(request.form.get("tenure_months", loan.tenure_months))
+        amount_repaid = float(request.form.get("amount_repaid", loan.amount_repaid or 0.0))
+        status = (request.form.get("status") or loan.status).strip()
+
+        raw_rate = request.form.get("interest_rate")
+        if raw_rate is not None and str(raw_rate).strip() != "":
+            interest_rate = float(str(raw_rate).replace("%", "").strip())
+        else:
+            interest_rate = 7.0 if loan_type.lower() == "emergency" else 10.0
+
+        if amount_requested <= 0:
+            flash("Principal loan amount must be greater than zero.", "warning")
+            return redirect(url_for("finance.dashboard"))
+
+        if amount_repaid < 0:
+            flash("Repaid amount cannot be negative.", "warning")
+            return redirect(url_for("finance.dashboard"))
+
+        loan.loan_type = loan_type
+        loan.amount_requested = amount_requested
+        loan.tenure_months = tenure_months
+        loan.interest_rate = interest_rate
+        loan.amount_repaid = amount_repaid
+        loan.status = status
+
+        loan.check_and_update_status()
+        db.session.commit()
+        flash(f"Loan #{loan.id} updated successfully.", "success")
+    except (ValueError, TypeError):
+        db.session.rollback()
+        flash("Invalid numeric values submitted for loan update.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Could not update loan record: {str(e)}", "danger")
+
+    return redirect(url_for("finance.dashboard"))
+
+
+@finance_bp.route("/loans/<int:id>/delete", methods=["POST"])
+@login_required
+def delete_loan(id):
+    if not _can_manage_finance():
+        flash("Unauthorized access to loan records.", "danger")
+        return redirect(url_for("finance.dashboard"))
+
+    loan = Loan.query.get_or_404(id)
+
+    try:
+        borrower_label = (
+            f"{loan.user.fname} {loan.user.lname}" if loan.user else f"Loan #{loan.id}"
+        )
+        db.session.delete(loan)
+        db.session.commit()
+        flash(f"Deleted loan record #{id} ({borrower_label}).", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Could not delete loan record: {str(e)}", "danger")
+
+    return redirect(url_for("finance.dashboard"))
