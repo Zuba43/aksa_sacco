@@ -491,16 +491,19 @@
           class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 text-white flex-shrink-0 border border-white border-opacity-50"
           style="width: 46px; height: 46px"
         >
-          {% set avatar_file = current_user.passport_photo or current_user.profile_pic %}
-          {% if avatar_file %}
-          <img
-            src="{{ url_for('static', filename='uploads/kyc/' ~ avatar_file.lstrip('/')) }}"
-            alt="Profile Picture"
-            class="w-100 h-100 object-fit-cover"
-          />
-          {% else %}
-          <i class="bi bi-person-circle fs-4"></i>
-          {% endif %}
+          {% if current_user.passport_photo %}
+                <img
+                  src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
+                  alt="Profile Picture"
+                  class="w-100 h-100 object-fit-cover"
+                />
+                {% else %}
+                <span
+                  class="w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white fs-4"
+                >
+                  <i class="bi bi-person-fill"></i>
+                </span>
+                {% endif %}
         </div>
         <div>
           <div class="small text-white text-opacity-75 fw-medium">
