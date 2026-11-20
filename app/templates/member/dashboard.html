@@ -50,6 +50,141 @@ endblock %} {% block extra_head %}
     }
   }
 
+  /* Light Theme Override (Applied when body has .aksa-light-theme) */
+  body.bg-light.aksa-light-theme,
+  body.aksa-light-theme {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .aksa-dark-card,
+  body.aksa-light-theme .promo-banner-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  body.aksa-light-theme .aksa-dark-card .card-header,
+  body.aksa-light-theme .aksa-dark-card .list-group-item {
+    background-color: transparent !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .aksa-dark-card h5,
+  body.aksa-light-theme .aksa-dark-card h6,
+  body.aksa-light-theme .aksa-dark-card .text-white,
+  body.aksa-light-theme .promo-banner-card h5 {
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .promo-banner-card p.text-white,
+  body.aksa-light-theme .aksa-dark-card .text-secondary,
+  body.aksa-light-theme .aksa-dark-card small.text-secondary {
+    color: #64748b !important;
+  }
+
+  /* Inner notification & meeting-minutes cards in Light Mode */
+  body.aksa-light-theme #notif-section .rounded-4,
+  body.aksa-light-theme #minutes-section .rounded-4 {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme #notif-section .rounded-4 h6,
+  body.aksa-light-theme #minutes-section .rounded-4 h6 {
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme #notif-section .rounded-4 p,
+  body.aksa-light-theme #minutes-section .rounded-4 p {
+    color: #475569 !important;
+  }
+
+  body.aksa-light-theme #minutes-section .btn-outline-light {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+  }
+
+  body.aksa-light-theme #minutes-section .btn-outline-light:hover {
+    background-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .promo-banner-card .btn-light {
+    background-color: #5b5ce6 !important;
+    border-color: #5b5ce6 !important;
+    color: #ffffff !important;
+  }
+
+  body.aksa-light-theme .action-feature-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+  body.aksa-light-theme .action-feature-card h5 {
+    color: #0f172a !important;
+  }
+  body.aksa-light-theme .action-feature-card p {
+    color: #64748b !important;
+  }
+
+  body.aksa-light-theme .tx-row {
+    border-bottom-color: #e2e8f0 !important;
+  }
+  body.aksa-light-theme .tx-icon-circle {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .table-aksa {
+    --bs-table-bg: transparent;
+    --bs-table-color: #1e293b;
+    --bs-table-border-color: #e2e8f0;
+    --bs-table-hover-bg: #f8fafc;
+    --bs-table-hover-color: #0f172a;
+  }
+  body.aksa-light-theme .table-aksa thead th {
+    color: #64748b !important;
+    border-bottom-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .form-control-aksa {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  body.aksa-light-theme .form-control-aksa::-webkit-calendar-picker-indicator {
+    filter: none;
+  }
+
+  body.aksa-light-theme .floating-bottom-nav {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  }
+  body.aksa-light-theme .bottom-pill-btn {
+    color: #475569 !important;
+  }
+  body.aksa-light-theme .bottom-pill-btn:hover {
+    color: #0f172a !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+  }
+  body.aksa-light-theme .bottom-pill-btn.active {
+    background-color: #5b5ce6 !important;
+    color: #ffffff !important;
+  }
+
+  /* Keep hero gradient text crisp white in both modes */
+  body.aksa-light-theme .wallet-hero-card,
+  body.aksa-light-theme .wallet-hero-card h2,
+  body.aksa-light-theme .wallet-hero-card .text-white {
+    color: #ffffff !important;
+  }
+
   .hero-icon-btn {
     width: 42px;
     height: 42px;
@@ -390,20 +525,15 @@ endblock %} {% block extra_head %}
               >
                 <i class="bi bi-wallet2"></i>
               </button>
+
               <button
                 type="button"
-                class="hero-icon-btn position-relative js-switch-tab"
-                data-target-tab="tab-notifications"
-                title="Notifications"
+                class="hero-icon-btn"
+                id="themeToggleBtn"
+                aria-label="Toggle light or dark theme"
+                title="Switch Light / Dark Theme"
               >
-                <i class="bi bi-bell"></i>
-                {% if notifications and notifications|length > 0 %}
-                <span
-                  class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
-                >
-                  <span class="visually-hidden">New notifications</span>
-                </span>
-                {% endif %}
+                <i class="bi bi-sun-fill" id="themeToggleIcon"></i>
               </button>
               <a
                 href="{{ url_for('auth.logout') }}"
@@ -2539,5 +2669,50 @@ endblock %} {% block extra_head %}
     autoSelectDefaultFriday();
     renderCalendar(currentYear, currentMonth);
   });
+  // ---------------------------------------------------------
+  // 0D. Light / Dark Theme Selector (Persisted in localStorage)
+  // ---------------------------------------------------------
+  const THEME_STORAGE_KEY = "aksa_member_theme";
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const themeToggleIcon = document.getElementById("themeToggleIcon");
+
+  function applyMemberTheme(theme) {
+    const isLight = theme === "light";
+    document.body.classList.toggle("aksa-light-theme", isLight);
+
+    if (themeToggleIcon) {
+      // Show moon icon when in light mode (click to go dark), sun icon when in dark mode (click to go light)
+      themeToggleIcon.className = isLight
+        ? "bi bi-moon-stars-fill"
+        : "bi bi-sun-fill";
+    }
+    if (themeToggleBtn) {
+      themeToggleBtn.setAttribute(
+        "title",
+        isLight ? "Switch to Dark Theme" : "Switch to Light Theme",
+      );
+    }
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, isLight ? "light" : "dark");
+    } catch (err) {
+      // Ignore storage restrictions
+    }
+  }
+
+  let savedTheme = "dark";
+  try {
+    savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  } catch (err) {
+    savedTheme = "dark";
+  }
+  applyMemberTheme(savedTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", function () {
+      const currentIsLight =
+        document.body.classList.contains("aksa-light-theme");
+      applyMemberTheme(currentIsLight ? "dark" : "light");
+    });
+  }
 </script>
 {% endblock %}
