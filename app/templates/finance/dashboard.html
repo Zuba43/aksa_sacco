@@ -491,19 +491,16 @@
           class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 text-white flex-shrink-0 border border-white border-opacity-50"
           style="width: 46px; height: 46px"
         >
-          {% if current_user.passport_photo %}
-                <img
-                  src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
-                  alt="Profile Picture"
-                  class="w-100 h-100 object-fit-cover"
-                />
-                {% else %}
-                <span
-                  class="w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white fs-4"
-                >
-                  <i class="bi bi-person-fill"></i>
-                </span>
-                {% endif %}
+          {% set avatar_file = current_user.passport_photo or current_user.profile_pic %}
+          {% if avatar_file %}
+          <img
+            src="{{ url_for('static', filename='uploads/kyc/' ~ avatar_file.lstrip('/')) }}"
+            alt="Profile Picture"
+            class="w-100 h-100 object-fit-cover"
+          />
+          {% else %}
+          <i class="bi bi-person-circle fs-4"></i>
+          {% endif %}
         </div>
         <div>
           <div class="small text-white text-opacity-75 fw-medium">
@@ -1183,11 +1180,11 @@
     type="button"
     class="bottom-pill-btn"
     data-bs-toggle="modal"
-    data-bs-target="#transactionHistoryModal"
-    title="Ledger"
+    data-bs-target="#myPersonalSavingsModal"
+    title="My Savings"
   >
-    <i class="bi bi-arrow-left-right"></i>
-    <span class="nav-label">Ledger</span>
+    <i class="bi bi-journal-text"></i>
+    <span class="nav-label">My Savings</span>
   </button>
   <button
     type="button"
@@ -1271,7 +1268,7 @@
               class="btn btn-outline-primary w-100 py-3 fw-semibold"
               data-bs-dismiss="modal"
               data-bs-toggle="modal"
-              data-bs-target="#viewSavingsModal"
+              data-bs-target="#myPersonalSavingsModal"
             >
               <i class="bi bi-clock-history d-block fs-4 mb-1"></i>View Savings
             </button>
@@ -1339,7 +1336,7 @@
               data-bs-toggle="modal"
               data-bs-target="#transactionHistoryModal"
             >
-              <i class="bi bi-journal-text d-block fs-4 mb-1"></i>Ledger History
+              <i class="bi bi-journal-text d-block fs-4 mb-1"></i>SACCO Ledger
             </button>
           </div>
         </div>
@@ -1351,6 +1348,113 @@
         >
           <i class="bi bi-box-arrow-right me-1"></i>Logout
         </a>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm px-4"
+          data-bs-dismiss="modal"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Personal Savings Transactions Modal (SACCO Total + Finance Officer's Savings Rows) -->
+<div
+  class="modal fade"
+  id="myPersonalSavingsModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-dark text-white py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-journal-text me-2"></i>My Savings Transactions ({{ current_user.fname }} {{ current_user.lname }})
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body p-0">
+        {% set ns_my_sav = namespace(rows=[]) %}
+        {% for item in all_savings_transactions|default([]) %}
+          {% set s = item[0] %}
+          {% set u = item[1] %}
+          {% if u and u.id == current_user.id %}
+            {% set _ = ns_my_sav.rows.append(s) %}
+          {% endif %}
+        {% endfor %}
+
+        {# Fallback to `savings` list if `all_savings_transactions` had no matching user rows #}
+        {% if ns_my_sav.rows|length == 0 and savings|default([])|length > 0 %}
+          {% for s in savings %}
+            {% set _ = ns_my_sav.rows.append(s) %}
+          {% endfor %}
+        {% endif %}
+
+        {% if ns_my_sav.rows %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">#</th>
+                <th>Date</th>
+                <th>Deposit Type</th>
+                <th class="text-end pe-4">Amount (UGX)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in ns_my_sav.rows %}
+              <tr>
+                <td class="ps-4 text-muted small">{{ loop.index }}</td>
+                <td>
+                  {{ s.date_recorded.strftime('%d %b %Y, %H:%M') if s.date_recorded else 'N/A' }}
+                </td>
+                <td>
+                  <span class="badge bg-success bg-opacity-10 text-success">
+                    {{ s.deposit_type }}
+                  </span>
+                </td>
+                <td class="text-end pe-4 fw-semibold text-success">
+                  +{{ "{:,.2f}".format(s.amount|default(0.0)) }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light border-top border-2">
+              <tr>
+                <td colspan="3" class="ps-4 fw-bold text-uppercase text-secondary">
+                  Total SACCO Savings
+                </td>
+                <td class="text-end pe-4 fw-bold fs-5 text-primary">
+                  UGX {{ "{:,.2f}".format(total_savings|default(0.0)) }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+          <i class="bi bi-piggy-bank display-6 d-block mb-2 text-secondary"></i>
+          No personal savings transactions found yet.
+        </div>
+        {% endif %}
+      </div>
+      <div class="modal-footer bg-light justify-content-between">
+        <button
+          type="button"
+          class="btn btn-success btn-sm fw-semibold"
+          data-bs-dismiss="modal"
+          data-bs-toggle="modal"
+          data-bs-target="#saveFridayModal"
+        >
+          <i class="bi bi-plus-circle me-1"></i>Deposit Savings
+        </button>
         <button
           type="button"
           class="btn btn-secondary btn-sm px-4"
@@ -1522,7 +1626,7 @@
   </div>
 </div>
 
-<!-- Modal 2: View Savings Breakdown -->
+<!-- Modal 2: View Savings Breakdown (Personal Savings) -->
 <div class="modal fade" id="viewSavingsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow">
@@ -1538,7 +1642,21 @@
         ></button>
       </div>
       <div class="modal-body p-0">
-        {% if savings %}
+        {% set ns_vs = namespace(rows=[]) %}
+        {% for item in all_savings_transactions|default([]) %}
+          {% set s = item[0] %}
+          {% set u = item[1] %}
+          {% if u and u.id == current_user.id %}
+            {% set _ = ns_vs.rows.append(s) %}
+          {% endif %}
+        {% endfor %}
+        {% if ns_vs.rows|length == 0 and savings|default([])|length > 0 %}
+          {% for s in savings %}
+            {% set _ = ns_vs.rows.append(s) %}
+          {% endfor %}
+        {% endif %}
+
+        {% if ns_vs.rows %}
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -1550,7 +1668,7 @@
               </tr>
             </thead>
             <tbody>
-              {% for s in savings %}
+              {% for s in ns_vs.rows %}
               <tr>
                 <td class="ps-4 text-muted small">{{ loop.index }}</td>
                 <td>
@@ -1574,10 +1692,10 @@
                   colspan="3"
                   class="ps-4 fw-bold text-uppercase text-secondary"
                 >
-                  Total Accumulated Savings
+                  Total SACCO Savings
                 </td>
                 <td class="text-end pe-4 fw-bold fs-5 text-primary">
-                  UGX {{ "{:,.2f}".format(current_user_savings|default(0.0)) }}
+                  UGX {{ "{:,.2f}".format(total_savings|default(0.0)) }}
                 </td>
               </tr>
             </tfoot>
@@ -1588,7 +1706,7 @@
           <i
             class="bi bi-info-circle display-6 d-block mb-2 text-secondary"
           ></i>
-          No savings records found yet.
+          No personal savings records found yet.
         </div>
         {% endif %}
       </div>
