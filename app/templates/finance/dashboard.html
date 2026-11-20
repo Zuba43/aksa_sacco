@@ -694,142 +694,141 @@ SACCO{% endblock %} {% block extra_head %}
         </div>
 
         <!-- 2. Loans & Status Portfolio Card (Width: 6 cols on large screens) -->
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div
-              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-            >
-              <h6 class="fw-bold mb-0">
-                <i class="bi bi-cash-stack me-2 text-primary"></i>Loans Status
-                Portfolio
-              </h6>
-              <span
-                class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small"
-              >
-                {{ all_loans|length }} Total Loans
-              </span>
-            </div>
+<div class="col-lg-6">
+  <div class="card border-0 shadow-sm rounded-3 h-100">
+    <div
+      class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
+    >
+      <h6 class="fw-bold mb-0">
+        <i class="bi bi-cash-stack me-2 text-primary"></i>Loans Status
+        Portfolio
+      </h6>
+      <span
+        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small"
+      >
+        {{ all_loans|length }} Total Loans
+      </span>
+    </div>
 
-            <div class="card-body p-0">
-              <div
-                class="table-responsive"
-                style="max-height: 380px; overflow-y: auto"
-              >
-                <table
-                  class="table table-hover align-middle mb-0 text-nowrap"
-                  style="font-size: 0.875rem"
+    <div class="card-body p-0">
+      <div
+        class="table-responsive"
+        style="max-height: 380px; overflow-y: auto"
+      >
+        <table
+          class="table table-hover align-middle mb-0 text-nowrap"
+          style="font-size: 0.875rem"
+        >
+          <thead class="table-light sticky-top">
+            <tr>
+              <th class="ps-3">Borrower / Type</th>
+              <th>Status</th>
+              <th class="text-end">Total Due</th>
+              <th class="text-end">Repaid</th>
+              <th class="text-end">Balance</th>
+              {% if current_user.is_finance or current_user.role in
+              ['finance', 'treasurer', 'chair'] %}
+              <th class="text-end pe-3">Actions</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in all_loans|default([]) %}
+            <tr>
+              <td class="ps-3">
+                <div class="fw-bold text-dark">
+                  {% if loan.user %}{{ loan.user.fname }} {{
+                  loan.user.lname }}{% else %}Unknown{% endif %}
+                </div>
+                <small
+                  class="text-muted text-uppercase"
+                  style="font-size: 0.7rem"
                 >
-                  <thead class="table-light sticky-top">
-                    <tr>
-                      <th class="ps-3">Borrower / Type</th>
-                      <th>Status</th>
-                      <th class="text-end">Total Due</th>
-                      <th class="text-end">Repaid</th>
-                      <th class="text-end">Balance</th>
-                      {% if current_user.is_finance or current_user.role in
-                      ['finance', 'treasurer', 'chair'] %}
-                      <th class="text-end pe-3">Actions</th>
-                      {% endif %}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for loan in all_loans|default([]) %}
-                    <tr>
-                      <td class="ps-3">
-                        <div class="fw-bold text-dark">
-                          {% if loan.user %}{{ loan.user.fname }} {{
-                          loan.user.lname }}{% else %}Unknown{% endif %}
-                        </div>
-                        <small
-                          class="text-muted text-uppercase"
-                          style="font-size: 0.7rem"
-                        >
-                          {{ loan.loan_type }}
-                        </small>
-                      </td>
-                      <td>
-                        {% if loan.status == 'Fully Paid' %}
-                        <span
-                          class="badge bg-success bg-opacity-10 text-success"
-                          >Fully Paid</span
-                        >
-                        {% elif loan.status in ['Approved', 'Active'] %}
-                        <span
-                          class="badge bg-primary bg-opacity-10 text-primary"
-                          >Active</span
-                        >
-                        {% elif loan.status == 'Defaulted' %}
-                        <span class="badge bg-danger bg-opacity-10 text-danger"
-                          >Defaulted</span
-                        >
-                        {% else %}
-                        <span class="badge bg-warning bg-opacity-10 text-dark"
-                          >{{ loan.status }}</span
-                        >
-                        {% endif %}
-                      </td>
-                      <td class="text-end fw-semibold">
-                        UGX {{ "{:,.0f}".format(loan.total_due) }}
-                      </td>
-                      <td class="text-end text-success fw-semibold">
-                        UGX {{ "{:,.0f}".format(loan.amount_repaid or 0.0) }}
-                      </td>
-                      <td class="text-end fw-bold text-danger">
-                        UGX {{ "{:,.0f}".format(loan.balance_remaining) }}
-                      </td>
-                      {% if current_user.is_finance or current_user.role in
-                      ['finance', 'treasurer', 'chair'] %}
-                      <td class="text-end pe-3">
-                        <div class="d-inline-flex align-items-center gap-1">
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-outline-primary py-0 px-2 js-edit-loan-btn"
-                            title="Edit Loan"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editLoanModal"
-                            data-loan-id="{{ loan.id }}"
-                            data-borrower-name="{% if loan.user %}{{ loan.user.fname }} {{ loan.user.lname }}{% else %}Unknown{% endif %}"
-                            data-loan-type="{{ loan.loan_type | default('general') }}"
-                            data-status="{{ loan.status | default('Pending') }}"
-                            data-amount-requested="{{ loan.amount_requested | default(0) }}"
-                            data-interest-rate="{{ loan.interest_rate | default(10) }}"
-                            data-tenure-months="{{ loan.tenure_months | default(1) }}"
-                            data-amount-repaid="{{ loan.amount_repaid | default(0) }}"
-                          >
-                            <i class="bi bi-pencil"></i>
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-outline-danger py-0 px-2 js-delete-loan-btn"
-                            title="Delete Loan"
-                            data-bs-toggle="modal"
-                            data-bs-target="#deleteLoanModal"
-                            data-loan-id="{{ loan.id }}"
-                            data-borrower-name="{% if loan.user %}{{ loan.user.fname }} {{ loan.user.lname }}{% else %}Unknown{% endif %}"
-                            data-balance-remaining="{{ "{:,.0f}".format(loan.balance_remaining | default(0)) }}"
-                          >
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                      {% endif %}
-                    </tr>
-                    {% else %}
-                    <tr>
-                      <td
-                        colspan="{% if current_user.is_finance or current_user.role in ['finance', 'treasurer', 'chair'] %}6{% else %}5{% endif %}"
-                        class="text-center py-4 text-muted"
-                      >
-                        No loan records found.
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+                  {{ loan.loan_type }} · M{{ loan.compounding_cycles|default(1) }}
+                </small>
+              </td>
+              <td>
+                {% if loan.status == 'Fully Paid' %}
+                <span class="badge bg-success bg-opacity-10 text-success"
+                  >Fully Paid</span
+                >
+                {% elif loan.status in ['Approved', 'Active'] %}
+                <span class="badge bg-primary bg-opacity-10 text-primary"
+                  >Active</span
+                >
+                {% elif loan.status == 'Defaulted' %}
+                <span class="badge bg-danger bg-opacity-10 text-danger"
+                  >Defaulted</span
+                >
+                {% else %}
+                <span class="badge bg-warning bg-opacity-10 text-dark"
+                  >{{ loan.status }}</span
+                >
+                {% endif %}
+              </td>
+              <td class="text-end fw-semibold">
+                UGX {{ "{:,.0f}".format(loan.total_due) }}
+              </td>
+              <td class="text-end text-success fw-semibold">
+                UGX {{ "{:,.0f}".format(loan.amount_repaid or 0.0) }}
+              </td>
+              <td class="text-end fw-bold text-danger">
+                UGX {{ "{:,.0f}".format(loan.balance_remaining) }}
+              </td>
+              {% if current_user.is_finance or current_user.role in
+              ['finance', 'treasurer', 'chair'] %}
+              <td class="text-end pe-3">
+                <div class="d-inline-flex align-items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary py-0 px-2 js-edit-loan-btn"
+                    title="Edit Loan"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editLoanModal"
+                    data-loan-id="{{ loan.id }}"
+                    data-borrower-name="{% if loan.user %}{{ loan.user.fname }} {{ loan.user.lname }}{% else %}Unknown{% endif %}"
+                    data-loan-type="{{ loan.loan_type | default('general') }}"
+                    data-status="{{ loan.status | default('Pending') }}"
+                    data-amount-requested="{{ loan.amount_requested | default(0) }}"
+                    data-interest-rate="{{ loan.interest_rate | default(10) }}"
+                    data-tenure-months="{{ loan.tenure_months | default(1) }}"
+                    data-amount-repaid="{{ loan.amount_repaid | default(0) }}"
+                    data-date-applied="{{ loan.date_applied.isoformat() if loan.date_applied else '' }}"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger py-0 px-2 js-delete-loan-btn"
+                    title="Delete Loan"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteLoanModal"
+                    data-loan-id="{{ loan.id }}"
+                    data-borrower-name="{% if loan.user %}{{ loan.user.fname }} {{ loan.user.lname }}{% else %}Unknown{% endif %}"
+                    data-balance-remaining="{{ "{:,.0f}".format(loan.balance_remaining | default(0)) }}"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+              <td
+                colspan="{% if current_user.is_finance or current_user.role in ['finance', 'treasurer', 'chair'] %}6{% else %}5{% endif %}"
+                class="text-center py-4 text-muted"
+              >
+                No loan records found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
       </div>
     </main>
   </div>
@@ -2558,6 +2557,81 @@ loan.amount_repaid > 0 %}
     // 0. Loans Status Portfolio Edit & Delete Modal Handlers
     const editLoanForm = document.getElementById("editLoanForm");
     const deleteLoanForm = document.getElementById("deleteLoanForm");
+    const amountReqEl = document.getElementById("editAmountRequested");
+    const interestRateEl = document.getElementById("editInterestRate");
+    const tenureMonthsEl = document.getElementById("editTenureMonths");
+    const amountRepaidEl = document.getElementById("editAmountRepaid");
+    const statusSelectEl = document.getElementById("editLoanStatus");
+    const loanTypeSelectEl = document.getElementById("editLoanType");
+
+    let activeLoanCycles = 1;
+    let amountRepaidManuallyEdited = false;
+
+    function getCyclesFromDateApplied(isoDateStr) {
+      if (!isoDateStr) return 1;
+      const applied = new Date(isoDateStr);
+      if (Number.isNaN(applied.getTime())) return 1;
+      const diffDays = Math.max(
+        0,
+        Math.floor((Date.now() - applied.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      return Math.floor(diffDays / 30) + 1;
+    }
+
+    function computeCompoundedTotalDue() {
+      const principal = parseFloat(amountReqEl ? amountReqEl.value : 0) || 0;
+      const rate = parseFloat(interestRateEl ? interestRateEl.value : 0) || 0;
+      const factor = 1 + rate / 100;
+      return principal * Math.pow(factor, activeLoanCycles);
+    }
+
+    function autoFillRepaidFromPrincipal() {
+      if (!amountRepaidEl) return;
+      const computedDue = computeCompoundedTotalDue();
+      amountRepaidEl.value = Number.isInteger(computedDue)
+        ? computedDue.toFixed(1)
+        : computedDue.toFixed(2);
+      amountRepaidManuallyEdited = false;
+    }
+
+    if (amountReqEl) {
+      amountReqEl.addEventListener("input", function () {
+        autoFillRepaidFromPrincipal();
+      });
+    }
+
+    if (interestRateEl) {
+      interestRateEl.addEventListener("input", function () {
+        if (!amountRepaidManuallyEdited) {
+          autoFillRepaidFromPrincipal();
+        }
+      });
+    }
+
+    if (loanTypeSelectEl) {
+      loanTypeSelectEl.addEventListener("change", function () {
+        if (interestRateEl) {
+          interestRateEl.value = this.value === "emergency" ? "7.0" : "10.0";
+        }
+        if (!amountRepaidManuallyEdited) {
+          autoFillRepaidFromPrincipal();
+        }
+      });
+    }
+
+    if (statusSelectEl) {
+      statusSelectEl.addEventListener("change", function () {
+        if (this.value === "Fully Paid" && !amountRepaidManuallyEdited) {
+          autoFillRepaidFromPrincipal();
+        }
+      });
+    }
+
+    if (amountRepaidEl) {
+      amountRepaidEl.addEventListener("input", function () {
+        amountRepaidManuallyEdited = true;
+      });
+    }
 
     function normalizeLoanBaseUrl(rawBase) {
       const cleaned = (rawBase || "/finance/loans").trim().replace(/\/+$/, "");
@@ -2570,6 +2644,11 @@ loan.amount_repaid > 0 %}
         const loanId = this.getAttribute("data-loan-id");
         if (!loanId || loanId === "0") return;
 
+        amountRepaidManuallyEdited = false;
+        activeLoanCycles = getCyclesFromDateApplied(
+          this.getAttribute("data-date-applied")
+        );
+
         const idInput = document.getElementById("editLoanIdInput");
         if (idInput) idInput.value = loanId;
 
@@ -2579,7 +2658,6 @@ loan.amount_repaid > 0 %}
             this.getAttribute("data-borrower-name") || "Borrower";
         }
 
-        const loanTypeSelectEl = document.getElementById("editLoanType");
         const loanTypeVal = (
           this.getAttribute("data-loan-type") || "general"
         ).toLowerCase();
@@ -2588,27 +2666,22 @@ loan.amount_repaid > 0 %}
             loanTypeVal === "emergency" ? "emergency" : "general";
         }
 
-        const statusSelectEl = document.getElementById("editLoanStatus");
         if (statusSelectEl) {
           statusSelectEl.value = this.getAttribute("data-status") || "Pending";
         }
 
-        const amountReqEl = document.getElementById("editAmountRequested");
         if (amountReqEl) {
           amountReqEl.value = this.getAttribute("data-amount-requested") || 0;
         }
 
-        const interestRateEl = document.getElementById("editInterestRate");
         if (interestRateEl) {
           interestRateEl.value = this.getAttribute("data-interest-rate") || 10;
         }
 
-        const tenureMonthsEl = document.getElementById("editTenureMonths");
         if (tenureMonthsEl) {
           tenureMonthsEl.value = this.getAttribute("data-tenure-months") || 1;
         }
 
-        const amountRepaidEl = document.getElementById("editAmountRepaid");
         if (amountRepaidEl) {
           amountRepaidEl.value = this.getAttribute("data-amount-repaid") || 0;
         }
