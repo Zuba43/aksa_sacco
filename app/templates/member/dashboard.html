@@ -1,264 +1,313 @@
 {% extends "base.html" %} {% block title %}Member Dashboard - AKSA SACCO{%
 endblock %} {% block extra_head %}
 <style>
-  /* Sidebar Styles */
-  .sidebar {
-    background-color: #0f172a;
-    color: #cbd5e1;
+  :root {
+    --aksa-bg-dark: #090a0f;
+    --aksa-surface: #12141d;
+    --aksa-surface-2: #191c28;
+    --aksa-border: rgba(255, 255, 255, 0.08);
+    --aksa-text-muted: #94a3b8;
+    --aksa-grad-start: #5b5ce6;
+    --aksa-grad-mid: #7b6cf6;
+    --aksa-grad-end: #9d94ff;
   }
-  .sidebar .nav-link,
-  .sidebar .sidebar-btn {
-    color: #94a3b8;
-    background: transparent;
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.6rem 1rem;
-    font-weight: 500;
-    width: 100%;
-    text-align: left;
-    transition: all 0.2s ease-in-out;
-    display: flex;
+
+  /* Override base.html light background & hide top navbar for app-like bottom nav */
+  body.bg-light,
+  body {
+    background-color: var(--aksa-bg-dark) !important;
+    color: #f8fafc !important;
+    padding-bottom: 6.25rem;
+  }
+  nav.navbar.sticky-top {
+    display: none !important;
+  }
+  footer.bg-dark {
+    display: none !important;
+  }
+  #pwaInstallBtn {
+    bottom: 5.5rem !important;
+  }
+
+  /* Reference Hero Wallet Card */
+  .wallet-hero-card {
+    background: linear-gradient(
+      135deg,
+      var(--aksa-grad-start) 0%,
+      var(--aksa-grad-mid) 52%,
+      var(--aksa-grad-end) 100%
+    );
+    border-radius: 0 0 2rem 2rem;
+    padding: 1.5rem 1.35rem 1.75rem;
+    box-shadow: 0 18px 40px rgba(91, 92, 230, 0.28);
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .wallet-hero-card {
+      border-radius: 1.75rem;
+      padding: 1.75rem 2rem;
+    }
+  }
+
+  .hero-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
     text-decoration: none;
   }
-  .sidebar .nav-link:hover,
-  .sidebar .sidebar-btn:hover,
-  .sidebar .nav-link.active,
-  .sidebar .sidebar-btn.active {
+  .hero-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.32);
     color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
   }
-  .sidebar .sub-nav-link {
-    font-size: 0.875rem;
-    padding-left: 2.5rem;
-    color: #94a3b8;
+
+  .balance-toggle-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.88);
+    padding: 0.25rem 0.4rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s ease;
   }
-  .sidebar .sub-nav-link:hover {
-    color: #38bdf8;
-    background-color: rgba(255, 255, 255, 0.05);
+  .balance-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
   }
-  /* Modern Metric Card Polish */
-  .metric-card {
-    transition:
-      transform 0.2s ease-in-out,
-      box-shadow 0.2s ease-in-out;
+
+  /* 4 Quick Action Tiles */
+  .quick-action-btn {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 1.15rem;
+    padding: 0.85rem 0.5rem;
+    color: #ffffff;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+    text-decoration: none;
   }
-  .metric-card:hover {
+  .quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+  .quick-action-btn i {
+    font-size: 1.15rem;
+  }
+
+  /* Action Feature Cards (Savings & Loans Tabs) */
+  .action-feature-card {
+    background: linear-gradient(145deg, #161926 0%, #1d2133 100%);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    padding: 1.35rem;
+    color: #ffffff;
+    text-align: left;
+    width: 100%;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .action-feature-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(157, 148, 255, 0.45);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  }
+  .feature-icon-pill {
+    width: 48px;
+    height: 48px;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  /* Promo / Dividend Banner */
+  .promo-banner-card {
+    background: linear-gradient(120deg, #161824 0%, #1f2235 55%, #4c469b 135%);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .promo-wave-accent {
+    background:
+      radial-gradient(
+        circle at 85% 30%,
+        rgba(157, 148, 255, 0.35),
+        transparent 60%
+      ),
+      repeating-linear-gradient(
+        -35deg,
+        rgba(255, 255, 255, 0.05) 0px,
+        rgba(255, 255, 255, 0.05) 6px,
+        transparent 6px,
+        transparent 14px
+      );
+  }
+
+  /* Dark Cards & Feed */
+  .aksa-dark-card {
+    background-color: var(--aksa-surface);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    color: #f8fafc;
+  }
+  .aksa-dark-card .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--aksa-border);
+    color: #f8fafc;
+  }
+  .aksa-dark-card .list-group-item {
+    background-color: transparent;
+    color: #e2e8f0;
+    border-color: var(--aksa-border);
+  }
+
+  .tx-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 0.75rem;
+  }
+  .tx-row:last-child {
+    border-bottom: none;
+  }
+  .tx-icon-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--aksa-surface-2);
+    border: 1px solid var(--aksa-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  .tx-credit-icon {
+    color: #34d399;
+  }
+  .tx-debit-icon {
+    color: #f87171;
+  }
+
+  /* Dark Inputs & Tables */
+  .form-control-aksa {
+    background-color: var(--aksa-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #f8fafc;
+  }
+  .form-control-aksa:focus {
+    background-color: var(--aksa-surface-2);
+    border-color: #9d94ff;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(157, 148, 255, 0.2);
+  }
+  .form-control-aksa::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+  .table-aksa {
+    --bs-table-bg: transparent;
+    --bs-table-color: #e2e8f0;
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.04);
+    --bs-table-hover-color: #ffffff;
+  }
+  .table-aksa thead th {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Floating Bottom Pill Navigation */
+  .floating-bottom-nav {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(28, 30, 42, 0.94);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 0.38rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
+    z-index: 1030;
+    max-width: calc(100vw - 1.25rem);
+  }
+  .bottom-pill-btn {
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    border-radius: 999px;
+    padding: 0.58rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .bottom-pill-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .bottom-pill-btn .nav-label {
+    display: none;
+  }
+  .bottom-pill-btn.active {
+    background-color: #ffffff;
+    color: #11131c;
+    padding: 0.58rem 1.15rem;
+  }
+  .bottom-pill-btn.active .nav-label {
+    display: inline;
   }
 </style>
 {% endblock %} {% block content %}
-<div class="container-fluid">
-  <div class="row">
-    <!-- Collapsible Sidebar Navigation -->
-    <nav
-      class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3 shadow"
-      id="sidebarMenu"
-    >
-      <div
-        class="d-flex align-items-center gap-2 mb-4 px-2 border-bottom border-secondary border-opacity-25 pb-3"
-      >
-        <div
-          class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-primary text-white flex-shrink-0"
-          style="width: 42px; height: 42px"
-        >
-          {% if current_user.passport_photo %}
-          <img
-            src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
-            alt="Profile Picture"
-            class="w-100 h-100 object-fit-cover"
-          />
-          {% else %}
-          <i class="bi bi-person-circle fs-5"></i>
-          {% endif %}
-        </div>
-        <div>
-          <div class="fw-bold text-white small">
-            {{ current_user.fname }} {{ current_user.lname }}
-          </div>
-          <span class="badge bg-info text-dark text-uppercase small"
-            >{{ current_user.role }}</span
-          >
-        </div>
-      </div>
-
-      <!-- Executive Portal Switcher Link (if role is not just 'member') -->
-      {% if current_user.role != 'member' %}
-      <div class="mb-3 px-2">
-        <a
-          href="{{ url_for(current_user.role ~ '.dashboard') }}"
-          class="btn btn-sm btn-outline-warning w-100 fw-bold"
-        >
-          <i class="bi bi-shield-lock me-1"></i> Switch to {{
-          current_user.role|capitalize }} Desk
-        </a>
-      </div>
-      {% endif %}
-
-      <ul class="nav flex-column gap-1">
-        <!-- Dashboard Home -->
-        <li class="nav-item">
-          <a
-            class="nav-link active d-flex align-items-center gap-2"
-            href="#overview"
-          >
-            <i class="bi bi-speedometer2"></i> Overview
-          </a>
-        </li>
-
-        <!-- Collapsible 1: Savings -->
-        <li class="nav-item">
-          <a
-            class="nav-link d-flex align-items-center justify-content-between"
-            data-bs-toggle="collapse"
-            href="#savingsMenu"
-            role="button"
-          >
-            <span><i class="bi bi-piggy-bank me-2"></i>Savings</span>
-            <i class="bi bi-chevron-down small"></i>
-          </a>
-          <div class="collapse show ms-2" id="savingsMenu">
-            <ul class="nav flex-column gap-1 mt-1">
-              <li>
-                <button
-                  type="button"
-                  class="nav-link sub-nav-link text-success fw-semibold bg-transparent border-0 w-100 text-start"
-                  data-bs-toggle="modal"
-                  data-bs-target="#saveFridayModal"
-                >
-                  <i class="bi bi-plus-circle me-1"></i> Friday Savings
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  class="nav-link sub-nav-link bg-transparent border-0 w-100 text-start"
-                  data-bs-toggle="modal"
-                  data-bs-target="#viewSavingsModal"
-                >
-                  <i class="bi bi-clock-history me-1"></i> View Savings
-                </button>
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Collapsible 2: Loans -->
-        <li class="nav-item">
-          <a
-            class="nav-link d-flex align-items-center justify-content-between"
-            data-bs-toggle="collapse"
-            href="#loansMenu"
-            role="button"
-          >
-            <span><i class="bi bi-cash-stack me-2"></i>Loans</span>
-            <i class="bi bi-chevron-down small"></i>
-          </a>
-          <div class="collapse ms-2" id="loansMenu">
-            <ul class="nav flex-column gap-1 mt-1">
-              <li>
-                <button
-                  type="button"
-                  class="nav-link sub-nav-link bg-transparent border-0 w-100 text-start"
-                  data-bs-toggle="modal"
-                  data-bs-target="#applyLoanModal"
-                >
-                  <i class="bi bi-plus-circle me-1"></i> Application
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  class="nav-link sub-nav-link text-warning fw-semibold bg-transparent border-0 w-100 text-start"
-                  data-bs-toggle="modal"
-                  data-bs-target="#repayLoanModal"
-                >
-                  <i class="bi bi-arrow-return-left me-1"></i> Loan Repayment
-                </button>
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Collapsible 3: Notifications -->
-        <li class="nav-item">
-          <a
-            class="nav-link d-flex align-items-center justify-content-between"
-            data-bs-toggle="collapse"
-            href="#notifMenu"
-            role="button"
-          >
-            <span><i class="bi bi-bell me-2"></i>Notifications</span>
-            <span class="badge bg-danger rounded-pill"
-              >{{ notifications|length }}</span
-            >
-          </a>
-          <div class="collapse ms-2" id="notifMenu">
-            <ul class="nav flex-column gap-1 mt-1">
-              <li>
-                <a href="#notif-section" class="nav-link sub-nav-link">
-                  <i class="bi bi-calendar-event me-1"></i> Meetings & Reminders
-                </a>
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <li class="nav-item">
-          <button
-            type="button"
-            class="nav-link bg-transparent border-0 w-100 text-start d-flex align-items-center gap-2"
-            data-bs-toggle="modal"
-            data-bs-target="#profileModal"
-          >
-            <i class="bi bi-person-badge me-2"></i> Profile Info
-          </button>
-        </li>
-
-        <hr class="my-3 border-secondary border-opacity-25" />
-
-        <!-- Logout -->
-        <li class="nav-item">
-          <a
-            class="nav-link text-danger d-flex align-items-center gap-2"
-            href="{{ url_for('auth.logout') }}"
-          >
-            <i class="bi bi-box-arrow-right"></i> Logout
-          </a>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- Main Content Body -->
-    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-      <!-- Mobile Header Bar with Hamburger Toggle Button -->
-      <div
-        class="d-flex d-md-none justify-content-between align-items-center bg-dark text-white p-3 rounded-3 mb-4 shadow-sm"
-      >
-        <span class="fw-bold"
-          ><i class="bi bi-shield-lock me-2 text-warning"></i>AKSA Portal
-          Menu</span
-        >
-        <button
-          class="btn btn-outline-light btn-sm"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#sidebarMenu"
-          aria-controls="sidebarMenu"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <i class="bi bi-list fs-5"></i> Menu
-        </button>
-      </div>
+<div class="container-fluid px-0 px-md-3">
+  <div class="row justify-content-center g-0">
+    <!-- Full-Width Main Content Body -->
+    <main class="col-12 col-xl-9 px-0 px-md-2 pt-0 pt-md-3">
       <!-- Flash Messages Container -->
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %}
-      <div class="mb-4">
+      <div class="px-3 px-md-0 pt-3 pt-md-0 mb-3">
         {% for category, message in messages %}
         <div
-          class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm"
+          class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm rounded-3"
           role="alert"
         >
           <div class="d-flex align-items-center">
@@ -277,332 +326,796 @@ endblock %} {% block extra_head %}
         {% endfor %}
       </div>
       {% endif %} {% endwith %}
-      <!-- Top Bar Greeting Only -->
-      <div
-        class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
-      >
-        <div>
-          <h4 class="fw-bold mb-1">Welcome back, {{ current_user.fname }}!</h4>
-          <p class="text-muted small mb-0">
-            AKSA Savings & Credit Member Dashboard
-          </p>
-        </div>
-      </div>
 
-      <!-- Quick Metrics Row -->
-      <div class="row g-3 mb-4" id="overview">
-        <div class="col-md-4">
-          <div
-            class="card metric-card border-0 shadow-sm p-3 bg-primary bg-gradient text-white rounded-4"
-          >
-            <small class="text-white-50">Total Accumulated Savings</small>
-            <h3 class="fw-bold my-2">
-              UGX {{ "{:,.2f}".format(total_savings) }}
-            </h3>
-            <span class="small text-white-50"
-              ><i class="bi bi-check-circle me-1"></i>Verified Share
-              Contributions</span
-            >
-          </div>
-        </div>
-
-        <div class="col-md-4" id="projected-profits">
-          <div
-            class="card metric-card border-0 shadow-sm p-3 bg-success bg-gradient text-white rounded-4"
-          >
-            <small class="text-white-50"
-              >Est. Dividend & Projected Profits</small
-            >
-            <h3 class="fw-bold my-2">
-              UGX {{ "{:,.2f}".format(projected_profit) }}
-            </h3>
-            <span class="small text-white-50"
-              ><i class="bi bi-graph-up-arrow me-1"></i>5% Annual Estimated
-              Return</span
-            >
-          </div>
-        </div>
-      </div>
-
-      <!-- Side-by-Side Grid: Savings History (Left) & Loan Requests (Right) -->
-      <div class="row g-4 mb-4">
-        <!-- Savings History -->
-        <div class="col-lg-6" id="savings-history">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div
-              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-            >
-              <h5 class="fw-bold mb-0">
-                <i class="bi bi-piggy-bank text-primary me-2"></i>Savings
-                Transaction History
-              </h5>
-            </div>
-            <div class="card-body p-0">
-              {% if savings %}
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Amount (UGX)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for s in savings %}
-                    <tr>
-                      <td>{{ s.date_recorded.strftime('%d %b %Y') }}</td>
-                      <td>
-                        <span class="badge bg-light text-dark border"
-                          >{{ s.deposit_type }}</span
-                        >
-                      </td>
-                      <td class="fw-bold text-success">
-                        +{{ "{:,.2f}".format(s.amount) }}
-                      </td>
-                      <td>
-                        <span
-                          class="badge bg-success bg-opacity-10 text-success"
-                          ><i class="bi bi-check me-1"></i> Recorded</span
-                        >
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% else %}
-              <div class="p-4 text-center text-muted">
-                No savings records found. Use the "Friday Savings" link in your
-                sidebar to make your first contribution.
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Loan Requests, Status & Recent Transactions -->
-        <div class="col-lg-6" id="loan-history">
-          <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div
-              class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-            >
-              <h5 class="fw-bold mb-0">
-                <i class="bi bi-cash-stack text-success me-2"></i>Loans & Recent
-                Activity
-              </h5>
-            </div>
-            <div class="card-body p-0">
-              <!-- Active / Historical Loans Table -->
-              <div class="p-3 bg-light border-bottom">
-                <h6 class="fw-bold text-uppercase small text-muted mb-0">
-                  Loan Overview & Balance
-                </h6>
-              </div>
-              {% if loans %}
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 small">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Principal</th>
-                      <th>Total (+10%)</th>
-                      <th>Balance</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for l in loans %}
-                    <tr>
-                      <td>
-                        {{ l.date_applied.strftime('%d %b %Y') if l.date_applied
-                        else '-' }}
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary text-uppercase"
-                          >{{ l.loan_type | default('N/A') }}</span
-                        >
-                      </td>
-                      <td class="fw-semibold">
-                        UGX {{ "{:,.0f}".format(l.amount_requested | default(0))
-                        }}
-                      </td>
-                      <td>
-                        UGX {{ "{:,.0f}".format(l.total_due | default(0)) }}
-                      </td>
-                      <td>
-                        UGX {{ "{:,.0f}".format(l.balance_remaining |
-                        default(0)) }}
-                      </td>
-                      <td>
-                        {% if l.status == 'Approved' %}
-                        <span class="badge bg-success">Approved</span>
-                        {% elif l.status == 'Pending' %}
-                        <span class="badge bg-warning text-dark">Pending</span>
-                        {% elif l.status == 'Paid' %}
-                        <span class="badge bg-primary">Fully Paid</span>
-                        {% elif l.status == 'Defaulter' %}
-                        <span class="badge bg-danger">Defaulter</span>
-                        {% else %}
-                        <span class="badge bg-secondary"
-                          >{{ l.status | default('Unknown') }}</span
-                        >
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% else %}
-              <div class="p-3 text-center text-muted small">
-                No loan applications on record.
-              </div>
-              {% endif %}
-
-              <div class="p-3 bg-light border-top border-bottom">
-                <h6 class="fw-bold text-uppercase small text-muted mb-0">
-                  Recent 5 Transactions (Savings, Fees, Fines & Repayments)
-                </h6>
-              </div>
-              {% if recent_transactions %}
-              <div class="table-responsive">
-                <table
-                  class="table table-sm table-hover align-middle mb-0 small"
-                >
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Description</th>
-                      <th class="text-end">Amount (UGX)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for t in recent_transactions %} {% set is_positive =
-                    t.is_credit or 'saving' in t.type|lower or 'membership' in
-                    t.type|lower %}
-                    <tr>
-                      <td>
-                        {{ t.date.strftime('%d %b %Y, %H:%M') if t.date else
-                        'N/A' }}
-                      </td>
-                      <td>
-                        <span class="badge {{ t.badge }} me-1"
-                          >{{ t.type }}</span
-                        >
-                      </td>
-                      <td
-                        class="text-end fw-bold {{ 'text-success' if is_positive else 'text-danger' }}"
-                      >
-                        {{ '+' if is_positive else '-' }}{{
-                        "{:,.2f}".format(t.amount | default(0)) }}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% else %}
-              <div class="p-3 text-center text-muted small">
-                No recent transaction activity.
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Notifications & Alerts -->
-      <div class="card border-0 shadow-sm rounded-3 mb-4" id="notif-section">
-        <div
-          class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center"
-        >
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-bell text-warning me-2"></i>Notifications &
-            Reminders
-          </h5>
-          <span class="badge bg-warning text-dark"
-            >{{ notifications|length }} Messages</span
-          >
-        </div>
-        <div class="card-body p-0">
-          {% if notifications %}
-          <div class="list-group list-group-flush">
-            {% for n in notifications %}
-            <div class="list-group-item p-3">
-              <div
-                class="d-flex justify-content-between align-items-center mb-1"
+      <!-- ========================================================= -->
+      <!-- TAB 1: HOME (Overview, Balance, Quick Actions & Feed)     -->
+      <!-- ========================================================= -->
+      <div class="dashboard-tab-pane" id="tab-home">
+        <!-- HERO GRADIENT WALLET CARD -->
+        <section class="wallet-hero-card mb-4">
+          <!-- Top Header Row -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+              <button
+                type="button"
+                class="p-0 border-0 bg-transparent rounded-circle overflow-hidden flex-shrink-0"
+                style="
+                  width: 46px;
+                  height: 46px;
+                  border: 2px solid rgba(255, 255, 255, 0.45) !important;
+                "
+                data-bs-toggle="modal"
+                data-bs-target="#profileModal"
+                title="Profile Info"
               >
-                <h6 class="fw-bold mb-0 text-dark">{{ n.title }}</h6>
-                <small class="text-muted"
-                  >{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</small
+                {% if current_user.passport_photo %}
+                <img
+                  src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
+                  alt="Profile Picture"
+                  class="w-100 h-100 object-fit-cover"
+                />
+                {% else %}
+                <span
+                  class="w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white fs-4"
                 >
+                  <i class="bi bi-person-fill"></i>
+                </span>
+                {% endif %}
+              </button>
+              <div>
+                <div class="small text-white text-opacity-75">Good morning</div>
+                <div class="fw-bold fs-6 text-white">
+                  {{ current_user.fname }} {{ current_user.lname }} &#128075;
+                </div>
               </div>
-              <p class="small text-muted mb-0">{{ n.message }}</p>
             </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="p-4 text-center text-muted">
-            No notifications at this time.
-          </div>
-          {% endif %}
-        </div>
-      </div>
 
-      <!-- Section: Meeting Minutes -->
-      <div class="card border-0 shadow-sm rounded-3 mb-4" id="minutes-section">
-        <div class="card-header bg-white py-3 border-0">
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-file-earmark-text text-info me-2"></i>Published
-            Meeting Minutes
-          </h5>
-        </div>
-        <div class="card-body p-0">
-          {% if recent_minutes %}
-          <div class="list-group list-group-flush">
-            {% for m in recent_minutes %}
-            <div class="list-group-item p-3">
-              <div
-                class="d-flex justify-content-between align-items-center mb-1"
-              >
-                <h6 class="fw-bold text-primary mb-0">{{ m.title }}</h6>
-                <small class="text-muted"
-                  ><i class="bi bi-calendar3 me-1"></i>{{ m.meeting_date
-                  }}</small
-                >
-              </div>
-              <p class="small text-muted mb-2">{{ m.content }}</p>
-              {% if m.file_attachment %}
+            <div class="d-flex align-items-center gap-2">
+              {% if current_user.role != 'member' %}
               <a
-                href="{{ url_for('static', filename='uploads/minutes/' ~ m.file_attachment) }}"
-                target="_blank"
-                class="btn btn-sm btn-outline-danger"
+                href="{{ url_for(current_user.role ~ '.dashboard') }}"
+                class="btn btn-sm btn-warning rounded-pill fw-semibold px-3 d-none d-sm-inline-flex align-items-center gap-1"
+                title="Switch to {{ current_user.role|capitalize }} Desk"
               >
-                <i class="bi bi-file-earmark-pdf me-1"></i> Download Minutes
-                Document
+                <i class="bi bi-shield-lock"></i> {{
+                current_user.role|capitalize }}
               </a>
               {% endif %}
+              <button
+                type="button"
+                class="hero-icon-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#viewSavingsModal"
+                title="Savings Wallet"
+              >
+                <i class="bi bi-wallet2"></i>
+              </button>
+              <button
+                type="button"
+                class="hero-icon-btn position-relative js-switch-tab"
+                data-target-tab="tab-notifications"
+                title="Notifications"
+              >
+                <i class="bi bi-bell"></i>
+                {% if notifications and notifications|length > 0 %}
+                <span
+                  class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
+                >
+                  <span class="visually-hidden">New notifications</span>
+                </span>
+                {% endif %}
+              </button>
+              <a
+                href="{{ url_for('auth.logout') }}"
+                class="hero-icon-btn"
+                title="Logout"
+              >
+                <i class="bi bi-box-arrow-right"></i>
+              </a>
             </div>
-            {% endfor %}
+          </div>
+
+          <!-- Wallet Balance Display + Eye Toggle -->
+          <div class="mb-4">
+            <div class="small text-white text-opacity-75 mb-1">
+              Total Accumulated Savings
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <h2
+                class="fw-bold text-white mb-0 display-6"
+                id="walletBalanceText"
+              >
+                UGX {{ "{:,.2f}".format(total_savings | default(0)) }}
+              </h2>
+              <h2
+                class="fw-bold text-white mb-0 display-6 d-none"
+                id="walletBalanceMasked"
+              >
+                UGX •••••••
+              </h2>
+              <button
+                type="button"
+                class="balance-toggle-btn"
+                id="toggleBalanceBtn"
+                aria-label="Toggle balance visibility"
+                title="Show / Hide balance"
+              >
+                <i class="bi bi-eye-slash fs-5" id="toggleBalanceIcon"></i>
+              </button>
+            </div>
+            <div
+              class="small text-white text-opacity-75 mt-1"
+              id="projected-profits"
+            >
+              Est. Dividend & Projected Profits (5%):
+              <strong class="text-white"
+                >UGX {{ "{:,.2f}".format(projected_profit | default(0))
+                }}</strong
+              >
+            </div>
+          </div>
+
+          <!-- 4 Quick Action Buttons -->
+          <div class="row g-2 g-sm-3 text-center">
+            <div class="col-3">
+              <button
+                type="button"
+                class="quick-action-btn js-open-savings-modal"
+                data-period="friday"
+              >
+                <i class="bi bi-arrow-up-right"></i>
+                <span>Save</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button
+                type="button"
+                class="quick-action-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#applyLoanModal"
+              >
+                <i class="bi bi-arrow-down-left"></i>
+                <span>Loan</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button
+                type="button"
+                class="quick-action-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#repayLoanModal"
+              >
+                <i class="bi bi-plus-lg"></i>
+                <span>Repay</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button
+                type="button"
+                class="quick-action-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#profileModal"
+              >
+                <i class="bi bi-three-dots"></i>
+                <span>More</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="px-3 px-md-0">
+          <!-- Promo / Dividend Banner Card -->
+          <div class="promo-banner-card p-4 mb-4">
+            <div class="row align-items-center g-3">
+              <div class="col-sm-8 position-relative" style="z-index: 2">
+                <h5 class="fw-bold text-white mb-1">Weekly Friday Savings</h5>
+                <p class="small text-white text-opacity-75 mb-3">
+                  Earn an estimated 5% annual return and build your SACCO credit
+                  eligibility
+                </p>
+                <button
+                  type="button"
+                  class="btn btn-light rounded-pill fw-semibold px-4 py-2 text-dark small js-open-savings-modal"
+                  data-period="friday"
+                >
+                  Deposit now
+                </button>
+              </div>
+              <div class="col-sm-4 d-none d-sm-block">
+                <div
+                  class="promo-wave-accent rounded-4 h-100"
+                  style="min-height: 110px"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions Feed (Home Overview) -->
+          <div class="aksa-dark-card p-3 p-sm-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0 text-white">Transactions</h5>
+              <button
+                type="button"
+                class="btn btn-link text-decoration-none small p-0 js-switch-tab"
+                data-target-tab="tab-savings"
+                style="color: #9d94ff"
+              >
+                View all
+              </button>
+            </div>
+
+            {% if recent_transactions %}
+            <div>
+              {% for t in recent_transactions %} {% set is_positive =
+              t.is_credit or 'saving' in t.type|lower or 'membership' in
+              t.type|lower %}
+              <div class="tx-row">
+                <div class="d-flex align-items-center gap-3">
+                  <div
+                    class="tx-icon-circle {{ 'tx-credit-icon' if is_positive else 'tx-debit-icon' }}"
+                  >
+                    <i
+                      class="bi {{ 'bi-arrow-down-left' if is_positive else 'bi-arrow-up-right' }}"
+                    ></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold text-white small">{{ t.type }}</div>
+                    <div class="text-secondary" style="font-size: 0.75rem">
+                      {{ t.badge if t.badge else 'SACCO Ledger' }}
+                    </div>
+                    <div class="text-secondary" style="font-size: 0.72rem">
+                      {{ t.date.strftime('%d %b %Y, %H:%M') if t.date else 'N/A'
+                      }}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="text-end fw-bold small {{ 'text-success' if is_positive else 'text-danger' }}"
+                >
+                  {{ '+' if is_positive else '-' }}UGX {{
+                  "{:,.2f}".format(t.amount | default(0)) }}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="py-4 text-center text-secondary small">
+              No recent transaction activity.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- TAB 2: SAVINGS (Friday Card, Custom Card, Date Filter & Tx) -->
+      <!-- ========================================================= -->
+      <div
+        class="dashboard-tab-pane d-none px-3 px-md-0 pt-3 pt-md-0"
+        id="tab-savings"
+      >
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="fw-bold text-white mb-0">Savings & Deposits</h4>
+            <small class="text-secondary">
+              Total Accumulated:
+              <strong class="text-white"
+                >UGX {{ "{:,.2f}".format(total_savings | default(0)) }}</strong
+              >
+            </small>
+          </div>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-light rounded-pill px-3"
+            data-bs-toggle="modal"
+            data-bs-target="#viewSavingsModal"
+          >
+            <i class="bi bi-receipt me-1"></i> Statement
+          </button>
+        </div>
+
+        <!-- Two Action Cards: Friday Savings & Custom Savings -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <button
+              type="button"
+              class="action-feature-card js-open-savings-modal"
+              data-period="friday"
+            >
+              <div
+                class="d-flex align-items-start justify-content-between mb-3"
+              >
+                <div
+                  class="feature-icon-pill bg-success bg-opacity-25 text-success"
+                >
+                  <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <span
+                  class="badge rounded-pill bg-success bg-opacity-25 text-success px-3 py-2"
+                >
+                  Weekly
+                </span>
+              </div>
+              <h5 class="fw-bold text-white mb-1">Friday Savings</h5>
+              <p class="small text-secondary mb-0">
+                Make your weekly Friday share deposit (UGX 2,000 – UGX 25,000).
+              </p>
+            </button>
+          </div>
+
+          <div class="col-md-6">
+            <button
+              type="button"
+              class="action-feature-card js-open-savings-modal"
+              data-period="custom"
+            >
+              <div
+                class="d-flex align-items-start justify-content-between mb-3"
+              >
+                <div
+                  class="feature-icon-pill"
+                  style="background: rgba(157, 148, 255, 0.2); color: #9d94ff"
+                >
+                  <i class="bi bi-calendar2-range-fill"></i>
+                </div>
+                <span
+                  class="badge rounded-pill px-3 py-2"
+                  style="background: rgba(157, 148, 255, 0.2); color: #c4b5fd"
+                >
+                  Multi-Month
+                </span>
+              </div>
+              <h5 class="fw-bold text-white mb-1">Custom Savings</h5>
+              <p class="small text-secondary mb-0">
+                Select one or more months to pay ahead for multiple Fridays at
+                once.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Savings Transactions + Date Range Filter -->
+        <div class="aksa-dark-card p-3 p-sm-4 mb-4">
+          <div
+            class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3 pb-3 border-bottom border-secondary border-opacity-25"
+          >
+            <div>
+              <h5 class="fw-bold text-white mb-1">
+                Recent Savings Transactions
+              </h5>
+              <small class="text-secondary" id="savingsFilterCount">
+                Showing all recorded deposits
+              </small>
+            </div>
+
+            <!-- Date Range Filter Controls -->
+            <div class="d-flex flex-wrap align-items-end gap-2">
+              <div>
+                <label
+                  for="savingsDateFrom"
+                  class="form-label small text-secondary mb-1"
+                  >From</label
+                >
+                <input
+                  type="date"
+                  id="savingsDateFrom"
+                  class="form-control form-control-sm form-control-aksa"
+                />
+              </div>
+              <div>
+                <label
+                  for="savingsDateTo"
+                  class="form-label small text-secondary mb-1"
+                  >To</label
+                >
+                <input
+                  type="date"
+                  id="savingsDateTo"
+                  class="form-control form-control-sm form-control-aksa"
+                />
+              </div>
+              <button
+                type="button"
+                id="resetSavingsFilterBtn"
+                class="btn btn-sm btn-outline-secondary"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          {% if savings %}
+          <div class="table-responsive">
+            <table
+              class="table table-aksa table-hover align-middle mb-0 small"
+              id="savingsHistoryTable"
+            >
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Deposit Type</th>
+                  <th>Amount (UGX)</th>
+                  <th class="text-end">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in savings %}
+                <tr
+                  class="savings-tx-row"
+                  data-tx-date="{{ s.date_recorded.strftime('%Y-%m-%d') if s.date_recorded else '' }}"
+                >
+                  <td>
+                    {{ s.date_recorded.strftime('%d %b %Y') if s.date_recorded
+                    else '-' }}
+                  </td>
+                  <td>
+                    <span
+                      class="badge bg-dark border border-secondary text-light"
+                    >
+                      {{ s.deposit_type | default('Deposit') }}
+                    </span>
+                  </td>
+                  <td class="fw-bold text-success">
+                    +{{ "{:,.2f}".format(s.amount | default(0)) }}
+                  </td>
+                  <td class="text-end">
+                    <span class="badge bg-success bg-opacity-25 text-success">
+                      <i class="bi bi-check me-1"></i>Recorded
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div
+            class="py-4 text-center text-secondary small d-none"
+            id="noFilteredSavingsMsg"
+          >
+            No savings transactions match the selected date range.
           </div>
           {% else %}
-          <div class="p-4 text-center text-muted">
-            No meeting minutes published yet.
+          <div class="py-4 text-center text-secondary small">
+            No savings records found yet. Tap <strong>Friday Savings</strong> or
+            <strong>Custom Savings</strong> above to make your first
+            contribution.
           </div>
           {% endif %}
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- TAB 3: LOANS (Application Card, Repayment Card & Loans)   -->
+      <!-- ========================================================= -->
+      <div
+        class="dashboard-tab-pane d-none px-3 px-md-0 pt-3 pt-md-0"
+        id="tab-loans"
+      >
+        <div class="mb-3">
+          <h4 class="fw-bold text-white mb-0">Credit & Loans</h4>
+          <small class="text-secondary">
+            Apply for General or Emergency credit and track active loan balances
+          </small>
+        </div>
+
+        <!-- Two Action Cards: Loan Application & Loan Repayment -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <button
+              type="button"
+              class="action-feature-card"
+              data-bs-toggle="modal"
+              data-bs-target="#applyLoanModal"
+            >
+              <div
+                class="d-flex align-items-start justify-content-between mb-3"
+              >
+                <div
+                  class="feature-icon-pill bg-primary bg-opacity-25 text-info"
+                >
+                  <i class="bi bi-file-earmark-plus-fill"></i>
+                </div>
+                <span
+                  class="badge rounded-pill bg-primary bg-opacity-25 text-info px-3 py-2"
+                >
+                  7% – 10% Interest
+                </span>
+              </div>
+              <h5 class="fw-bold text-white mb-1">Loan Application</h5>
+              <p class="small text-secondary mb-0">
+                Request a General (10%) or Emergency (7%) loan with guarantor
+                details.
+              </p>
+            </button>
+          </div>
+
+          <div class="col-md-6">
+            <button
+              type="button"
+              class="action-feature-card"
+              data-bs-toggle="modal"
+              data-bs-target="#repayLoanModal"
+            >
+              <div
+                class="d-flex align-items-start justify-content-between mb-3"
+              >
+                <div
+                  class="feature-icon-pill bg-warning bg-opacity-25 text-warning"
+                >
+                  <i class="bi bi-arrow-return-left"></i>
+                </div>
+                <span
+                  class="badge rounded-pill bg-warning bg-opacity-25 text-warning px-3 py-2"
+                >
+                  Installment
+                </span>
+              </div>
+              <h5 class="fw-bold text-white mb-1">Loan Repayment</h5>
+              <p class="small text-secondary mb-0">
+                Post a repayment installment toward any active or approved loan
+                balance.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Loans Overview & Balance -->
+        <div class="aksa-dark-card mb-4">
+          <div
+            class="card-header py-3 px-4 d-flex justify-content-between align-items-center"
+          >
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-cash-stack text-success me-2"></i>Recent Loans &
+              Balances
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            {% if loans %}
+            <div class="table-responsive">
+              <table
+                class="table table-aksa table-hover align-middle mb-0 small"
+              >
+                <thead>
+                  <tr>
+                    <th class="ps-4">Date</th>
+                    <th>Type</th>
+                    <th>Principal</th>
+                    <th>Total Due</th>
+                    <th>Balance</th>
+                    <th class="pe-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for l in loans %}
+                  <tr>
+                    <td class="ps-4">
+                      {{ l.date_applied.strftime('%d %b %Y') if l.date_applied
+                      else '-' }}
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary text-uppercase"
+                        >{{ l.loan_type | default('N/A') }}</span
+                      >
+                    </td>
+                    <td class="fw-semibold">
+                      UGX {{ "{:,.0f}".format(l.amount_requested | default(0))
+                      }}
+                    </td>
+                    <td>
+                      UGX {{ "{:,.0f}".format(l.total_due | default(0)) }}
+                    </td>
+                    <td class="fw-bold text-white">
+                      UGX {{ "{:,.0f}".format(l.balance_remaining | default(0))
+                      }}
+                    </td>
+                    <td class="pe-4">
+                      {% if l.status == 'Approved' %}
+                      <span class="badge bg-success">Approved</span>
+                      {% elif l.status == 'Pending' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                      {% elif l.status == 'Paid' %}
+                      <span class="badge bg-primary">Fully Paid</span>
+                      {% elif l.status == 'Defaulter' %}
+                      <span class="badge bg-danger">Defaulter</span>
+                      {% else %}
+                      <span class="badge bg-secondary"
+                        >{{ l.status | default('Unknown') }}</span
+                      >
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-secondary small">
+              No loan applications on record. Tap
+              <strong>Loan Application</strong> above to apply.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- TAB 4: NOTIFICATIONS (Reminders, Events & Meeting Minutes)-->
+      <!-- ========================================================= -->
+      <div
+        class="dashboard-tab-pane d-none px-3 px-md-0 pt-3 pt-md-0"
+        id="tab-notifications"
+      >
+        <div class="mb-3">
+          <h4 class="fw-bold text-white mb-0">Notifications & Updates</h4>
+          <small class="text-secondary">
+            SACCO reminders, upcoming events, and published meeting minutes
+          </small>
+        </div>
+
+        <!-- Reminders & Events Cards -->
+        <div class="aksa-dark-card mb-4" id="notif-section">
+          <div
+            class="card-header py-3 px-4 d-flex justify-content-between align-items-center"
+          >
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-bell-fill text-warning me-2"></i>Reminders &
+              Events
+            </h5>
+            <span class="badge bg-warning text-dark"
+              >{{ notifications|length }} Messages</span
+            >
+          </div>
+          <div class="card-body p-3">
+            {% if notifications %}
+            <div class="row g-3">
+              {% for n in notifications %}
+              <div class="col-md-6">
+                <div
+                  class="p-3 rounded-4 h-100"
+                  style="
+                    background: var(--aksa-surface-2);
+                    border: 1px solid var(--aksa-border);
+                  "
+                >
+                  <div
+                    class="d-flex justify-content-between align-items-start gap-2 mb-2"
+                  >
+                    <span class="badge bg-warning bg-opacity-25 text-warning">
+                      <i class="bi bi-calendar-event me-1"></i>Reminder / Event
+                    </span>
+                    <small class="text-secondary" style="font-size: 0.75rem">
+                      {{ n.created_at.strftime('%d %b %Y, %H:%M') }}
+                    </small>
+                  </div>
+                  <h6 class="fw-bold text-white mb-1">{{ n.title }}</h6>
+                  <p class="small text-secondary mb-0">{{ n.message }}</p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-secondary small">
+              No reminders or events posted at this time.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Published Meeting Minutes Cards -->
+        <div class="aksa-dark-card mb-4" id="minutes-section">
+          <div
+            class="card-header py-3 px-4 d-flex justify-content-between align-items-center"
+          >
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-file-earmark-text-fill text-info me-2"></i>Meeting
+              Minutes
+            </h5>
+            <span class="badge bg-info text-dark"
+              >{{ recent_minutes|length if recent_minutes else 0 }}
+              Published</span
+            >
+          </div>
+          <div class="card-body p-3">
+            {% if recent_minutes %}
+            <div class="row g-3">
+              {% for m in recent_minutes %}
+              <div class="col-md-6">
+                <div
+                  class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between"
+                  style="
+                    background: var(--aksa-surface-2);
+                    border: 1px solid var(--aksa-border);
+                  "
+                >
+                  <div>
+                    <div
+                      class="d-flex justify-content-between align-items-center mb-2"
+                    >
+                      <span
+                        class="badge"
+                        style="
+                          background: rgba(157, 148, 255, 0.2);
+                          color: #c4b5fd;
+                        "
+                      >
+                        Minutes
+                      </span>
+                      <small class="text-secondary">
+                        <i class="bi bi-calendar3 me-1"></i>{{ m.meeting_date }}
+                      </small>
+                    </div>
+                    <h6 class="fw-bold text-white mb-1">{{ m.title }}</h6>
+                    <p class="small text-secondary mb-3">{{ m.content }}</p>
+                  </div>
+                  {% if m.file_attachment %}
+                  <div>
+                    <a
+                      href="{{ url_for('static', filename='uploads/minutes/' ~ m.file_attachment) }}"
+                      target="_blank"
+                      class="btn btn-sm btn-outline-light rounded-pill px-3"
+                    >
+                      <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                      Download Minutes
+                    </a>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-secondary small">
+              No meeting minutes published yet.
+            </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </main>
   </div>
 </div>
 
+<!-- ========================================================= -->
+<!-- FLOATING BOTTOM PILL NAVIGATION (4 TABS)                  -->
+<!-- ========================================================= -->
+<nav class="floating-bottom-nav" aria-label="Member bottom navigation">
+  <button type="button" class="bottom-pill-btn active" data-tab="tab-home">
+    <i class="bi bi-house-door-fill"></i>
+    <span class="nav-label">Home</span>
+  </button>
+
+  <button type="button" class="bottom-pill-btn" data-tab="tab-savings">
+    <i class="bi bi-piggy-bank-fill"></i>
+    <span class="nav-label">Savings</span>
+  </button>
+
+  <button type="button" class="bottom-pill-btn" data-tab="tab-loans">
+    <i class="bi bi-cash-stack"></i>
+    <span class="nav-label">Loans</span>
+  </button>
+
+  <button
+    type="button"
+    class="bottom-pill-btn position-relative"
+    data-tab="tab-notifications"
+  >
+    <i class="bi bi-bell-fill"></i>
+    <span class="nav-label">Notifications</span>
+    {% if notifications and notifications|length > 0 %}
+    <span
+      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+      style="font-size: 0.65rem"
+    >
+      {{ notifications|length }}
+    </span>
+    {% endif %}
+  </button>
+</nav>
+
 <!-- Modal: Flexible Savings Modal (ID FIXED to #saveFridayModal) -->
 <div class="modal fade" id="saveFridayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 shadow text-dark">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title fw-bold" id="savingsModalTitle">
           <i class="bi bi-piggy-bank me-2"></i>Make a Deposit
@@ -640,7 +1153,6 @@ endblock %} {% block extra_head %}
           <div class="mb-3" id="fridayCalendarContainer">
             <label class="form-label fw-semibold">Select Friday Date</label>
 
-            <!-- Hidden input that submits the selected Friday (YYYY-MM-DD) to Flask -->
             <input
               type="hidden"
               name="friday_date"
@@ -649,7 +1161,6 @@ endblock %} {% block extra_head %}
             />
 
             <div class="border rounded p-3 bg-light">
-              <!-- Month Navigation Header -->
               <div
                 class="d-flex justify-content-between align-items-center mb-2"
               >
@@ -670,7 +1181,6 @@ endblock %} {% block extra_head %}
                 </button>
               </div>
 
-              <!-- Calendar Grid -->
               <div class="table-responsive">
                 <table class="table table-borderless table-sm text-center mb-0">
                   <thead>
@@ -684,13 +1194,10 @@ endblock %} {% block extra_head %}
                       <th>Sat</th>
                     </tr>
                   </thead>
-                  <tbody id="calendarGridBody">
-                    <!-- Populated dynamically via JS -->
-                  </tbody>
+                  <tbody id="calendarGridBody"></tbody>
                 </table>
               </div>
 
-              <!-- Selected Date Feedback -->
               <div
                 class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center small"
               >
@@ -781,7 +1288,7 @@ endblock %} {% block extra_head %}
   aria-hidden="true"
 >
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 shadow text-dark">
       <div class="modal-header bg-primary text-white py-3">
         <h5 class="modal-title fw-bold" id="viewSavingsModalLabel">
           <i class="bi bi-piggy-bank me-2"></i>My Savings Transaction History
@@ -873,7 +1380,7 @@ endblock %} {% block extra_head %}
   aria-hidden="true"
 >
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 shadow text-dark">
       <div class="modal-header bg-primary text-white py-3">
         <h5 class="modal-title fw-bold" id="applyLoanModalLabel">
           <i class="bi bi-cash-stack me-2"></i>Apply for SACCO Credit
@@ -1054,7 +1561,7 @@ endblock %} {% block extra_head %}
 <!-- Modal 4: Loan Repayment Modal -->
 <div class="modal fade" id="repayLoanModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 shadow text-dark">
       <div class="modal-header bg-warning text-dark">
         <h5 class="modal-title fw-bold">
           <i class="bi bi-arrow-return-left me-2"></i>Repay Active Loan
@@ -1142,7 +1649,7 @@ endblock %} {% block extra_head %}
   <div
     class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
   >
-    <div class="modal-content border-0 shadow-lg">
+    <div class="modal-content border-0 shadow-lg text-dark">
       <div class="modal-header bg-dark text-white">
         <h5 class="modal-title fw-bold" id="profileModalLabel">
           <i class="bi bi-person-badge me-2"></i> User Profile Details
@@ -1325,7 +1832,6 @@ endblock %} {% block extra_head %}
           </div>
 
           <div class="card-body">
-            <!-- Current Status & Preview Links (Pointing to uploads/kyc/) -->
             <div class="row g-3 align-items-center">
               <div class="col-md-4">
                 <small class="text-muted d-block">Is Outsider?</small>
@@ -1365,7 +1871,6 @@ endblock %} {% block extra_head %}
               </div>
             </div>
 
-            <!-- Collapsible Upload Form -->
             <div class="collapse mt-3 pt-3 border-top" id="editKycDocsCollapse">
               <form
                 method="POST"
@@ -1455,7 +1960,7 @@ endblock %} {% block extra_head %}
   tabindex="-1"
 >
   <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content border-0 shadow text-center p-4">
+    <div class="modal-content border-0 shadow text-center p-4 text-dark">
       <div
         class="spinner-border text-success mx-auto mb-3"
         style="width: 3rem; height: 3rem"
@@ -1472,11 +1977,140 @@ endblock %} {% block extra_head %}
     </div>
   </div>
 </div>
-
 {% endblock %} {% block extra_scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // ---------------------------------------------------------
+    // 0A. Bottom Pill Navigation Tab Switching
+    // ---------------------------------------------------------
+    const bottomNavButtons = document.querySelectorAll(
+      ".bottom-pill-btn[data-tab]",
+    );
+    const tabPanes = document.querySelectorAll(".dashboard-tab-pane");
+
+    function activateTab(tabId) {
+      tabPanes.forEach((pane) => {
+        if (pane.id === tabId) {
+          pane.classList.remove("d-none");
+        } else {
+          pane.classList.add("d-none");
+        }
+      });
+
+      bottomNavButtons.forEach((btn) => {
+        if (btn.getAttribute("data-tab") === tabId) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    bottomNavButtons.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const targetTab = this.getAttribute("data-tab");
+        if (targetTab) activateTab(targetTab);
+      });
+    });
+
+    document.querySelectorAll(".js-switch-tab").forEach((el) => {
+      el.addEventListener("click", function () {
+        const targetTab = this.getAttribute("data-target-tab");
+        if (targetTab) activateTab(targetTab);
+      });
+    });
+
+    // ---------------------------------------------------------
+    // 0B. Balance Visibility Eye Toggle
+    // ---------------------------------------------------------
+    const toggleBalanceBtn = document.getElementById("toggleBalanceBtn");
+    const walletBalanceText = document.getElementById("walletBalanceText");
+    const walletBalanceMasked = document.getElementById("walletBalanceMasked");
+    const toggleBalanceIcon = document.getElementById("toggleBalanceIcon");
+
+    if (toggleBalanceBtn && walletBalanceText && walletBalanceMasked) {
+      toggleBalanceBtn.addEventListener("click", function () {
+        const isHidden = !walletBalanceMasked.classList.contains("d-none");
+        if (isHidden) {
+          walletBalanceMasked.classList.add("d-none");
+          walletBalanceText.classList.remove("d-none");
+          if (toggleBalanceIcon)
+            toggleBalanceIcon.className = "bi bi-eye-slash fs-5";
+        } else {
+          walletBalanceText.classList.add("d-none");
+          walletBalanceMasked.classList.remove("d-none");
+          if (toggleBalanceIcon) toggleBalanceIcon.className = "bi bi-eye fs-5";
+        }
+      });
+    }
+
+    // ---------------------------------------------------------
+    // 0C. Savings Date Range Filter
+    // ---------------------------------------------------------
+    const savingsDateFrom = document.getElementById("savingsDateFrom");
+    const savingsDateTo = document.getElementById("savingsDateTo");
+    const resetSavingsFilterBtn = document.getElementById(
+      "resetSavingsFilterBtn",
+    );
+    const savingsRows = document.querySelectorAll(".savings-tx-row");
+    const noFilteredSavingsMsg = document.getElementById(
+      "noFilteredSavingsMsg",
+    );
+    const savingsFilterCount = document.getElementById("savingsFilterCount");
+
+    function filterSavingsByDate() {
+      if (!savingsRows.length) return;
+      const fromVal = savingsDateFrom ? savingsDateFrom.value : "";
+      const toVal = savingsDateTo ? savingsDateTo.value : "";
+      let visibleCount = 0;
+
+      savingsRows.forEach((row) => {
+        const rowDate = row.getAttribute("data-tx-date") || "";
+        let show = true;
+        if (fromVal && rowDate && rowDate < fromVal) show = false;
+        if (toVal && rowDate && rowDate > toVal) show = false;
+
+        if (show) {
+          row.classList.remove("d-none");
+          visibleCount++;
+        } else {
+          row.classList.add("d-none");
+        }
+      });
+
+      if (noFilteredSavingsMsg) {
+        if (visibleCount === 0) {
+          noFilteredSavingsMsg.classList.remove("d-none");
+        } else {
+          noFilteredSavingsMsg.classList.add("d-none");
+        }
+      }
+
+      if (savingsFilterCount) {
+        savingsFilterCount.textContent =
+          fromVal || toVal
+            ? `Showing ${visibleCount} matching deposit(s)`
+            : "Showing all recorded deposits";
+      }
+    }
+
+    if (savingsDateFrom)
+      savingsDateFrom.addEventListener("change", filterSavingsByDate);
+    if (savingsDateTo)
+      savingsDateTo.addEventListener("change", filterSavingsByDate);
+    if (resetSavingsFilterBtn) {
+      resetSavingsFilterBtn.addEventListener("click", function () {
+        if (savingsDateFrom) savingsDateFrom.value = "";
+        if (savingsDateTo) savingsDateTo.value = "";
+        filterSavingsByDate();
+      });
+    }
+
+    // ---------------------------------------------------------
     // 1. Dynamic Interest Rate calculation for Loan Application modal
+    // ---------------------------------------------------------
     const loanTypeSelect = document.getElementById("loanTypeSelect");
     const interestRateInput = document.getElementById("interestRateInput");
     const emergencyDisclaimer = document.getElementById("emergencyDisclaimer");
@@ -1510,7 +2144,9 @@ endblock %} {% block extra_head %}
       updateLoanRules();
     }
 
+    // ---------------------------------------------------------
     // 2. Flexible Savings Modal Elements & Logic
+    // ---------------------------------------------------------
     const savingPeriod = document.getElementById("savingPeriod");
     const fridayContainer = document.getElementById("fridayCalendarContainer");
     const customContainer = document.getElementById("customMonthsContainer");
@@ -1663,6 +2299,23 @@ endblock %} {% block extra_head %}
       });
     }
 
+    // Open Savings Modal directly into Friday or Custom mode from cards
+    document.querySelectorAll(".js-open-savings-modal").forEach((trigger) => {
+      trigger.addEventListener("click", function () {
+        const mode = this.getAttribute("data-period") || "friday";
+        if (savingPeriod) {
+          savingPeriod.value = mode;
+          savingPeriod.dispatchEvent(new Event("change"));
+        }
+        if (saveFridayModal) {
+          const modalInstance =
+            bootstrap.Modal.getInstance(saveFridayModal) ||
+            new bootstrap.Modal(saveFridayModal);
+          modalInstance.show();
+        }
+      });
+    });
+
     // Calendar Picker State
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
@@ -1731,7 +2384,7 @@ endblock %} {% block extra_head %}
           if (selectedFridayDisplay)
             selectedFridayDisplay.textContent = selectedDateStr;
           if (fridayError) fridayError.classList.add("d-none");
-          renderCalendar(currentMonth, currentYear);
+          renderCalendar(currentYear, currentMonth);
         });
       });
     }
@@ -1743,7 +2396,7 @@ endblock %} {% block extra_head %}
           currentMonth = 11;
           currentYear--;
         }
-        renderCalendar(currentMonth, currentYear);
+        renderCalendar(currentYear, currentMonth);
       });
 
       nextMonthBtn.addEventListener("click", function () {
@@ -1752,7 +2405,7 @@ endblock %} {% block extra_head %}
           currentMonth = 0;
           currentYear++;
         }
-        renderCalendar(currentMonth, currentYear);
+        renderCalendar(currentYear, currentMonth);
       });
     }
 
@@ -1764,7 +2417,9 @@ endblock %} {% block extra_head %}
       });
     }
 
+    // ---------------------------------------------------------
     // 3. Savings Deposit Form Anti-Double-Submission Protection
+    // ---------------------------------------------------------
     const submitDepositBtn = document.getElementById("submitDepositBtn");
     if (saveFridayForm) {
       saveFridayForm.addEventListener("submit", function (e) {
@@ -1810,7 +2465,9 @@ endblock %} {% block extra_head %}
       });
     }
 
+    // ---------------------------------------------------------
     // 4. Loan Repayment Form Anti-Double-Submission Protection
+    // ---------------------------------------------------------
     const repayLoanForm = document.getElementById("repayLoanForm");
     const submitRepayBtn = document.getElementById("submitRepayBtn");
 
@@ -1836,27 +2493,6 @@ endblock %} {% block extra_head %}
           document.getElementById("processingModal"),
         );
         processingModal.show();
-      });
-    }
-
-    // 5. Mobile Menu Auto-close
-    const sidebarMenu = document.getElementById("sidebarMenu");
-    if (sidebarMenu) {
-      const sidebarLinks = sidebarMenu.querySelectorAll(
-        ".nav-link:not([data-bs-toggle='collapse'])",
-      );
-      sidebarLinks.forEach(function (link) {
-        link.addEventListener("click", function () {
-          if (
-            window.innerWidth < 768 &&
-            sidebarMenu.classList.contains("show")
-          ) {
-            const bsCollapse =
-              bootstrap.Collapse.getInstance(sidebarMenu) ||
-              new bootstrap.Collapse(sidebarMenu);
-            bsCollapse.hide();
-          }
-        });
       });
     }
 
@@ -1897,11 +2533,11 @@ endblock %} {% block extra_head %}
         });
       }
       if (fridayError) fridayError.classList.add("d-none");
-      renderCalendar(currentMonth, currentYear);
+      renderCalendar(currentYear, currentMonth);
     }
 
     autoSelectDefaultFriday();
-    renderCalendar(currentMonth, currentYear);
+    renderCalendar(currentYear, currentMonth);
   });
 </script>
 {% endblock %}
