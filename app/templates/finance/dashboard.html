@@ -158,9 +158,10 @@
             class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 text-white flex-shrink-0 border border-white border-opacity-50"
             style="width: 48px; height: 48px"
           >
-            {% if current_user.passport_photo %}
+            {% set avatar_file = current_user.passport_photo or current_user.profile_pic %}
+            {% if avatar_file %}
             <img
-              src="{{ url_for('static', filename='uploads/kyc/' ~ current_user.passport_photo) }}"
+              src="{{ url_for('static', filename='uploads/kyc/' ~ avatar_file.lstrip('/')) }}"
               alt="Profile Picture"
               class="w-100 h-100 object-fit-cover"
             />
