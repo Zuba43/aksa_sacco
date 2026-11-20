@@ -4,108 +4,442 @@
 {% block extra_head %}
 <style>
   :root {
-    --fintech-bg: #f8fafc;
-    --fintech-surface: #ffffff;
-    --fintech-border: rgba(15, 23, 42, 0.08);
-    --fintech-text: #0f172a;
-    --fintech-muted: #64748b;
-    --fintech-dock-bg: rgba(15, 23, 42, 0.92);
+    --aksa-bg-dark: #090a0f;
+    --aksa-surface: #12141d;
+    --aksa-surface-2: #191c28;
+    --aksa-border: rgba(255, 255, 255, 0.08);
+    --aksa-text-muted: #94a3b8;
+    --aksa-grad-start: #5b5ce6;
+    --aksa-grad-mid: #7b6cf6;
+    --aksa-grad-end: #9d94ff;
   }
 
-  body.fintech-body {
-    background-color: var(--fintech-bg);
-    color: var(--fintech-text);
+  /* Override base.html light background & hide top navbar for app-like bottom nav */
+  body.bg-light,
+  body {
+    background-color: var(--aksa-bg-dark) !important;
+    color: #f8fafc !important;
     padding-bottom: 6.25rem;
   }
-
-  .fintech-hero {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 48%, #38bdf8 100%);
-    border-radius: 1.5rem;
-    color: #ffffff;
-    box-shadow: 0 14px 32px rgba(79, 70, 229, 0.22);
+  nav.navbar.sticky-top {
+    display: none !important;
+  }
+  footer.bg-dark {
+    display: none !important;
+  }
+  #pwaInstallBtn {
+    bottom: 5.5rem !important;
   }
 
-  .fintech-pill-btn {
-    background: rgba(255, 255, 255, 0.16);
+  /* Reference Hero Wallet Card */
+  .wallet-hero-card {
+    background: linear-gradient(
+      135deg,
+      var(--aksa-grad-start) 0%,
+      var(--aksa-grad-mid) 52%,
+      var(--aksa-grad-end) 100%
+    );
+    border-radius: 0 0 2rem 2rem;
+    padding: 1.5rem 1.35rem 1.75rem;
+    box-shadow: 0 18px 40px rgba(91, 92, 230, 0.28);
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 768px) {
+    .wallet-hero-card {
+      border-radius: 1.75rem;
+      padding: 1.75rem 2rem;
+    }
+  }
+
+  /* Light Theme Override (Applied when body has .aksa-light-theme) */
+  body.bg-light.aksa-light-theme,
+  body.aksa-light-theme {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .aksa-dark-card,
+  body.aksa-light-theme .promo-banner-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  body.aksa-light-theme .aksa-dark-card .card-header,
+  body.aksa-light-theme .aksa-dark-card .list-group-item {
+    background-color: transparent !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .aksa-dark-card h5,
+  body.aksa-light-theme .aksa-dark-card h6,
+  body.aksa-light-theme .aksa-dark-card .text-white,
+  body.aksa-light-theme .promo-banner-card h5 {
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme .promo-banner-card p.text-white,
+  body.aksa-light-theme .aksa-dark-card .text-secondary,
+  body.aksa-light-theme .aksa-dark-card small.text-secondary {
+    color: #64748b !important;
+  }
+
+  /* Inner notification & meeting-minutes cards in Light Mode */
+  body.aksa-light-theme #notif-section .rounded-4,
+  body.aksa-light-theme #minutes-section .rounded-4 {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme #notif-section .rounded-4 h6,
+  body.aksa-light-theme #minutes-section .rounded-4 h6 {
+    color: #0f172a !important;
+  }
+
+  body.aksa-light-theme #notif-section .rounded-4 p,
+  body.aksa-light-theme #minutes-section .rounded-4 p {
+    color: #475569 !important;
+  }
+
+  body.aksa-light-theme #minutes-section .btn-outline-light {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+  }
+
+  body.aksa-light-theme #minutes-section .btn-outline-light:hover {
+    background-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .promo-banner-card .btn-light {
+    background-color: #5b5ce6 !important;
+    border-color: #5b5ce6 !important;
+    color: #ffffff !important;
+  }
+
+  body.aksa-light-theme .action-feature-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+  body.aksa-light-theme .action-feature-card h5 {
+    color: #0f172a !important;
+  }
+  body.aksa-light-theme .action-feature-card p {
+    color: #64748b !important;
+  }
+
+  body.aksa-light-theme .tx-row {
+    border-bottom-color: #e2e8f0 !important;
+  }
+  body.aksa-light-theme .tx-icon-circle {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .table-aksa {
+    --bs-table-bg: transparent;
+    --bs-table-color: #1e293b;
+    --bs-table-border-color: #e2e8f0;
+    --bs-table-hover-bg: #f8fafc;
+    --bs-table-hover-color: #0f172a;
+  }
+  body.aksa-light-theme .table-aksa thead th {
+    color: #64748b !important;
+    border-bottom-color: #e2e8f0 !important;
+  }
+
+  body.aksa-light-theme .form-control-aksa {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  body.aksa-light-theme .form-control-aksa::-webkit-calendar-picker-indicator {
+    filter: none;
+  }
+
+  body.aksa-light-theme .floating-bottom-nav {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  }
+  body.aksa-light-theme .bottom-pill-btn {
+    color: #475569 !important;
+  }
+  body.aksa-light-theme .bottom-pill-btn:hover {
+    color: #0f172a !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+  }
+  body.aksa-light-theme .bottom-pill-btn.active {
+    background-color: #5b5ce6 !important;
+    color: #ffffff !important;
+  }
+
+  /* Keep hero gradient text crisp white in both modes */
+  body.aksa-light-theme .wallet-hero-card,
+  body.aksa-light-theme .wallet-hero-card h2,
+  body.aksa-light-theme .wallet-hero-card .text-white {
+    color: #ffffff !important;
+  }
+
+  .hero-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.24);
-    color: #ffffff;
-    border-radius: 1rem;
-    transition: transform 0.18s ease, background-color 0.18s ease;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+    text-decoration: none;
   }
-
-  .fintech-pill-btn:hover,
-  .fintech-pill-btn:focus {
-    background: rgba(255, 255, 255, 0.26);
+  .hero-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.32);
     color: #ffffff;
     transform: translateY(-1px);
   }
 
-  .metric-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  .balance-toggle-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.88);
+    padding: 0.25rem 0.4rem;
+    border-radius: 0.5rem;
+    transition: background 0.15s ease;
+  }
+  .balance-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
   }
 
-  .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.65rem 1.25rem rgba(15, 23, 42, 0.12) !important;
-  }
-
-  .fintech-card {
-    background-color: var(--fintech-surface);
-    border: 1px solid var(--fintech-border);
+  /* 4 Quick Action Tiles */
+  .quick-action-btn {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 1.15rem;
+    padding: 0.85rem 0.5rem;
+    color: #ffffff;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+  .quick-action-btn i {
+    font-size: 1.15rem;
   }
 
-  /* Floating Bottom Navigation Dock */
+  /* Action Feature Cards (Savings & Loans Tabs) */
+  .action-feature-card {
+    background: linear-gradient(145deg, #161926 0%, #1d2133 100%);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    padding: 1.35rem;
+    color: #ffffff;
+    text-align: left;
+    width: 100%;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .action-feature-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(157, 148, 255, 0.45);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  }
+  .feature-icon-pill {
+    width: 48px;
+    height: 48px;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  /* Promo / Dividend Banner */
+  .promo-banner-card {
+    background: linear-gradient(120deg, #161824 0%, #1f2235 55%, #4c469b 135%);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .promo-wave-accent {
+    background:
+      radial-gradient(
+        circle at 85% 30%,
+        rgba(157, 148, 255, 0.35),
+        transparent 60%
+      ),
+      repeating-linear-gradient(
+        -35deg,
+        rgba(255, 255, 255, 0.05) 0px,
+        rgba(255, 255, 255, 0.05) 6px,
+        transparent 6px,
+        transparent 14px
+      );
+  }
+
+  /* Dark Cards & Feed */
+  .aksa-dark-card {
+    background-color: var(--aksa-surface);
+    border: 1px solid var(--aksa-border);
+    border-radius: 1.35rem;
+    color: #f8fafc;
+  }
+  .aksa-dark-card .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--aksa-border);
+    color: #f8fafc;
+  }
+  .aksa-dark-card .list-group-item {
+    background-color: transparent;
+    color: #e2e8f0;
+    border-color: var(--aksa-border);
+  }
+
+  .tx-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 0.75rem;
+  }
+  .tx-row:last-child {
+    border-bottom: none;
+  }
+  .tx-icon-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--aksa-surface-2);
+    border: 1px solid var(--aksa-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  .tx-credit-icon {
+    color: #34d399;
+  }
+  .tx-debit-icon {
+    color: #f87171;
+  }
+
+  /* Dark Inputs & Tables */
+  .form-control-aksa {
+    background-color: var(--aksa-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #f8fafc;
+  }
+  .form-control-aksa:focus {
+    background-color: var(--aksa-surface-2);
+    border-color: #9d94ff;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(157, 148, 255, 0.2);
+  }
+  .form-control-aksa::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+  .table-aksa {
+    --bs-table-bg: transparent;
+    --bs-table-color: #e2e8f0;
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.04);
+    --bs-table-hover-color: #ffffff;
+  }
+  .table-aksa thead th {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Floating Bottom Pill Navigation */
   .floating-bottom-nav {
     position: fixed;
-    left: 50%;
     bottom: 1rem;
+    left: 50%;
     transform: translateX(-50%);
-    width: min(94%, 640px);
-    background: var(--fintech-dock-bg);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(28, 30, 42, 0.94);
+    backdrop-filter: blur(18px);
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 999px;
-    padding: 0.4rem 0.55rem;
-    z-index: 1040;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.32);
+    padding: 0.38rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.65);
+    z-index: 1030;
+    max-width: calc(100vw - 1.25rem);
   }
-
-  .bottom-nav-item {
+  .bottom-pill-btn {
     border: none;
     background: transparent;
     color: #cbd5e1;
     border-radius: 999px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.78rem;
-    font-weight: 600;
+    padding: 0.58rem 0.95rem;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+    gap: 0.45rem;
+    font-size: 0.86rem;
+    font-weight: 600;
     text-decoration: none;
     transition: all 0.2s ease;
     white-space: nowrap;
+    cursor: pointer;
   }
-
-  .bottom-nav-item:hover {
+  .bottom-pill-btn:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .bottom-pill-btn .nav-label {
+    display: none;
+  }
+  .bottom-pill-btn.active {
+    background-color: #ffffff;
+    color: #11131c;
+    padding: 0.58rem 1.15rem;
+  }
+  .bottom-pill-btn.active .nav-label {
+    display: inline;
   }
 
-  .bottom-nav-item.active {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+  .metric-card {
+    border-radius: 1.15rem !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
-
-  @media (min-width: 768px) {
-    .bottom-nav-item {
-      padding: 0.55rem 1.05rem;
-      font-size: 0.85rem;
-    }
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.65rem 1.25rem rgba(0, 0, 0, 0.28) !important;
   }
 
   @media print {
@@ -113,7 +447,7 @@
     .no-print {
       display: none !important;
     }
-    body.fintech-body {
+    body {
       padding-bottom: 0;
     }
   }
@@ -121,135 +455,169 @@
 {% endblock %}
 
 {% block content %}
-<div class="fintech-body">
-  <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
-    <!-- Flash Messages Container -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="mb-4">
-      {% for category, message in messages %}
-      <div
-        class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm rounded-3"
-        role="alert"
-      >
-        <div class="d-flex align-items-center">
-          <i
-            class="bi {{ 'bi-check-circle-fill text-success' if category == 'success' else 'bi-exclamation-triangle-fill text-danger' if category == 'error' or category == 'danger' else 'bi-info-circle-fill text-info' }} fs-5 me-2"
-          ></i>
-          <div>{{ message }}</div>
+<div class="container-fluid px-0 px-md-4 pb-4">
+  <!-- Flash Messages Container -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="px-3 px-md-0 pt-3 mb-3">
+    {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' or category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show shadow-sm rounded-3"
+      role="alert"
+    >
+      <div class="d-flex align-items-center">
+        <i
+          class="bi {{ 'bi-check-circle-fill text-success' if category == 'success' else 'bi-exclamation-triangle-fill text-danger' if category == 'error' or category == 'danger' else 'bi-info-circle-fill text-info' }} fs-5 me-2"
+        ></i>
+        <div>{{ message }}</div>
+      </div>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+      ></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Hero Treasury Wallet Card -->
+  <section class="wallet-hero-card mb-4">
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div
+          class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 text-white flex-shrink-0 border border-white border-opacity-50"
+          style="width: 46px; height: 46px"
+        >
+          {% set avatar_file = current_user.passport_photo or current_user.profile_pic %}
+          {% if avatar_file %}
+          <img
+            src="{{ url_for('static', filename='uploads/kyc/' ~ avatar_file.lstrip('/')) }}"
+            alt="Profile Picture"
+            class="w-100 h-100 object-fit-cover"
+          />
+          {% else %}
+          <i class="bi bi-person-circle fs-4"></i>
+          {% endif %}
         </div>
+        <div>
+          <div class="small text-white text-opacity-75 fw-medium">
+            Finance &amp; Treasury Desk
+            <span class="badge bg-white text-dark text-uppercase ms-1" style="font-size: 0.65rem">
+              {{ current_user.role }}
+            </span>
+          </div>
+          <h4 class="fw-bold mb-0 text-white fs-5 fs-md-4">
+            {{ current_user.fname }} {{ current_user.lname }}
+          </h4>
+        </div>
+      </div>
+
+      <!-- Theme Switcher & Quick Controls -->
+      <div class="d-flex align-items-center gap-2 no-print">
         <button
           type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
+          class="hero-icon-btn js-theme-toggle"
+          title="Switch Dark / Light Theme"
+          aria-label="Switch Dark / Light Theme"
+        >
+          <i class="bi bi-sun-fill js-theme-icon"></i>
+        </button>
+        <button
+          type="button"
+          class="hero-icon-btn"
+          onclick="window.print()"
+          title="Print Report"
+          aria-label="Print Report"
+        >
+          <i class="bi bi-printer"></i>
+        </button>
+        <a
+          href="{{ url_for('auth.logout') }}"
+          class="hero-icon-btn"
+          title="Logout"
+          aria-label="Logout"
+        >
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
       </div>
-      {% endfor %}
     </div>
-    {% endif %}
-    {% endwith %}
 
-    <!-- Top Fintech Header & Quick Action Banner -->
-    <section class="fintech-hero p-3 p-md-4 mb-4">
-      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
-        <div class="d-flex align-items-center gap-3">
-          <div
-            class="rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 text-white flex-shrink-0 border border-white border-opacity-50"
-            style="width: 48px; height: 48px"
-          >
-            {% set avatar_file = current_user.passport_photo or current_user.profile_pic %}
-            {% if avatar_file %}
-            <img
-              src="{{ url_for('static', filename='uploads/kyc/' ~ avatar_file.lstrip('/')) }}"
-              alt="Profile Picture"
-              class="w-100 h-100 object-fit-cover"
-            />
-            {% else %}
-            <i class="bi bi-person-circle fs-4"></i>
-            {% endif %}
-          </div>
-          <div>
-            <div class="small text-white text-opacity-75 fw-medium">
-              Treasury Desk · {{ current_user.fname }} {{ current_user.lname }}
-              <span class="badge bg-white text-dark text-uppercase ms-1" style="font-size: 0.65rem">
-                {{ current_user.role }}
-              </span>
-            </div>
-            <h3 class="fw-bold mb-0 fs-4 fs-md-3">
-              Finance &amp; Treasury Analytics
-            </h3>
-          </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-2 flex-wrap no-print">
-          <button
-            type="button"
-            class="btn fintech-pill-btn btn-sm px-3 py-2"
-            onclick="window.print()"
-          >
-            <i class="bi bi-printer me-1"></i> Print Report
-          </button>
-          <a
-            href="{{ url_for('auth.logout') }}"
-            class="btn fintech-pill-btn btn-sm px-3 py-2 text-white"
-          >
-            <i class="bi bi-box-arrow-right me-1"></i> Logout
-          </a>
-        </div>
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <div>
+        <div class="small text-white text-opacity-75">Total SACCO Savings</div>
+        <h2 class="fw-bold mb-0 text-white" id="heroSavingsDisplay" data-raw-value="UGX {{ '{:,.2f}'.format(total_savings|default(0.0)) }}">
+          UGX {{ "{:,.2f}".format(total_savings|default(0.0)) }}
+        </h2>
       </div>
+      <button
+        type="button"
+        class="balance-toggle-btn ms-1"
+        id="toggleBalanceVisibilityBtn"
+        title="Show / Hide Balance"
+      >
+        <i class="bi bi-eye-slash fs-5" id="balanceEyeIcon"></i>
+      </button>
+    </div>
 
-      <!-- Quick Action Pills (Fintech Mobile Strip) -->
-      <div class="row g-2 no-print">
-        <div class="col-6 col-sm-3">
-          <button
-            type="button"
-            class="btn fintech-pill-btn w-100 py-2 px-3 d-flex align-items-center justify-content-center gap-2 small fw-semibold"
-            data-bs-toggle="modal"
-            data-bs-target="#saveFridayModal"
-          >
-            <i class="bi bi-plus-circle"></i> Friday Savings
-          </button>
-        </div>
-        <div class="col-6 col-sm-3">
-          <button
-            type="button"
-            class="btn fintech-pill-btn w-100 py-2 px-3 d-flex align-items-center justify-content-center gap-2 small fw-semibold"
-            data-bs-toggle="modal"
-            data-bs-target="#viewSavingsModal"
-          >
-            <i class="bi bi-piggy-bank"></i> My Savings
-          </button>
-        </div>
-        <div class="col-6 col-sm-3">
-          <button
-            type="button"
-            class="btn fintech-pill-btn w-100 py-2 px-3 d-flex align-items-center justify-content-center gap-2 small fw-semibold"
-            data-bs-toggle="modal"
-            data-bs-target="#applyLoanModal"
-          >
-            <i class="bi bi-cash-stack"></i> Apply Loan
-          </button>
-        </div>
-        <div class="col-6 col-sm-3">
-          <button
-            type="button"
-            class="btn fintech-pill-btn w-100 py-2 px-3 d-flex align-items-center justify-content-center gap-2 small fw-semibold"
-            data-bs-toggle="modal"
-            data-bs-target="#repayLoanModal"
-          >
-            <i class="bi bi-arrow-return-left"></i> Repay Loan
-          </button>
-        </div>
+    <!-- 4 Quick Action Tiles -->
+    <div class="row g-2 no-print">
+      <div class="col-3">
+        <button
+          type="button"
+          class="quick-action-btn"
+          data-bs-toggle="modal"
+          data-bs-target="#saveFridayModal"
+        >
+          <i class="bi bi-plus-circle"></i>
+          <span>Save</span>
+        </button>
       </div>
-    </section>
+      <div class="col-3">
+        <button
+          type="button"
+          class="quick-action-btn"
+          data-bs-toggle="modal"
+          data-bs-target="#applyLoanModal"
+        >
+          <i class="bi bi-cash-stack"></i>
+          <span>Apply</span>
+        </button>
+      </div>
+      <div class="col-3">
+        <button
+          type="button"
+          class="quick-action-btn"
+          data-bs-toggle="modal"
+          data-bs-target="#repayLoanModal"
+        >
+          <i class="bi bi-arrow-return-left"></i>
+          <span>Repay</span>
+        </button>
+      </div>
+      <div class="col-3">
+        <button
+          type="button"
+          class="quick-action-btn"
+          data-bs-toggle="modal"
+          data-bs-target="#moreActionsModal"
+        >
+          <i class="bi bi-three-dots"></i>
+          <span>More</span>
+        </button>
+      </div>
+    </div>
+  </section>
 
+  <div class="px-3 px-md-0">
     <!-- Top Metrics Bar: 4 in 2x2 mobile grid + 5th Profits card full-width below on mobile -->
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-2 g-md-3 mb-4" id="metricsSection">
       <!-- 1. Total Savings -->
       <div class="col">
         <div
-          class="card metric-card border-0 shadow-sm rounded-3 bg-primary text-white p-3 h-100"
+          class="card metric-card border-0 shadow-sm bg-primary text-white p-3 h-100"
         >
           <div class="d-md-none text-center py-1">
             <div class="fs-4 fw-bold lh-1 mb-1">
@@ -279,13 +647,22 @@
       </div>
 
       <!-- 2. Unpaid Loans -->
+      {% set ns_unpaid = namespace(total=0.0) %}
+      {% for l in all_loans|default([]) %}
+        {% if l.status != 'Fully Paid' %}
+          {% set rem = l.balance_remaining if l.balance_remaining is defined and l.balance_remaining is not none else (l.balance_calc if l.balance_calc is defined and l.balance_calc is not none else 0.0) %}
+          {% if rem > 0 %}{% set ns_unpaid.total = ns_unpaid.total + rem %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% set unpaid_val = unpaid_loans if (unpaid_loans is defined and unpaid_loans is not none and unpaid_loans > 0) else ns_unpaid.total %}
+
       <div class="col">
         <div
-          class="card metric-card border-0 shadow-sm rounded-3 bg-danger text-white p-3 h-100"
+          class="card metric-card border-0 shadow-sm bg-danger text-white p-3 h-100"
         >
           <div class="d-md-none text-center py-1">
             <div class="fs-4 fw-bold lh-1 mb-1">
-              {{ unpaid_loans|default(0.0)|compact_num }}
+              {{ unpaid_val|default(0.0)|compact_num }}
             </div>
             <div
               class="small text-white-50 fw-semibold"
@@ -302,7 +679,7 @@
                 Unpaid Loans
               </div>
               <div class="fs-5 fw-bold">
-                UGX {{ "{:,.2f}".format(unpaid_loans|default(0.0)) }}
+                UGX {{ "{:,.2f}".format(unpaid_val|default(0.0)) }}
               </div>
             </div>
             <i class="bi bi-exclamation-octagon fs-1 opacity-50"></i>
@@ -313,7 +690,7 @@
       <!-- 3. Membership Fees -->
       <div class="col">
         <div
-          class="card metric-card border-0 shadow-sm rounded-3 bg-info text-dark p-3 h-100"
+          class="card metric-card border-0 shadow-sm bg-info text-dark p-3 h-100"
         >
           <div class="d-md-none text-center py-1">
             <div class="fs-4 fw-bold lh-1 mb-1">
@@ -345,7 +722,7 @@
       <!-- 4. Total Fines & Fees -->
       <div class="col">
         <div
-          class="card metric-card border-0 shadow-sm rounded-3 bg-secondary text-white p-3 h-100"
+          class="card metric-card border-0 shadow-sm bg-secondary text-white p-3 h-100"
         >
           <div class="d-md-none text-center py-1">
             <div class="fs-4 fw-bold lh-1 mb-1">
@@ -375,13 +752,22 @@
       </div>
 
       <!-- 5. Profits (Interests) -->
+      {% set ns_profit = namespace(total=0.0) %}
+      {% for l in all_loans|default([]) %}
+        {% set req = l.amount_requested|default(0.0) %}
+        {% set due = l.total_due if l.total_due is defined and l.total_due is not none else req %}
+        {% set interest_amt = due - req %}
+        {% if interest_amt > 0 %}{% set ns_profit.total = ns_profit.total + interest_amt %}{% endif %}
+      {% endfor %}
+      {% set profit_val = loan_profits if (loan_profits is defined and loan_profits is not none and loan_profits > 0) else ns_profit.total %}
+
       <div class="col-12 col-md">
         <div
-          class="card metric-card border-0 shadow-sm rounded-3 bg-success text-white p-3 h-100"
+          class="card metric-card border-0 shadow-sm bg-success text-white p-3 h-100"
         >
           <div class="d-md-none text-center py-1">
             <div class="fs-4 fw-bold lh-1 mb-1">
-              {{ loan_profits|default(0.0)|compact_num }}
+              {{ profit_val|default(0.0)|compact_num }}
             </div>
             <div
               class="small text-white-50 fw-semibold"
@@ -398,7 +784,7 @@
                 Profits (Interests)
               </div>
               <div class="fs-5 fw-bold">
-                UGX {{ "{:,.2f}".format(loan_profits|default(0.0)) }}
+                UGX {{ "{:,.2f}".format(profit_val|default(0.0)) }}
               </div>
             </div>
             <i class="bi bi-cash-coin fs-1 opacity-50"></i>
@@ -407,12 +793,35 @@
       </div>
     </div>
 
+    <!-- Promo / Treasury Audit Banner -->
+    <div class="promo-banner-card p-3 p-md-4 mb-4">
+      <div class="promo-wave-accent position-absolute top-0 start-0 w-100 h-100"></div>
+      <div class="position-relative d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+        <div>
+          <h5 class="fw-bold text-white mb-1">
+            Monitor portfolio health &amp; monthly loan compounding
+          </h5>
+          <p class="text-white text-opacity-75 small mb-0">
+            Track NPL risk, cashflow cycles, savings leaderboards, and institution ledger logs.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-light fw-bold px-3 py-2 rounded-pill flex-shrink-0 no-print"
+          data-bs-toggle="modal"
+          data-bs-target="#transactionHistoryModal"
+        >
+          View Ledger
+        </button>
+      </div>
+    </div>
+
     <!-- SECTION 1: Loan Status & Risk Breakdown & Trends -->
     <div class="row g-4 mb-4" id="analyticsSection">
       <!-- 1. Portfolio Risk Classification Card (4 Columns) -->
       <div class="col-lg-4">
-        <div class="card fintech-card shadow-sm h-100">
-          <div class="card-header bg-transparent py-3 border-0">
+        <div class="card aksa-dark-card shadow-sm h-100">
+          <div class="card-header py-3 border-0">
             <h6 class="fw-bold mb-0">
               <i class="bi bi-shield-exclamation text-primary me-2"></i>Portfolio Risk Classification
             </h6>
@@ -477,9 +886,9 @@
 
       <!-- 2. Monthly Disbursement vs. Repayment Column Chart Card (8 Columns) -->
       <div class="col-lg-8">
-        <div class="card fintech-card shadow-sm h-100">
+        <div class="card aksa-dark-card shadow-sm h-100">
           <div
-            class="card-header bg-transparent py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2"
+            class="card-header py-3 border-0 d-flex flex-wrap justify-content-between align-items-center gap-2"
           >
             <h6 class="fw-bold mb-0">
               <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Monthly
@@ -505,9 +914,9 @@
     <div class="row g-4 mb-4" id="portfolioSection">
       <!-- 1. Top Members Savings Leaderboard Card (Width: 6 cols on large screens) -->
       <div class="col-lg-6" id="leaderboardSection">
-        <div class="card fintech-card shadow-sm h-100">
+        <div class="card aksa-dark-card shadow-sm h-100">
           <div
-            class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center"
+            class="card-header py-3 border-0 d-flex justify-content-between align-items-center"
           >
             <h6 class="fw-bold mb-0">
               <i class="bi bi-trophy me-2 text-warning"></i>Top Members
@@ -532,16 +941,10 @@
                   class="d-flex align-items-center justify-content-between"
                 >
                   <div class="d-flex align-items-center">
-                    {% if user.passport_photo %}
+                    {% set saver_avatar = user.passport_photo or user.profile_pic %}
+                    {% if saver_avatar %}
                     <img
-                      src="{{ url_for('static', filename='uploads/kyc/' ~ user.passport_photo) }}"
-                      alt="{{ user.fname }}"
-                      class="rounded-circle me-3"
-                      style="width: 45px; height: 45px; object-fit: cover"
-                    />
-                    {% elif user.profile_pic %}
-                    <img
-                      src="{{ url_for('static', filename='uploads/kyc/' ~ user.profile_pic) }}"
+                      src="{{ url_for('static', filename='uploads/kyc/' ~ saver_avatar.lstrip('/')) }}"
                       alt="{{ user.fname }}"
                       class="rounded-circle me-3"
                       style="width: 45px; height: 45px; object-fit: cover"
@@ -556,10 +959,10 @@
                     {% endif %}
 
                     <div>
-                      <div class="fw-bold text-dark">
+                      <div class="fw-bold">
                         {{ user.fname }} {{ user.lname }}
                       </div>
-                      <small class="text-muted"
+                      <small class="text-secondary"
                         ><i class="bi bi-telephone me-1"></i>{{ user.phone or
                         'No phone' }}</small
                       >
@@ -568,7 +971,7 @@
 
                   <div class="text-end">
                     <div
-                      class="small text-muted text-uppercase fw-semibold"
+                      class="small text-secondary text-uppercase fw-semibold"
                       style="font-size: 0.7rem"
                     >
                       Total Savings
@@ -582,7 +985,7 @@
                 </div>
               </div>
               {% else %}
-              <div class="text-center py-5 text-muted">
+              <div class="text-center py-5 text-secondary">
                 No member savings records available.
               </div>
               {% endfor %}
@@ -601,7 +1004,7 @@
             >
               <i class="bi bi-chevron-left me-1"></i> Previous
             </button>
-            <small class="text-muted fw-semibold">Showing 5 per page</small>
+            <small class="text-secondary fw-semibold">Showing 5 per page</small>
             <button
               class="btn btn-outline-primary btn-sm px-3"
               id="nextBtn"
@@ -616,9 +1019,9 @@
 
       <!-- 2. Loans & Status Portfolio Card (Width: 6 cols on large screens) -->
       <div class="col-lg-6" id="loansPortfolioSection">
-        <div class="card fintech-card shadow-sm h-100">
+        <div class="card aksa-dark-card shadow-sm h-100">
           <div
-            class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center"
+            class="card-header py-3 border-0 d-flex justify-content-between align-items-center"
           >
             <h6 class="fw-bold mb-0">
               <i class="bi bi-cash-stack me-2 text-primary"></i>Loans Status
@@ -637,10 +1040,10 @@
               style="max-height: 380px; overflow-y: auto"
             >
               <table
-                class="table table-hover align-middle mb-0 text-nowrap"
+                class="table table-aksa table-hover align-middle mb-0 text-nowrap"
                 style="font-size: 0.875rem"
               >
-                <thead class="table-light sticky-top">
+                <thead class="sticky-top">
                   <tr>
                     <th class="ps-3">Borrower / Type</th>
                     <th>Status</th>
@@ -657,12 +1060,12 @@
                   {% for loan in all_loans|default([]) %}
                   <tr>
                     <td class="ps-3">
-                      <div class="fw-bold text-dark">
+                      <div class="fw-bold">
                         {% if loan.user %}{{ loan.user.fname }} {{
                         loan.user.lname }}{% else %}Unknown{% endif %}
                       </div>
                       <small
-                        class="text-muted text-uppercase"
+                        class="text-secondary text-uppercase"
                         style="font-size: 0.7rem"
                       >
                         {{ loan.loan_type }} · M{{ loan.compounding_cycles|default(1) }}
@@ -682,7 +1085,7 @@
                         >Defaulted</span
                       >
                       {% else %}
-                      <span class="badge bg-warning bg-opacity-10 text-dark"
+                      <span class="badge bg-warning bg-opacity-10 text-warning"
                         >{{ loan.status }}</span
                       >
                       {% endif %}
@@ -738,7 +1141,7 @@
                   <tr>
                     <td
                       colspan="{% if current_user.is_finance or current_user.role in ['finance', 'treasurer', 'chair'] %}6{% else %}5{% endif %}"
-                      class="text-center py-4 text-muted"
+                      class="text-center py-4 text-secondary"
                     >
                       No loan records found.
                     </td>
@@ -754,49 +1157,60 @@
   </div>
 </div>
 
-<!-- ================= FLOATING BOTTOM NAVIGATION BAR ================= -->
+<!-- ================= FLOATING BOTTOM PILL NAVIGATION ================= -->
 <nav class="floating-bottom-nav no-print" aria-label="Primary bottom navigation">
-  <div class="d-flex justify-content-between align-items-center gap-1">
-    <a
-      href="{{ url_for('finance.dashboard') }}"
-      class="bottom-nav-item active"
-    >
-      <i class="bi bi-house-door-fill"></i>
-      <span>Home</span>
-    </a>
-    <button
-      type="button"
-      class="bottom-nav-item"
-      data-bs-toggle="modal"
-      data-bs-target="#transactionHistoryModal"
-    >
-      <i class="bi bi-arrow-left-right"></i>
-      <span>Ledger</span>
-    </button>
-    <button
-      type="button"
-      class="bottom-nav-item"
-      data-bs-toggle="modal"
-      data-bs-target="#repayLoanModal"
-    >
-      <i class="bi bi-wallet2"></i>
-      <span>Repay</span>
-    </button>
-    <button
-      type="button"
-      class="bottom-nav-item"
-      data-bs-toggle="modal"
-      data-bs-target="#moreActionsModal"
-    >
-      <i class="bi bi-grid-fill"></i>
-      <span>More</span>
-    </button>
-  </div>
+  <a
+    href="{{ url_for('finance.dashboard') }}"
+    class="bottom-pill-btn active"
+  >
+    <i class="bi bi-house-door-fill"></i>
+    <span class="nav-label">Home</span>
+  </a>
+  <button
+    type="button"
+    class="bottom-pill-btn"
+    data-bs-toggle="modal"
+    data-bs-target="#saveFridayModal"
+    title="Savings"
+  >
+    <i class="bi bi-piggy-bank"></i>
+    <span class="nav-label">Save</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-pill-btn"
+    data-bs-toggle="modal"
+    data-bs-target="#transactionHistoryModal"
+    title="Ledger"
+  >
+    <i class="bi bi-arrow-left-right"></i>
+    <span class="nav-label">Ledger</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-pill-btn"
+    data-bs-toggle="modal"
+    data-bs-target="#repayLoanModal"
+    title="Repay Loan"
+  >
+    <i class="bi bi-wallet2"></i>
+    <span class="nav-label">Repay</span>
+  </button>
+  <button
+    type="button"
+    class="bottom-pill-btn"
+    data-bs-toggle="modal"
+    data-bs-target="#moreActionsModal"
+    title="More Actions & Theme"
+  >
+    <i class="bi bi-grid-fill"></i>
+    <span class="nav-label">More</span>
+  </button>
 </nav>
 
 <!-- ================= MODAL CONTAINERS ================= -->
 
-<!-- More Actions Sheet Modal -->
+<!-- More Actions & Theme Selector Modal -->
 <div class="modal fade" id="moreActionsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
@@ -812,6 +1226,30 @@
         ></button>
       </div>
       <div class="modal-body p-3 p-md-4">
+        <!-- Theme Selector Choice -->
+        <div class="d-flex justify-content-between align-items-center border rounded-3 p-3 mb-3">
+          <div>
+            <div class="fw-bold small">Appearance Theme</div>
+            <small class="text-muted">Switch between Dark and Light mode</small>
+          </div>
+          <div class="btn-group btn-group-sm" role="group" aria-label="Theme selector">
+            <button
+              type="button"
+              class="btn btn-dark"
+              id="selectDarkThemeBtn"
+            >
+              <i class="bi bi-moon-stars-fill me-1"></i>Dark
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="selectLightThemeBtn"
+            >
+              <i class="bi bi-sun-fill me-1"></i>Light
+            </button>
+          </div>
+        </div>
+
         <div class="row g-2">
           <div class="col-6">
             <button
@@ -2642,6 +3080,76 @@ loan.amount_repaid > 0 %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // Theme Selector (Dark default + Light theme option)
+    const THEME_STORAGE_KEY = "aksa_finance_theme";
+    const selectDarkThemeBtn = document.getElementById("selectDarkThemeBtn");
+    const selectLightThemeBtn = document.getElementById("selectLightThemeBtn");
+    const themeToggleBtns = document.querySelectorAll(".js-theme-toggle");
+
+    function applyTheme(mode) {
+      const isLight = mode === "light";
+      document.body.classList.toggle("aksa-light-theme", isLight);
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, isLight ? "light" : "dark");
+      } catch (e) {}
+
+      document.querySelectorAll(".js-theme-icon").forEach((icon) => {
+        icon.className = isLight
+          ? "bi bi-moon-stars-fill js-theme-icon"
+          : "bi bi-sun-fill js-theme-icon";
+      });
+
+      if (selectDarkThemeBtn && selectLightThemeBtn) {
+        selectDarkThemeBtn.className = isLight
+          ? "btn btn-outline-dark"
+          : "btn btn-dark";
+        selectLightThemeBtn.className = isLight
+          ? "btn btn-primary"
+          : "btn btn-outline-secondary";
+      }
+    }
+
+    let savedTheme = "dark";
+    try {
+      savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+    } catch (e) {}
+    applyTheme(savedTheme);
+
+    themeToggleBtns.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const nextTheme = document.body.classList.contains("aksa-light-theme")
+          ? "dark"
+          : "light";
+        applyTheme(nextTheme);
+      });
+    });
+
+    if (selectDarkThemeBtn) {
+      selectDarkThemeBtn.addEventListener("click", () => applyTheme("dark"));
+    }
+    if (selectLightThemeBtn) {
+      selectLightThemeBtn.addEventListener("click", () => applyTheme("light"));
+    }
+
+    // Hero Balance Visibility Toggle
+    const toggleBalanceBtn = document.getElementById("toggleBalanceVisibilityBtn");
+    const heroSavingsDisplay = document.getElementById("heroSavingsDisplay");
+    const balanceEyeIcon = document.getElementById("balanceEyeIcon");
+    let balanceHidden = false;
+
+    if (toggleBalanceBtn && heroSavingsDisplay) {
+      toggleBalanceBtn.addEventListener("click", function () {
+        balanceHidden = !balanceHidden;
+        const rawText = heroSavingsDisplay.getAttribute("data-raw-value") || "";
+        heroSavingsDisplay.textContent = balanceHidden ? "UGX ••••••••" : rawText;
+        if (balanceEyeIcon) {
+          balanceEyeIcon.className = balanceHidden
+            ? "bi bi-eye fs-5"
+            : "bi bi-eye-slash fs-5";
+        }
+      });
+    }
+
     // 0. Loans Status Portfolio Edit & Delete Modal Handlers
     const editLoanForm = document.getElementById("editLoanForm");
     const deleteLoanForm = document.getElementById("deleteLoanForm");
