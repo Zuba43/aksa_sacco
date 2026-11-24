@@ -1,13 +1,18 @@
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request,session
 from flask_login import login_required, current_user
 from sqlalchemy import func, extract
 from app.models import User, Loan, Savings, Expense, FineFee
 from app import db
-
+import uuid
 
 finance_bp = Blueprint("finance", __name__, url_prefix="/finance")
 
+def issue_savings_token():
+    token = str(uuid.uuid4())
+    session["savings_tx_token"] = token
+    session.modified = True
+    return token
 
 def _can_manage_finance():
     return (
@@ -45,6 +50,7 @@ def dashboard():
     if not _can_manage_finance():
         flash("Access restricted to Finance & Treasury Officers.", "danger")
         return redirect(url_for("auth.login"))
+    tx_token = issue_savings_token()
 
     # 0. Automatically evaluate loan status updates (Tenure defaults & Full settlements)
     all_loans = Loan.query.order_by(Loan.date_applied.desc()).all()
@@ -200,6 +206,7 @@ def dashboard():
         fy_labels=fy_labels,
         fy_disbursements=fy_disbursements,
         fy_repayments=fy_repayments,
+        tx_token=tx_token,
     )
 
 
