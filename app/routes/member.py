@@ -13,6 +13,7 @@ def dashboard():
     if not current_user.is_active_account:
         flash('Your account is pending activation by the Secretary.', 'warning')
         return redirect(url_for('auth.login'))
+    tx_token = issue_savings_token()
 
     user_savings = Savings.query.filter_by(user_id=current_user.id).order_by(Savings.date_recorded.desc()).all()
     total_savings = sum(s.amount for s in user_savings)
@@ -60,37 +61,50 @@ def dashboard():
         loans=user_loans,
         notifications=notifications,
         recent_minutes=recent_minutes,
-        recent_transactions=recent_transactions
+        recent_transactions=recent_transactions,
+        tx_token=tx_token
     )
 
 
-from datetime import datetime
 def issue_savings_token():
     token = str(uuid.uuid4())
-    session['savings_tx_token'] = token
+    session["savings_tx_token"] = token
     session.modified = True
     return token
 
 
-@member_bp.route('/save-friday', methods=['POST'])
+def _redirect_after_savings():
+    # If coming from finance dashboard or current_user is finance, keep them where they started if referrer is finance
+    ref = request.referrer or ""
+    if "/finance" in ref:
+        return redirect(ref)
+    return redirect(url_for("member.dashboard"))
+
+
+@member_bp.route("/save-friday", methods=["POST"])
 @login_required
 def save_friday():
-    submitted_token = request.form.get('tx_token', '')
-    expected_token = session.pop('savings_tx_token', None)
+    submitted_token = (request.form.get("tx_token") or "").strip()
+    expected_token = session.pop("savings_tx_token", None)
     session.modified = True
 
     if not expected_token or submitted_token != expected_token:
-        flash('Transaction is still processing or has already been submitted.', 'warning')
-        return redirect(url_for('member.dashboard'))
+        # Re-issue a fresh token so the user isn't locked out on the next attempt
+        issue_savings_token()
+        flash(
+            "Transaction is still processing or has already been submitted.",
+            "warning",
+        )
+        return _redirect_after_savings()
 
     try:
-        amount = float(request.form.get('amount', 0))
+        amount = float(request.form.get("amount", 0))
     except (TypeError, ValueError):
         issue_savings_token()
-        flash('Please enter a valid deposit amount.', 'danger')
-        return redirect(url_for('member.dashboard'))
+        flash("Please enter a valid deposit amount.", "danger")
+        return _redirect_after_savings()
 
-    saving_period = request.form.get('saving_period', 'friday')
+    saving_period = request.form.get("saving_period", "friday")
 
     parsed_friday_date = None
     custom_months_str = None
@@ -99,34 +113,34 @@ def save_friday():
     min_limit = 2000
     max_limit = 25000
 
-    if saving_period == 'friday':
-        friday_date_str = request.form.get('friday_date')
+    if saving_period == "friday":
+        friday_date_str = request.form.get("friday_date")
         if not friday_date_str:
             issue_savings_token()
-            flash('Please select a valid Friday date from the calendar.', 'danger')
-            return redirect(url_for('member.dashboard'))
+            flash("Please select a valid Friday date from the calendar.", "danger")
+            return _redirect_after_savings()
 
         try:
-            parsed_friday_date = datetime.strptime(friday_date_str, '%Y-%m-%d').date()
+            parsed_friday_date = datetime.strptime(friday_date_str, "%Y-%m-%d").date()
             if parsed_friday_date.weekday() != 4:
                 issue_savings_token()
-                flash('Selected date must be a Friday.', 'danger')
-                return redirect(url_for('member.dashboard'))
+                flash("Selected date must be a Friday.", "danger")
+                return _redirect_after_savings()
         except ValueError:
             issue_savings_token()
-            flash('Invalid date format received.', 'danger')
-            return redirect(url_for('member.dashboard'))
+            flash("Invalid date format received.", "danger")
+            return _redirect_after_savings()
 
         period_label = f"Friday Weekly ({parsed_friday_date.strftime('%d %b %Y')})"
         min_limit = 2000
         max_limit = 25000
 
-    elif saving_period == 'custom':
-        custom_months_list = request.form.getlist('custom_months')
+    elif saving_period == "custom":
+        custom_months_list = request.form.getlist("custom_months")
         if not custom_months_list:
             issue_savings_token()
-            flash('Please select at least one month for custom savings.', 'danger')
-            return redirect(url_for('member.dashboard'))
+            flash("Please select at least one month for custom savings.", "danger")
+            return _redirect_after_savings()
 
         custom_months_str = ", ".join(custom_months_list)
         month_count = len(custom_months_list)
@@ -135,14 +149,13 @@ def save_friday():
         max_limit = 125000 * month_count
         period_label = f"Custom Savings ({custom_months_str})"
 
-    # Validate amount against the calculated limits
     if amount < min_limit or amount > max_limit:
         issue_savings_token()
         flash(
-            f'Contributions for {period_label.lower()} must be between UGX {min_limit:,.0f} and UGX {max_limit:,.0f}.',
-            'danger'
+            f"Contributions for {period_label.lower()} must be between UGX {min_limit:,.0f} and UGX {max_limit:,.0f}.",
+            "danger",
         )
-        return redirect(url_for('member.dashboard'))
+        return _redirect_after_savings()
 
     try:
         new_savings = Savings(
@@ -150,18 +163,21 @@ def save_friday():
             amount=amount,
             deposit_type=period_label,
             friday_date=parsed_friday_date,
-            custom_months=custom_months_str
+            custom_months=custom_months_str,
         )
         db.session.add(new_savings)
         db.session.commit()
     except Exception:
         db.session.rollback()
         issue_savings_token()
-        flash('Error recording deposit. Please try again.', 'danger')
-        return redirect(url_for('member.dashboard'))
+        flash("Error recording deposit. Please try again.", "danger")
+        return _redirect_after_savings()
 
-    flash(f'Successfully recorded deposit of UGX {amount:,.2f} ({period_label})!', 'success')
-    return redirect(url_for('member.dashboard'))
+    flash(
+        f"Successfully recorded deposit of UGX {amount:,.2f} ({period_label})!",
+        "success",
+    )
+    return _redirect_after_savings()
 
 # Handle Loan Application Request with Guarantor and Loan Type Support
 @member_bp.route('/apply-loan', methods=['POST'])

@@ -1262,6 +1262,7 @@ endblock %} {% block extra_head %}
         id="saveFridayForm"
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="tx_token" value="{{ tx_token }}" />
         <div class="modal-body p-4">
           <!-- Saving Period Selection -->
           <div class="mb-3">
@@ -1381,7 +1382,7 @@ endblock %} {% block extra_head %}
               class="form-control form-control-lg"
               min="2000"
               max="25000"
-              step="500"
+              step="1"
               value="5000"
               required
             />
