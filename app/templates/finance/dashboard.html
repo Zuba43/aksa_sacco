@@ -1492,10 +1492,10 @@ SACCO{% endblock %} {% block extra_head %}
               id="depositAmount"
               name="amount"
               class="form-control form-control-lg"
-              min="2000"
+              min="100"
               max="25000"
-              step="500"
-              value="5000"
+              step="1"
+              value="1"
               required
             />
             <div class="form-text mt-2" id="depositRuleText">
@@ -1518,6 +1518,19 @@ SACCO{% endblock %} {% block extra_head %}
           </button>
         </div>
       </form>
+      <!-- Optional alert banner that appears while processing -->
+      <div
+        id="processingAlert"
+        class="alert alert-info mt-3 d-none"
+        role="alert"
+      >
+        <span
+          class="spinner-border spinner-border-sm me-2"
+          role="status"
+          aria-hidden="true"
+        ></span>
+        Still processing transaction, please wait...
+      </div>
     </div>
   </div>
 </div>
@@ -1877,7 +1890,7 @@ SACCO{% endblock %} {% block extra_head %}
                 type="number"
                 name="amount_requested"
                 class="form-control"
-                min="5000"
+                min="500"
                 step="1"
                 placeholder="e.g. 500000"
                 required
@@ -1958,8 +1971,8 @@ SACCO{% endblock %} {% block extra_head %}
               type="number"
               name="amount"
               class="form-control form-control-lg"
-              min="500"
-              step="100"
+              min="100"
+              step="1"
               placeholder="e.g. 25000"
               required
             />
@@ -2048,8 +2061,8 @@ SACCO{% endblock %} {% block extra_head %}
               type="number"
               name="amount"
               class="form-control form-control-lg"
-              min="500"
-              step="500"
+              min="100"
+              step="1"
               placeholder="e.g. 5000"
               required
             />
@@ -3091,629 +3104,646 @@ loan.amount_repaid > 0 %}
 {% endfor %} {% endif %} {% endblock %} {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const formatUgx = (amount, { showPlus = false } = {}) => {
-      const num = Number(amount) || 0;
-      const formatted = num.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-      return showPlus && num >= 0 ? `+${formatted}` : `UGX ${formatted}`;
-    };
-
-    const escapeHtml = (value) =>
-      String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-
-    // Theme Selector (Dark default + Light theme option)
-    const THEME_STORAGE_KEY = "aksa_finance_theme";
-    const selectDarkThemeBtn = document.getElementById("selectDarkThemeBtn");
-    const selectLightThemeBtn = document.getElementById("selectLightThemeBtn");
-    const themeToggleBtns = document.querySelectorAll(".js-theme-toggle");
-
-    function applyTheme(mode) {
-      const isLight = mode === "light";
-      document.body.classList.toggle("aksa-light-theme", isLight);
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, isLight ? "light" : "dark");
-      } catch (e) {}
-
-      document.querySelectorAll(".js-theme-icon").forEach((icon) => {
-        icon.className = isLight
-          ? "bi bi-moon-stars-fill js-theme-icon"
-          : "bi bi-sun-fill js-theme-icon";
-      });
-
-      if (selectDarkThemeBtn && selectLightThemeBtn) {
-        selectDarkThemeBtn.className = isLight
-          ? "btn btn-outline-dark"
-          : "btn btn-dark";
-        selectLightThemeBtn.className = isLight
-          ? "btn btn-primary"
-          : "btn btn-outline-secondary";
-      }
-    }
-
-    let savedTheme = "dark";
-    try {
-      savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
-    } catch (e) {}
-    applyTheme(savedTheme);
-
-    themeToggleBtns.forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const nextTheme = document.body.classList.contains("aksa-light-theme")
-          ? "dark"
-          : "light";
-        applyTheme(nextTheme);
-      });
-    });
-
-    if (selectDarkThemeBtn) {
-      selectDarkThemeBtn.addEventListener("click", () => applyTheme("dark"));
-    }
-    if (selectLightThemeBtn) {
-      selectLightThemeBtn.addEventListener("click", () => applyTheme("light"));
-    }
-
-    // Hero Balance Visibility Toggle (Displays SACCO-wide savings)
-    const toggleBalanceBtn = document.getElementById("toggleBalanceVisibilityBtn");
-    const heroSavingsDisplay = document.getElementById("heroSavingsDisplay");
-    const balanceEyeIcon = document.getElementById("balanceEyeIcon");
-    let balanceHidden = false;
-
-    if (toggleBalanceBtn && heroSavingsDisplay) {
-      toggleBalanceBtn.addEventListener("click", function () {
-        balanceHidden = !balanceHidden;
-        const rawText = heroSavingsDisplay.getAttribute("data-raw-value") || "";
-        heroSavingsDisplay.textContent = balanceHidden ? "UGX ••••••••" : rawText;
-        if (balanceEyeIcon) {
-          balanceEyeIcon.className = balanceHidden
-            ? "bi bi-eye fs-5"
-            : "bi bi-eye-slash fs-5";
-        }
-      });
-    }
-
-    // Individual Member Savings Ledger Dynamic Refresh (Scoped to current member only; SACCO total stays on dashboard)
-    const mySavingsModalEl = document.getElementById("myPersonalSavingsModal");
-    const mySavingsBodyEl = document.getElementById("myPersonalSavingsBody");
-    const mySavingsTotalEl = document.getElementById("myPersonalSavingsTotal");
-
-    async function refreshIndividualMemberLedger() {
-      if (!mySavingsModalEl || !mySavingsBodyEl || !mySavingsTotalEl) return;
-      const ledgerUrl = mySavingsModalEl.getAttribute("data-ledger-url");
-      if (!ledgerUrl) return;
-
-      try {
-        const res = await fetch(ledgerUrl, {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
+    document.addEventListener("DOMContentLoaded", function () {
+      const formatUgx = (amount, { showPlus = false } = {}) => {
+        const num = Number(amount) || 0;
+        const formatted = num.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data || !Array.isArray(data.transactions)) return;
+        return showPlus && num >= 0 ? `+${formatted}` : `UGX ${formatted}`;
+      };
 
-        if (data.transactions.length === 0) {
-          mySavingsBodyEl.innerHTML = `
-            <tr>
-              <td colspan="4" class="p-5 text-center text-muted">
-                <i class="bi bi-piggy-bank display-6 d-block mb-2 text-secondary"></i>
-                No personal savings transactions found yet.
-              </td>
-            </tr>
-          `;
-        } else {
-          mySavingsBodyEl.innerHTML = data.transactions
-            .map(
-              (tx, i) => `
-              <tr>
-                <td class="ps-4 text-muted small">${i + 1}</td>
-                <td>${escapeHtml(tx.date_display || "N/A")}</td>
-                <td><span class="badge bg-success bg-opacity-10 text-success">${escapeHtml(tx.deposit_type)}</span></td>
-                <td class="text-end pe-4 fw-semibold text-success">${formatUgx(tx.amount, { showPlus: true })}</td>
-              </tr>
-            `
-            )
-            .join("");
-        }
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
 
-        // Update ONLY the individual member's ledger total in the modal footer
-        if (data.member_total !== undefined && data.member_total !== null) {
-          mySavingsTotalEl.textContent = formatUgx(data.member_total);
-        }
+      // Theme Selector (Dark default + Light theme option)
+      const THEME_STORAGE_KEY = "aksa_finance_theme";
+      const selectDarkThemeBtn = document.getElementById("selectDarkThemeBtn");
+      const selectLightThemeBtn = document.getElementById("selectLightThemeBtn");
+      const themeToggleBtns = document.querySelectorAll(".js-theme-toggle");
 
-        // Update SACCO-wide hero display if sacco_total is provided by backend
-        if (data.sacco_total !== undefined && data.sacco_total !== null && heroSavingsDisplay) {
-          const formattedSacco = formatUgx(data.sacco_total);
-          heroSavingsDisplay.setAttribute("data-raw-value", formattedSacco);
-          if (!balanceHidden) {
-            heroSavingsDisplay.textContent = formattedSacco;
-          }
+      function applyTheme(mode) {
+        const isLight = mode === "light";
+        document.body.classList.toggle("aksa-light-theme", isLight);
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, isLight ? "light" : "dark");
+        } catch (e) {}
+
+        document.querySelectorAll(".js-theme-icon").forEach((icon) => {
+          icon.className = isLight
+            ? "bi bi-moon-stars-fill js-theme-icon"
+            : "bi bi-sun-fill js-theme-icon";
+        });
+
+        if (selectDarkThemeBtn && selectLightThemeBtn) {
+          selectDarkThemeBtn.className = isLight
+            ? "btn btn-outline-dark"
+            : "btn btn-dark";
+          selectLightThemeBtn.className = isLight
+            ? "btn btn-primary"
+            : "btn btn-outline-secondary";
         }
-      } catch (err) {
-        // Keep server-rendered Jinja rows if endpoint is not yet active
       }
-    }
 
-    if (mySavingsModalEl) {
-      mySavingsModalEl.addEventListener("show.bs.modal", refreshIndividualMemberLedger);
-    }
+      let savedTheme = "dark";
+      try {
+        savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+      } catch (e) {}
+      applyTheme(savedTheme);
 
-    // 0. Loans Status Portfolio Edit & Delete Modal Handlers
-    const editLoanForm = document.getElementById("editLoanForm");
-    const deleteLoanForm = document.getElementById("deleteLoanForm");
-    const amountReqEl = document.getElementById("editAmountRequested");
-    const interestRateEl = document.getElementById("editInterestRate");
-    const tenureMonthsEl = document.getElementById("editTenureMonths");
-    const amountRepaidEl = document.getElementById("editAmountRepaid");
-    const statusSelectEl = document.getElementById("editLoanStatus");
-    const loanTypeSelectEl = document.getElementById("editLoanType");
-
-    let activeLoanCycles = 1;
-    let amountRepaidManuallyEdited = false;
-
-    function getCyclesFromDateApplied(isoDateStr) {
-      if (!isoDateStr) return 1;
-      const applied = new Date(isoDateStr);
-      if (Number.isNaN(applied.getTime())) return 1;
-      const diffDays = Math.max(
-        0,
-        Math.floor((Date.now() - applied.getTime()) / (1000 * 60 * 60 * 24))
-      );
-      return Math.floor(diffDays / 30) + 1;
-    }
-
-    function computeCompoundedTotalDue() {
-      const principal = parseFloat(amountReqEl ? amountReqEl.value : 0) || 0;
-      const rate = parseFloat(interestRateEl ? interestRateEl.value : 0) || 0;
-      const factor = 1 + rate / 100;
-      return principal * Math.pow(factor, activeLoanCycles);
-    }
-
-    function autoFillRepaidFromPrincipal() {
-      if (!amountRepaidEl) return;
-      const computedDue = computeCompoundedTotalDue();
-      amountRepaidEl.value = Number.isInteger(computedDue)
-        ? computedDue.toFixed(1)
-        : computedDue.toFixed(2);
-      amountRepaidManuallyEdited = false;
-    }
-
-    if (amountReqEl) {
-      amountReqEl.addEventListener("input", autoFillRepaidFromPrincipal);
-    }
-
-    if (interestRateEl) {
-      interestRateEl.addEventListener("input", function () {
-        if (!amountRepaidManuallyEdited) autoFillRepaidFromPrincipal();
+      themeToggleBtns.forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const nextTheme = document.body.classList.contains("aksa-light-theme")
+            ? "dark"
+            : "light";
+          applyTheme(nextTheme);
+        });
       });
-    }
 
-    if (loanTypeSelectEl) {
-      loanTypeSelectEl.addEventListener("change", function () {
-        if (interestRateEl) {
-          interestRateEl.value = this.value === "emergency" ? "7.0" : "10.0";
+      if (selectDarkThemeBtn) {
+        selectDarkThemeBtn.addEventListener("click", () => applyTheme("dark"));
+      }
+      if (selectLightThemeBtn) {
+        selectLightThemeBtn.addEventListener("click", () => applyTheme("light"));
+      }
+
+      // Hero Balance Visibility Toggle (Displays SACCO-wide savings)
+      const toggleBalanceBtn = document.getElementById("toggleBalanceVisibilityBtn");
+      const heroSavingsDisplay = document.getElementById("heroSavingsDisplay");
+      const balanceEyeIcon = document.getElementById("balanceEyeIcon");
+      let balanceHidden = false;
+
+      if (toggleBalanceBtn && heroSavingsDisplay) {
+        toggleBalanceBtn.addEventListener("click", function () {
+          balanceHidden = !balanceHidden;
+          const rawText = heroSavingsDisplay.getAttribute("data-raw-value") || "";
+          heroSavingsDisplay.textContent = balanceHidden ? "UGX ••••••••" : rawText;
+          if (balanceEyeIcon) {
+            balanceEyeIcon.className = balanceHidden
+              ? "bi bi-eye fs-5"
+              : "bi bi-eye-slash fs-5";
+          }
+        });
+      }
+
+      // Individual Member Savings Ledger Dynamic Refresh (Scoped to current member only; SACCO total stays on dashboard)
+      const mySavingsModalEl = document.getElementById("myPersonalSavingsModal");
+      const mySavingsBodyEl = document.getElementById("myPersonalSavingsBody");
+      const mySavingsTotalEl = document.getElementById("myPersonalSavingsTotal");
+
+      async function refreshIndividualMemberLedger() {
+        if (!mySavingsModalEl || !mySavingsBodyEl || !mySavingsTotalEl) return;
+        const ledgerUrl = mySavingsModalEl.getAttribute("data-ledger-url");
+        if (!ledgerUrl) return;
+
+        try {
+          const res = await fetch(ledgerUrl, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data || !Array.isArray(data.transactions)) return;
+
+          if (data.transactions.length === 0) {
+            mySavingsBodyEl.innerHTML = `
+              <tr>
+                <td colspan="4" class="p-5 text-center text-muted">
+                  <i class="bi bi-piggy-bank display-6 d-block mb-2 text-secondary"></i>
+                  No personal savings transactions found yet.
+                </td>
+              </tr>
+            `;
+          } else {
+            mySavingsBodyEl.innerHTML = data.transactions
+              .map(
+                (tx, i) => `
+                <tr>
+                  <td class="ps-4 text-muted small">${i + 1}</td>
+                  <td>${escapeHtml(tx.date_display || "N/A")}</td>
+                  <td><span class="badge bg-success bg-opacity-10 text-success">${escapeHtml(tx.deposit_type)}</span></td>
+                  <td class="text-end pe-4 fw-semibold text-success">${formatUgx(tx.amount, { showPlus: true })}</td>
+                </tr>
+              `
+              )
+              .join("");
+          }
+
+          // Update ONLY the individual member's ledger total in the modal footer
+          if (data.member_total !== undefined && data.member_total !== null) {
+            mySavingsTotalEl.textContent = formatUgx(data.member_total);
+          }
+
+          // Update SACCO-wide hero display if sacco_total is provided by backend
+          if (data.sacco_total !== undefined && data.sacco_total !== null && heroSavingsDisplay) {
+            const formattedSacco = formatUgx(data.sacco_total);
+            heroSavingsDisplay.setAttribute("data-raw-value", formattedSacco);
+            if (!balanceHidden) {
+              heroSavingsDisplay.textContent = formattedSacco;
+            }
+          }
+        } catch (err) {
+          // Keep server-rendered Jinja rows if endpoint is not yet active
         }
-        if (!amountRepaidManuallyEdited) autoFillRepaidFromPrincipal();
-      });
-    }
+      }
 
-    if (statusSelectEl) {
-      statusSelectEl.addEventListener("change", function () {
-        if (this.value === "Fully Paid" && !amountRepaidManuallyEdited) {
-          autoFillRepaidFromPrincipal();
-        }
-      });
-    }
+      if (mySavingsModalEl) {
+        mySavingsModalEl.addEventListener("show.bs.modal", refreshIndividualMemberLedger);
+      }
 
-    if (amountRepaidEl) {
-      amountRepaidEl.addEventListener("input", function () {
-        amountRepaidManuallyEdited = true;
-      });
-    }
+      // 0. Loans Status Portfolio Edit & Delete Modal Handlers
+      const editLoanForm = document.getElementById("editLoanForm");
+      const deleteLoanForm = document.getElementById("deleteLoanForm");
+      const amountReqEl = document.getElementById("editAmountRequested");
+      const interestRateEl = document.getElementById("editInterestRate");
+      const tenureMonthsEl = document.getElementById("editTenureMonths");
+      const amountRepaidEl = document.getElementById("editAmountRepaid");
+      const statusSelectEl = document.getElementById("editLoanStatus");
+      const loanTypeSelectEl = document.getElementById("editLoanType");
 
-    function normalizeLoanBaseUrl(rawBase) {
-      const cleaned = (rawBase || "/finance/loans").trim().replace(/\/+$/, "");
-      const fixed = cleaned.replace(/\/dashboard\/loans$/, "/loans");
-      return fixed.endsWith("/loans") ? fixed : "/finance/loans";
-    }
+      let activeLoanCycles = 1;
+      let amountRepaidManuallyEdited = false;
 
-    document.querySelectorAll(".js-edit-loan-btn").forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const loanId = this.getAttribute("data-loan-id");
-        if (!loanId || loanId === "0") return;
+      function getCyclesFromDateApplied(isoDateStr) {
+        if (!isoDateStr) return 1;
+        const applied = new Date(isoDateStr);
+        if (Number.isNaN(applied.getTime())) return 1;
+        const diffDays = Math.max(
+          0,
+          Math.floor((Date.now() - applied.getTime()) / (1000 * 60 * 60 * 24))
+        );
+        return Math.floor(diffDays / 30) + 1;
+      }
 
+      function computeCompoundedTotalDue() {
+        const principal = parseFloat(amountReqEl ? amountReqEl.value : 0) || 0;
+        const rate = parseFloat(interestRateEl ? interestRateEl.value : 0) || 0;
+        const factor = 1 + rate / 100;
+        return principal * Math.pow(factor, activeLoanCycles);
+      }
+
+      function autoFillRepaidFromPrincipal() {
+        if (!amountRepaidEl) return;
+        const computedDue = computeCompoundedTotalDue();
+        amountRepaidEl.value = Number.isInteger(computedDue)
+          ? computedDue.toFixed(1)
+          : computedDue.toFixed(2);
         amountRepaidManuallyEdited = false;
-        activeLoanCycles = getCyclesFromDateApplied(this.getAttribute("data-date-applied"));
+      }
 
-        const idInput = document.getElementById("editLoanIdInput");
-        if (idInput) idInput.value = loanId;
+      if (amountReqEl) {
+        amountReqEl.addEventListener("input", autoFillRepaidFromPrincipal);
+      }
 
-        const borrowerEl = document.getElementById("editLoanBorrowerName");
-        if (borrowerEl) borrowerEl.textContent = this.getAttribute("data-borrower-name") || "Borrower";
+      if (interestRateEl) {
+        interestRateEl.addEventListener("input", function () {
+          if (!amountRepaidManuallyEdited) autoFillRepaidFromPrincipal();
+        });
+      }
 
-        const loanTypeVal = (this.getAttribute("data-loan-type") || "general").toLowerCase();
-        if (loanTypeSelectEl) loanTypeSelectEl.value = loanTypeVal === "emergency" ? "emergency" : "general";
-        if (statusSelectEl) statusSelectEl.value = this.getAttribute("data-status") || "Pending";
-        if (amountReqEl) amountReqEl.value = this.getAttribute("data-amount-requested") || 0;
-        if (interestRateEl) interestRateEl.value = this.getAttribute("data-interest-rate") || 10;
-        if (tenureMonthsEl) tenureMonthsEl.value = this.getAttribute("data-tenure-months") || 1;
-        if (amountRepaidEl) amountRepaidEl.value = this.getAttribute("data-amount-repaid") || 0;
+      if (loanTypeSelectEl) {
+        loanTypeSelectEl.addEventListener("change", function () {
+          if (interestRateEl) {
+            interestRateEl.value = this.value === "emergency" ? "7.0" : "10.0";
+          }
+          if (!amountRepaidManuallyEdited) autoFillRepaidFromPrincipal();
+        });
+      }
 
-        if (editLoanForm) {
-          const baseUrl = normalizeLoanBaseUrl(editLoanForm.getAttribute("data-base-url"));
-          editLoanForm.action = `${baseUrl}/${loanId}/edit`;
-        }
+      if (statusSelectEl) {
+        statusSelectEl.addEventListener("change", function () {
+          if (this.value === "Fully Paid" && !amountRepaidManuallyEdited) {
+            autoFillRepaidFromPrincipal();
+          }
+        });
+      }
+
+      if (amountRepaidEl) {
+        amountRepaidEl.addEventListener("input", function () {
+          amountRepaidManuallyEdited = true;
+        });
+      }
+
+      function normalizeLoanBaseUrl(rawBase) {
+        const cleaned = (rawBase || "/finance/loans").trim().replace(/\/+$/, "");
+        const fixed = cleaned.replace(/\/dashboard\/loans$/, "/loans");
+        return fixed.endsWith("/loans") ? fixed : "/finance/loans";
+      }
+
+      document.querySelectorAll(".js-edit-loan-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const loanId = this.getAttribute("data-loan-id");
+          if (!loanId || loanId === "0") return;
+
+          amountRepaidManuallyEdited = false;
+          activeLoanCycles = getCyclesFromDateApplied(this.getAttribute("data-date-applied"));
+
+          const idInput = document.getElementById("editLoanIdInput");
+          if (idInput) idInput.value = loanId;
+
+          const borrowerEl = document.getElementById("editLoanBorrowerName");
+          if (borrowerEl) borrowerEl.textContent = this.getAttribute("data-borrower-name") || "Borrower";
+
+          const loanTypeVal = (this.getAttribute("data-loan-type") || "general").toLowerCase();
+          if (loanTypeSelectEl) loanTypeSelectEl.value = loanTypeVal === "emergency" ? "emergency" : "general";
+          if (statusSelectEl) statusSelectEl.value = this.getAttribute("data-status") || "Pending";
+          if (amountReqEl) amountReqEl.value = this.getAttribute("data-amount-requested") || 0;
+          if (interestRateEl) interestRateEl.value = this.getAttribute("data-interest-rate") || 10;
+          if (tenureMonthsEl) tenureMonthsEl.value = this.getAttribute("data-tenure-months") || 1;
+          if (amountRepaidEl) amountRepaidEl.value = this.getAttribute("data-amount-repaid") || 0;
+
+          if (editLoanForm) {
+            const baseUrl = normalizeLoanBaseUrl(editLoanForm.getAttribute("data-base-url"));
+            editLoanForm.action = `${baseUrl}/${loanId}/edit`;
+          }
+        });
       });
-    });
 
-    document.querySelectorAll(".js-delete-loan-btn").forEach((btn) => {
-      btn.addEventListener("click", function () {
-        const loanId = this.getAttribute("data-loan-id");
-        if (!loanId || loanId === "0") return;
+      document.querySelectorAll(".js-delete-loan-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const loanId = this.getAttribute("data-loan-id");
+          if (!loanId || loanId === "0") return;
 
-        const idInput = document.getElementById("deleteLoanIdInput");
-        if (idInput) idInput.value = loanId;
+          const idInput = document.getElementById("deleteLoanIdInput");
+          if (idInput) idInput.value = loanId;
 
-        const borrowerEl = document.getElementById("deleteLoanBorrowerName");
-        if (borrowerEl) borrowerEl.textContent = this.getAttribute("data-borrower-name") || "Borrower";
+          const borrowerEl = document.getElementById("deleteLoanBorrowerName");
+          if (borrowerEl) borrowerEl.textContent = this.getAttribute("data-borrower-name") || "Borrower";
 
-        const balanceEl = document.getElementById("deleteLoanBalanceText");
-        if (balanceEl) balanceEl.textContent = this.getAttribute("data-balance-remaining") || "0";
+          const balanceEl = document.getElementById("deleteLoanBalanceText");
+          if (balanceEl) balanceEl.textContent = this.getAttribute("data-balance-remaining") || "0";
 
-        if (deleteLoanForm) {
-          const baseUrl = normalizeLoanBaseUrl(deleteLoanForm.getAttribute("data-base-url"));
-          deleteLoanForm.action = `${baseUrl}/${loanId}/delete`;
-        }
+          if (deleteLoanForm) {
+            const baseUrl = normalizeLoanBaseUrl(deleteLoanForm.getAttribute("data-base-url"));
+            deleteLoanForm.action = `${baseUrl}/${loanId}/delete`;
+          }
+        });
       });
-    });
 
-    if (editLoanForm) {
-      editLoanForm.addEventListener("submit", function (e) {
-        if (!this.action || this.action.endsWith("#") || this.action.includes("/loans/0/")) {
-          e.preventDefault();
-        }
-      });
-    }
+      if (editLoanForm) {
+        editLoanForm.addEventListener("submit", function (e) {
+          if (!this.action || this.action.endsWith("#") || this.action.includes("/loans/0/")) {
+            e.preventDefault();
+          }
+        });
+      }
 
-    if (deleteLoanForm) {
-      deleteLoanForm.addEventListener("submit", function (e) {
-        if (!this.action || this.action.endsWith("#") || this.action.includes("/loans/0/")) {
-          e.preventDefault();
-        }
-      });
-    }
+      if (deleteLoanForm) {
+        deleteLoanForm.addEventListener("submit", function (e) {
+          if (!this.action || this.action.endsWith("#") || this.action.includes("/loans/0/")) {
+            e.preventDefault();
+          }
+        });
+      }
 
-    // Side-by-Side Grouped Column Chart: Cash Flows
-    const ctxFlow = document.getElementById("cashflowComboChart");
-    if (ctxFlow) {
-      new Chart(ctxFlow.getContext("2d"), {
-        type: "bar",
-        data: {
-          labels: {{ fy_labels | default(['Nov 2026']) | tojson | safe }},
-          datasets: [
-            {
-              type: "bar",
-              label: "Disbursements (UGX)",
-              data: {{ fy_disbursements | default([0]) | tojson | safe }},
-              backgroundColor: "#0d6efd",
-              borderRadius: 4,
-            },
-            {
-              type: "bar",
-              label: "Repayments Collected (UGX)",
-              data: {{ fy_repayments | default([0]) | tojson | safe }},
-              backgroundColor: "#198754",
-              borderRadius: 4,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { grid: { display: false } },
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function (value) {
-                  return value.toLocaleString();
+      // Side-by-Side Grouped Column Chart: Cash Flows
+      const ctxFlow = document.getElementById("cashflowComboChart");
+      if (ctxFlow) {
+        new Chart(ctxFlow.getContext("2d"), {
+          type: "bar",
+          data: {
+            labels: {{ fy_labels | default(['Nov 2026']) | tojson | safe }},
+            datasets: [
+              {
+                type: "bar",
+                label: "Disbursements (UGX)",
+                data: {{ fy_disbursements | default([0]) | tojson | safe }},
+                backgroundColor: "#0d6efd",
+                borderRadius: 4,
+              },
+              {
+                type: "bar",
+                label: "Repayments Collected (UGX)",
+                data: {{ fy_repayments | default([0]) | tojson | safe }},
+                backgroundColor: "#198754",
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { grid: { display: false } },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return value.toLocaleString();
+                  },
                 },
               },
             },
           },
-        },
-      });
-    }
-
-    // 2. Flexible Savings Modal Period & Calendar Handler
-    const periodSelect = document.getElementById("savingPeriod");
-    const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
-    const customMonthsContainer = document.getElementById("customMonthsContainer");
-    const amountInput = document.getElementById("depositAmount");
-    const ruleText = document.getElementById("depositRuleText");
-    const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
-    const savingsForm = document.querySelector("#saveFridayModal form");
-    const monthError = document.getElementById("monthError");
-
-    const calendarMonthYear = document.getElementById("calendarMonthYear");
-    const calendarGridBody = document.getElementById("calendarGridBody");
-    const prevMonthBtn = document.getElementById("prevMonthBtn");
-    const nextMonthBtn = document.getElementById("nextMonthBtn");
-    const selectedFridayInput = document.getElementById("selectedFridayDate");
-    const selectedFridayDisplay = document.getElementById("selectedFridayDisplay");
-    const fridayError = document.getElementById("fridayError");
-
-    let currentDate = new Date();
-    let currentMonth = currentDate.getMonth();
-    let currentYear = currentDate.getFullYear();
-    let selectedDateStr = "";
-
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December",
-    ];
-
-    function updateFormRules() {
-      if (!periodSelect || !amountInput) return;
-      const period = periodSelect.value;
-
-      if (period === "custom") {
-        if (customMonthsContainer) customMonthsContainer.classList.remove("d-none");
-        if (fridayCalendarContainer) fridayCalendarContainer.classList.add("d-none");
-        if (selectedFridayInput) selectedFridayInput.removeAttribute("required");
-
-        const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length || 1;
-        const minVal = 8000 * checkedCount;
-        const maxVal = 100000 * checkedCount;
-        amountInput.min = minVal;
-        amountInput.max = maxVal;
-        if (ruleText) {
-          ruleText.textContent = `Rule: For ${checkedCount} month(s), enter between UGX ${minVal.toLocaleString()} and UGX ${maxVal.toLocaleString()}.`;
-        }
-      } else if (period === "friday") {
-        if (fridayCalendarContainer) fridayCalendarContainer.classList.remove("d-none");
-        if (customMonthsContainer) customMonthsContainer.classList.add("d-none");
-        if (selectedFridayInput) selectedFridayInput.setAttribute("required", "required");
-        if (monthError) monthError.classList.add("d-none");
-
-        amountInput.min = 2000;
-        amountInput.max = 25000;
-        if (ruleText) {
-          ruleText.textContent = "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
-        }
-      }
-    }
-
-    function autoSelectDefaultFriday() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      for (let day = today.getDate(); day <= daysInMonth; day++) {
-        if (new Date(year, month, day).getDay() === 5) {
-          selectDate(year, month, day);
-          return;
-        }
-      }
-      for (let day = 1; day <= 7; day++) {
-        if (new Date(year, month, day).getDay() === 5) {
-          selectDate(year, month, day);
-          return;
-        }
-      }
-    }
-
-    function formatDateValue(year, month, day) {
-      const m = String(month + 1).padStart(2, "0");
-      const d = String(day).padStart(2, "0");
-      return `${year}-${m}-${d}`;
-    }
-
-    function selectDate(year, month, day) {
-      selectedDateStr = formatDateValue(year, month, day);
-      if (selectedFridayInput) selectedFridayInput.value = selectedDateStr;
-
-      const dateObj = new Date(year, month, day);
-      if (selectedFridayDisplay) {
-        selectedFridayDisplay.textContent = dateObj.toLocaleDateString("en-GB", {
-          weekday: "short", day: "numeric", month: "short", year: "numeric",
         });
       }
-      if (fridayError) fridayError.classList.add("d-none");
-      renderCalendar(currentMonth, currentYear);
-    }
 
-    function renderCalendar(month, year) {
-      if (!calendarMonthYear || !calendarGridBody) return;
-      calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
-      calendarGridBody.innerHTML = "";
+      // 2. Flexible Savings Modal Period & Calendar Handler
+      const periodSelect = document.getElementById("savingPeriod");
+      const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
+      const customMonthsContainer = document.getElementById("customMonthsContainer");
+      const amountInput = document.getElementById("depositAmount");
+      const ruleText = document.getElementById("depositRuleText");
+      const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
+      const savingsForm = document.querySelector("#saveFridayModal form");
+      const monthError = document.getElementById("monthError");
 
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const calendarMonthYear = document.getElementById("calendarMonthYear");
+      const calendarGridBody = document.getElementById("calendarGridBody");
+      const prevMonthBtn = document.getElementById("prevMonthBtn");
+      const nextMonthBtn = document.getElementById("nextMonthBtn");
+      const selectedFridayInput = document.getElementById("selectedFridayDate");
+      const selectedFridayDisplay = document.getElementById("selectedFridayDisplay");
+      const fridayError = document.getElementById("fridayError");
 
-      let date = 1;
-      for (let i = 0; i < 6; i++) {
-        const row = document.createElement("tr");
-        let hasDays = false;
+      let currentDate = new Date();
+      let currentMonth = currentDate.getMonth();
+      let currentYear = currentDate.getFullYear();
+      let selectedDateStr = "";
 
-        for (let j = 0; j < 7; j++) {
-          const cell = document.createElement("td");
-          cell.className = "p-1";
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+      ];
 
-          if (i === 0 && j < firstDay) {
-            cell.textContent = "";
-          } else if (date > daysInMonth) {
-            cell.textContent = "";
-          } else {
-            hasDays = true;
-            const cellDate = date;
-            const dateStr = formatDateValue(year, month, cellDate);
-            const isFriday = j === 5;
+      function updateFormRules() {
+        if (!periodSelect || !amountInput) return;
+        const period = periodSelect.value;
 
-            if (isFriday) {
-              const btn = document.createElement("button");
-              btn.type = "button";
-              btn.textContent = cellDate;
-              const isSelected = dateStr === selectedDateStr;
+        if (period === "custom") {
+          if (customMonthsContainer) customMonthsContainer.classList.remove("d-none");
+          if (fridayCalendarContainer) fridayCalendarContainer.classList.add("d-none");
+          if (selectedFridayInput) selectedFridayInput.removeAttribute("required");
 
-              btn.className = isSelected
-                ? "btn btn-sm btn-success fw-bold w-100 rounded-circle"
-                : "btn btn-sm btn-outline-success fw-semibold w-100 rounded-circle";
+          const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length || 1;
+          const minVal = 8000 * checkedCount;
+          const maxVal = 100000 * checkedCount;
+          amountInput.min = minVal;
+          amountInput.max = maxVal;
+          if (ruleText) {
+            ruleText.textContent = `Rule: For ${checkedCount} month(s), enter between UGX ${minVal.toLocaleString()} and UGX ${maxVal.toLocaleString()}.`;
+          }
+        } else if (period === "friday") {
+          if (fridayCalendarContainer) fridayCalendarContainer.classList.remove("d-none");
+          if (customMonthsContainer) customMonthsContainer.classList.add("d-none");
+          if (selectedFridayInput) selectedFridayInput.setAttribute("required", "required");
+          if (monthError) monthError.classList.add("d-none");
 
-              btn.addEventListener("click", () => selectDate(year, month, cellDate));
-              cell.appendChild(btn);
+          amountInput.min = 2000;
+          amountInput.max = 25000;
+          if (ruleText) {
+            ruleText.textContent = "Rule: Contributions must be between UGX 2,000 and UGX 25,000 every Friday.";
+          }
+        }
+      }
+
+      function autoSelectDefaultFriday() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let day = today.getDate(); day <= daysInMonth; day++) {
+          if (new Date(year, month, day).getDay() === 5) {
+            selectDate(year, month, day);
+            return;
+          }
+        }
+        for (let day = 1; day <= 7; day++) {
+          if (new Date(year, month, day).getDay() === 5) {
+            selectDate(year, month, day);
+            return;
+          }
+        }
+      }
+
+      function formatDateValue(year, month, day) {
+        const m = String(month + 1).padStart(2, "0");
+        const d = String(day).padStart(2, "0");
+        return `${year}-${m}-${d}`;
+      }
+
+      function selectDate(year, month, day) {
+        selectedDateStr = formatDateValue(year, month, day);
+        if (selectedFridayInput) selectedFridayInput.value = selectedDateStr;
+
+        const dateObj = new Date(year, month, day);
+        if (selectedFridayDisplay) {
+          selectedFridayDisplay.textContent = dateObj.toLocaleDateString("en-GB", {
+            weekday: "short", day: "numeric", month: "short", year: "numeric",
+          });
+        }
+        if (fridayError) fridayError.classList.add("d-none");
+        renderCalendar(currentMonth, currentYear);
+      }
+
+      function renderCalendar(month, year) {
+        if (!calendarMonthYear || !calendarGridBody) return;
+        calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+        calendarGridBody.innerHTML = "";
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+          const row = document.createElement("tr");
+          let hasDays = false;
+
+          for (let j = 0; j < 7; j++) {
+            const cell = document.createElement("td");
+            cell.className = "p-1";
+
+            if (i === 0 && j < firstDay) {
+              cell.textContent = "";
+            } else if (date > daysInMonth) {
+              cell.textContent = "";
             } else {
-              const span = document.createElement("span");
-              span.textContent = cellDate;
-              span.className = "d-inline-block text-muted opacity-50 py-1";
-              cell.appendChild(span);
+              hasDays = true;
+              const cellDate = date;
+              const dateStr = formatDateValue(year, month, cellDate);
+              const isFriday = j === 5;
+
+              if (isFriday) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = cellDate;
+                const isSelected = dateStr === selectedDateStr;
+
+                btn.className = isSelected
+                  ? "btn btn-sm btn-success fw-bold w-100 rounded-circle"
+                  : "btn btn-sm btn-outline-success fw-semibold w-100 rounded-circle";
+
+                btn.addEventListener("click", () => selectDate(year, month, cellDate));
+                cell.appendChild(btn);
+              } else {
+                const span = document.createElement("span");
+                span.textContent = cellDate;
+                span.className = "d-inline-block text-muted opacity-50 py-1";
+                cell.appendChild(span);
+              }
+              date++;
             }
-            date++;
+            row.appendChild(cell);
           }
-          row.appendChild(cell);
+          if (hasDays) calendarGridBody.appendChild(row);
         }
-        if (hasDays) calendarGridBody.appendChild(row);
       }
-    }
 
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener("click", () => {
-        currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
-        }
-        renderCalendar(currentMonth, currentYear);
-      });
-    }
+      if (prevMonthBtn) {
+        prevMonthBtn.addEventListener("click", () => {
+          currentMonth--;
+          if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+          }
+          renderCalendar(currentMonth, currentYear);
+        });
+      }
 
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener("click", () => {
-        currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
-        }
-        renderCalendar(currentMonth, currentYear);
-      });
-    }
+      if (nextMonthBtn) {
+        nextMonthBtn.addEventListener("click", () => {
+          currentMonth++;
+          if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+          }
+          renderCalendar(currentMonth, currentYear);
+        });
+      }
 
-    if (periodSelect) {
-      periodSelect.addEventListener("change", updateFormRules);
-      updateFormRules();
-    }
-
-    monthCheckboxes.forEach((cb) => {
-      cb.addEventListener("change", () => {
-        if (monthError) monthError.classList.add("d-none");
+      if (periodSelect) {
+        periodSelect.addEventListener("change", updateFormRules);
         updateFormRules();
+      }
+
+      monthCheckboxes.forEach((cb) => {
+        cb.addEventListener("change", () => {
+          if (monthError) monthError.classList.add("d-none");
+          updateFormRules();
+        });
       });
-    });
 
-    if (savingsForm) {
-      savingsForm.addEventListener("submit", function (e) {
-        if (periodSelect && periodSelect.value === "friday") {
-          if (selectedFridayInput && !selectedFridayInput.value) {
-            e.preventDefault();
-            if (fridayError) fridayError.classList.remove("d-none");
+      if (savingsForm) {
+        savingsForm.addEventListener("submit", function (e) {
+          if (periodSelect && periodSelect.value === "friday") {
+            if (selectedFridayInput && !selectedFridayInput.value) {
+              e.preventDefault();
+              if (fridayError) fridayError.classList.remove("d-none");
+            }
+          } else if (periodSelect && periodSelect.value === "custom") {
+            const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length;
+            if (checkedCount === 0) {
+              e.preventDefault();
+              if (monthError) monthError.classList.remove("d-none");
+            }
           }
-        } else if (periodSelect && periodSelect.value === "custom") {
-          const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length;
-          if (checkedCount === 0) {
-            e.preventDefault();
-            if (monthError) monthError.classList.remove("d-none");
+        });
+      }
+
+      // 3. Loan Type Rules Handler
+      const loanTypeSelect = document.getElementById("loanTypeSelect");
+      const tenureSelect = document.getElementById("tenureSelect");
+      const interestRateInput = document.getElementById("interestRateInput");
+
+      function updateLoanRules() {
+        if (!loanTypeSelect) return;
+        const selectedType = loanTypeSelect.value;
+
+        if (selectedType === "emergency") {
+          if (interestRateInput) interestRateInput.value = "7%";
+          if (tenureSelect) {
+            tenureSelect.innerHTML = `<option value="1" selected>1 Month (Strict limit)</option>`;
           }
-        }
-      });
-    }
-
-    // 3. Loan Type Rules Handler
-    const loanTypeSelect = document.getElementById("loanTypeSelect");
-    const tenureSelect = document.getElementById("tenureSelect");
-    const interestRateInput = document.getElementById("interestRateInput");
-
-    function updateLoanRules() {
-      if (!loanTypeSelect) return;
-      const selectedType = loanTypeSelect.value;
-
-      if (selectedType === "emergency") {
-        if (interestRateInput) interestRateInput.value = "7%";
-        if (tenureSelect) {
-          tenureSelect.innerHTML = `<option value="1" selected>1 Month (Strict limit)</option>`;
-        }
-      } else {
-        if (interestRateInput) interestRateInput.value = "10%";
-        if (tenureSelect) {
-          tenureSelect.innerHTML = `
-            <option value="1">1 Month</option>
-            <option value="2">2 Months</option>
-            <option value="3" selected>3 Months</option>
-          `;
+        } else {
+          if (interestRateInput) interestRateInput.value = "10%";
+          if (tenureSelect) {
+            tenureSelect.innerHTML = `
+              <option value="1">1 Month</option>
+              <option value="2">2 Months</option>
+              <option value="3" selected>3 Months</option>
+            `;
+          }
         }
       }
-    }
 
-    if (loanTypeSelect) {
-      loanTypeSelect.addEventListener("change", updateLoanRules);
-      updateLoanRules();
-    }
+      if (loanTypeSelect) {
+        loanTypeSelect.addEventListener("change", updateLoanRules);
+        updateLoanRules();
+      }
 
-    // 4. Robust Modal Backdrop Clean-up Fix
-    document.querySelectorAll(".modal").forEach((modal) => {
-      modal.addEventListener("hidden.bs.modal", function () {
-        document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
-        document.body.classList.remove("modal-open");
-        document.body.style.overflow = "";
-        document.body.style.paddingRight = "";
+      // 4. Robust Modal Backdrop Clean-up Fix
+      document.querySelectorAll(".modal").forEach((modal) => {
+        modal.addEventListener("hidden.bs.modal", function () {
+          document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+          document.body.classList.remove("modal-open");
+          document.body.style.overflow = "";
+          document.body.style.paddingRight = "";
+        });
       });
+
+      // Initialize Calendar on load
+      autoSelectDefaultFriday();
+      renderCalendar(currentMonth, currentYear);
     });
 
-    // Initialize Calendar on load
-    autoSelectDefaultFriday();
-    renderCalendar(currentMonth, currentYear);
-  });
+    // Top Members Leaderboard Pagination Script
+    let currentPage = 0;
+    const itemsPerPage = 5;
+    const saverItems = document.querySelectorAll(".saver-item");
+    const totalPages = Math.ceil(saverItems.length / itemsPerPage);
 
-  // Top Members Leaderboard Pagination Script
-  let currentPage = 0;
-  const itemsPerPage = 5;
-  const saverItems = document.querySelectorAll(".saver-item");
-  const totalPages = Math.ceil(saverItems.length / itemsPerPage);
+    function updatePagination() {
+      const start = currentPage * itemsPerPage;
+      const end = start + itemsPerPage;
 
-  function updatePagination() {
-    const start = currentPage * itemsPerPage;
-    const end = start + itemsPerPage;
+      saverItems.forEach((item, index) => {
+        item.style.display = index >= start && index < end ? "block" : "none";
+      });
 
-    saverItems.forEach((item, index) => {
-      item.style.display = index >= start && index < end ? "block" : "none";
-    });
+      const indicator = document.getElementById("pageIndicator");
+      if (indicator) {
+        indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+      }
 
-    const indicator = document.getElementById("pageIndicator");
-    if (indicator) {
-      indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+
+      if (prevBtn) prevBtn.disabled = currentPage === 0;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
     }
 
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
+    function changePage(direction) {
+      currentPage += direction;
+      if (currentPage < 0) currentPage = 0;
+      if (currentPage >= totalPages) currentPage = totalPages - 1;
+      updatePagination();
+    }
 
-    if (prevBtn) prevBtn.disabled = currentPage === 0;
-    if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
-  }
+    document.addEventListener("DOMContentLoaded", () => {
+      updatePagination();
+    });
+    //alert if still processing transaction
+    document.getElementById('savingsForm').addEventListener('submit', function(e) {
+      const btn = document.getElementById('submitSavingsBtn');
+      const alertBox = document.getElementById('processingAlert');
 
-  function changePage(direction) {
-    currentPage += direction;
-    if (currentPage < 0) currentPage = 0;
-    if (currentPage >= totalPages) currentPage = totalPages - 1;
-    updatePagination();
-  }
+      // If already submitting, block the second request completely
+      if (btn.dataset.submitting === 'true') {
+          e.preventDefault();
+          return false;
+      }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    updatePagination();
+      // Lock the button and update UI
+      btn.dataset.submitting = 'true';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Still processing...';
+      alertBox.classList.remove('d-none');
   });
 </script>
 {% endblock %}
