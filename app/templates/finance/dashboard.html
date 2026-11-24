@@ -3267,7 +3267,7 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // Individual Member Savings Ledger Dynamic Refresh (Scoped to current member only; SACCO total stays on dashboard)
+    // Individual Member Savings Ledger Dynamic Refresh
     const mySavingsModalEl = document.getElementById("myPersonalSavingsModal");
     const mySavingsBodyEl = document.getElementById("myPersonalSavingsBody");
     const mySavingsTotalEl = document.getElementById("myPersonalSavingsTotal");
@@ -3309,12 +3309,10 @@ loan.amount_repaid > 0 %}
             .join("");
         }
 
-        // Update ONLY the individual member's ledger total in the modal footer
         if (data.member_total !== undefined && data.member_total !== null) {
           mySavingsTotalEl.textContent = formatUgx(data.member_total);
         }
 
-        // Update SACCO-wide hero display if sacco_total is provided by backend
         if (data.sacco_total !== undefined && data.sacco_total !== null && heroSavingsDisplay) {
           const formattedSacco = formatUgx(data.sacco_total);
           heroSavingsDisplay.setAttribute("data-raw-value", formattedSacco);
@@ -3518,7 +3516,7 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // 2. Flexible Savings Modal Period, Calendar & Processing Lock Handler
+    // 2. Flexible Savings Modal Period, Calendar & Single Submit Lock Handler
     const periodSelect = document.getElementById("savingPeriod");
     const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
     const customMonthsContainer = document.getElementById("customMonthsContainer");
@@ -3561,7 +3559,7 @@ loan.amount_repaid > 0 %}
 
         const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length || 1;
         const minVal = 8000 * checkedCount;
-        const maxVal = 100000 * checkedCount;
+        const maxVal = 125000 * checkedCount;
         amountInput.min = minVal;
         amountInput.max = maxVal;
         if (ruleText) {
@@ -3725,7 +3723,12 @@ loan.amount_repaid > 0 %}
           }
         }
 
-        // Prevent duplicate submissions while the first request is in flight
+        // Allow native HTML5 validation to report invalid fields before locking
+        if (!savingsForm.checkValidity()) {
+          return;
+        }
+
+        // Block duplicate submissions while the first request is in flight
         if (savingsForm.dataset.submitting === "true") {
           e.preventDefault();
           if (processingAlertEl) processingAlertEl.classList.remove("d-none");
@@ -3903,9 +3906,10 @@ loan.amount_repaid > 0 %}
       });
     });
 
-    // Initialize Calendar on load
+    // Initialize Calendar & Leaderboard Pagination on load
     autoSelectDefaultFriday();
     renderCalendar(currentMonth, currentYear);
+    updatePagination();
   });
 
   // Top Members Leaderboard Pagination Script
@@ -3940,80 +3944,5 @@ loan.amount_repaid > 0 %}
     if (currentPage >= totalPages) currentPage = totalPages - 1;
     updatePagination();
   }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    updatePagination();
-  });
-</script>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const financeSavingsForm =
-      document.getElementById("saveFridayForm") ||
-      document.querySelector("#saveFridayModal form");
-    const financeSubmitBtn = document.getElementById("submitDepositBtn");
-    const financeAlertBox = document.getElementById("processingAlert");
-    const saveFridayModalEl = document.getElementById("saveFridayModal");
-    const processingModalEl = document.getElementById("processingModal");
-
-    if (!financeSavingsForm) return;
-
-    financeSavingsForm.addEventListener("submit", function (e) {
-      // Let validation listeners that already called preventDefault() finish first
-      if (e.defaultPrevented) {
-        return;
-      }
-
-      // Block duplicate submissions while a request is already in flight
-      if (financeSavingsForm.dataset.submitting === "true") {
-        e.preventDefault();
-        if (financeAlertBox) financeAlertBox.classList.remove("d-none");
-        return false;
-      }
-
-      financeSavingsForm.dataset.submitting = "true";
-
-      if (financeSubmitBtn) {
-        financeSubmitBtn.disabled = true;
-        financeSubmitBtn.innerHTML =
-          '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Still processing...';
-      }
-
-      financeSavingsForm
-        .querySelectorAll('[data-bs-dismiss="modal"]')
-        .forEach(function (btn) {
-          btn.disabled = true;
-        });
-
-      if (financeAlertBox) {
-        financeAlertBox.classList.remove("d-none");
-      }
-
-      if (saveFridayModalEl && typeof bootstrap !== "undefined") {
-        const existingModal = bootstrap.Modal.getInstance(saveFridayModalEl);
-        if (existingModal) {
-          existingModal.hide();
-        }
-      }
-
-      if (processingModalEl && typeof bootstrap !== "undefined") {
-        const procTitle = document.getElementById("processingTitle");
-        const procText = document.getElementById("processingText");
-        if (procTitle) procTitle.textContent = "Processing Deposit";
-        if (procText) {
-          procText.textContent =
-            "Still processing transaction, please wait while we record your deposit...";
-        }
-
-        const procModal =
-          bootstrap.Modal.getInstance(processingModalEl) ||
-          new bootstrap.Modal(processingModalEl, {
-            backdrop: "static",
-            keyboard: false,
-          });
-        procModal.show();
-      }
-    });
-  });
 </script>
 {% endblock %}
