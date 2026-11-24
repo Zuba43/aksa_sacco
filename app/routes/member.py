@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request,session
 from flask_login import login_required, current_user
 from app.models import Savings, Loan, Notification, Minute, FineFee
 from app import db
+import uuid
 from app.utils import send_guarantor_notification
 from datetime import datetime, timedelta
 
@@ -64,35 +65,58 @@ def dashboard():
 
 
 from datetime import datetime
+def issue_savings_token():
+    token = str(uuid.uuid4())
+    session['savings_tx_token'] = token
+    session.modified = True
+    return token
+
 
 @member_bp.route('/save-friday', methods=['POST'])
 @login_required
 def save_friday():
-    amount = float(request.form.get('amount', 0))
+    submitted_token = request.form.get('tx_token', '')
+    expected_token = session.pop('savings_tx_token', None)
+    session.modified = True
+
+    if not expected_token or submitted_token != expected_token:
+        flash('Transaction is still processing or has already been submitted.', 'warning')
+        return redirect(url_for('member.dashboard'))
+
+    try:
+        amount = float(request.form.get('amount', 0))
+    except (TypeError, ValueError):
+        issue_savings_token()
+        flash('Please enter a valid deposit amount.', 'danger')
+        return redirect(url_for('member.dashboard'))
+
     saving_period = request.form.get('saving_period', 'friday')
-    
+
     parsed_friday_date = None
     custom_months_str = None
     period_label = "Savings Deposit"
-    
+
     min_limit = 2000
     max_limit = 25000
 
     if saving_period == 'friday':
         friday_date_str = request.form.get('friday_date')
         if not friday_date_str:
+            issue_savings_token()
             flash('Please select a valid Friday date from the calendar.', 'danger')
             return redirect(url_for('member.dashboard'))
-        
+
         try:
             parsed_friday_date = datetime.strptime(friday_date_str, '%Y-%m-%d').date()
             if parsed_friday_date.weekday() != 4:
+                issue_savings_token()
                 flash('Selected date must be a Friday.', 'danger')
                 return redirect(url_for('member.dashboard'))
         except ValueError:
+            issue_savings_token()
             flash('Invalid date format received.', 'danger')
             return redirect(url_for('member.dashboard'))
-            
+
         period_label = f"Friday Weekly ({parsed_friday_date.strftime('%d %b %Y')})"
         min_limit = 2000
         max_limit = 25000
@@ -100,31 +124,41 @@ def save_friday():
     elif saving_period == 'custom':
         custom_months_list = request.form.getlist('custom_months')
         if not custom_months_list:
+            issue_savings_token()
             flash('Please select at least one month for custom savings.', 'danger')
             return redirect(url_for('member.dashboard'))
-        
+
         custom_months_str = ", ".join(custom_months_list)
         month_count = len(custom_months_list)
-        
+
         min_limit = 8000 * month_count
         max_limit = 125000 * month_count
         period_label = f"Custom Savings ({custom_months_str})"
 
     # Validate amount against the calculated limits
     if amount < min_limit or amount > max_limit:
-        flash(f'Contributions for {period_label.lower()} must be between UGX {min_limit:,.0f} and UGX {max_limit:,.0f}.', 'danger')
+        issue_savings_token()
+        flash(
+            f'Contributions for {period_label.lower()} must be between UGX {min_limit:,.0f} and UGX {max_limit:,.0f}.',
+            'danger'
+        )
         return redirect(url_for('member.dashboard'))
 
-    # Save to database
-    new_savings = Savings(
-        user_id=current_user.id,
-        amount=amount,
-        deposit_type=period_label,
-        friday_date=parsed_friday_date,
-        custom_months=custom_months_str
-    )
-    db.session.add(new_savings)
-    db.session.commit()
+    try:
+        new_savings = Savings(
+            user_id=current_user.id,
+            amount=amount,
+            deposit_type=period_label,
+            friday_date=parsed_friday_date,
+            custom_months=custom_months_str
+        )
+        db.session.add(new_savings)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        issue_savings_token()
+        flash('Error recording deposit. Please try again.', 'danger')
+        return redirect(url_for('member.dashboard'))
 
     flash(f'Successfully recorded deposit of UGX {amount:,.2f} ({period_label})!', 'success')
     return redirect(url_for('member.dashboard'))
