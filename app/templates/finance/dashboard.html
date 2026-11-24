@@ -2119,9 +2119,57 @@ SACCO{% endblock %} {% block extra_head %}
       </div>
       <div class="modal-body p-3 p-md-4">
         <p class="text-muted small mb-3">
-          Comprehensive audit log of all savings contributions, loan repayments,
-          membership fees, member fines, and institutional expenses.
+          Daily audit log of savings contributions, loan repayments, membership
+          fees, and member fines filterable by a single day and member.
         </p>
+
+        <!-- Single Day & Single Member Filter Bar -->
+        <div class="row g-2 align-items-end bg-light border rounded-3 p-3 mb-3">
+          <div class="col-md-4">
+            <label
+              for="historyDayFilter"
+              class="form-label small fw-semibold mb-1"
+            >
+              <i class="bi bi-calendar-day me-1"></i>Particular Day
+            </label>
+            <input
+              type="date"
+              id="historyDayFilter"
+              class="form-control form-control-sm"
+            />
+          </div>
+
+          <div class="col-md-5">
+            <label
+              for="historyMemberFilter"
+              class="form-label small fw-semibold mb-1"
+            >
+              <i class="bi bi-person me-1"></i>Member Filter
+            </label>
+            <select id="historyMemberFilter" class="form-select form-select-sm">
+              <option value="all" selected>All Members</option>
+              {% for m in all_members|default([]) %}
+              <option value="{{ m.id }}">
+                {{ m.fname }} {{ m.lname }} (@{{ m.username }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3 d-flex gap-2">
+            <button
+              type="button"
+              id="historyTodayBtn"
+              class="btn btn-sm btn-outline-secondary w-100"
+            >
+              Today
+            </button>
+          </div>
+
+          <div class="col-12">
+            <small id="historyFilterSummary" class="text-muted"></small>
+          </div>
+        </div>
 
         <ul
           class="nav nav-pills gap-2 mb-3 bg-light p-1 rounded-3 d-inline-flex flex-wrap"
@@ -2201,8 +2249,14 @@ SACCO{% endblock %} {% block extra_head %}
                 </thead>
                 <tbody>
                   {% for item in all_savings_transactions|default([]) %} {% set
-                  s = item[0] %} {% set u = item[1] %}
-                  <tr>
+                  s = item[0] %} {% set u = item[1] %} {% set tx_day =
+                  s.date_recorded.strftime('%Y-%m-%d') if s.date_recorded else
+                  '' %}
+                  <tr
+                    class="history-tx-row"
+                    data-tx-date="{{ tx_day }}"
+                    data-member-id="{{ u.id if u else s.user_id }}"
+                  >
                     <td class="fw-bold">
                       {% if u %}{{ u.fname }} {{ u.lname }}{% else %}Unknown{%
                       endif %}
@@ -2246,13 +2300,13 @@ SACCO{% endblock %} {% block extra_head %}
                     </td>
                     {% endif %}
                   </tr>
-                  {% else %}
-                  <tr>
+                  {% endfor %}
+                  <tr class="history-empty-row d-none">
                     <td colspan="5" class="text-center text-muted py-3">
-                      No savings transactions recorded.
+                      No savings transactions recorded for the selected day and
+                      member.
                     </td>
                   </tr>
-                  {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -2275,11 +2329,18 @@ SACCO{% endblock %} {% block extra_head %}
                   </tr>
                 </thead>
                 <tbody>
-                  {% set has_repayments = namespace(value=false) %} {% for loan
-                  in all_loans|default([]) %} {% if loan.amount_repaid and
-                  loan.amount_repaid > 0 %} {% set has_repayments.value = true
-                  %}
-                  <tr>
+                  {% for loan in all_loans|default([]) %} {% if
+                  loan.amount_repaid and loan.amount_repaid > 0 %} {% set
+                  rep_date = loan.last_payment_date if loan.last_payment_date is
+                  defined and loan.last_payment_date else (loan.date_updated if
+                  loan.date_updated is defined and loan.date_updated else
+                  loan.date_applied) %} {% set rep_day =
+                  rep_date.strftime('%Y-%m-%d') if rep_date else '' %}
+                  <tr
+                    class="history-tx-row"
+                    data-tx-date="{{ rep_day }}"
+                    data-member-id="{{ loan.user.id if loan.user else loan.user_id }}"
+                  >
                     <td class="fw-bold">
                       {% if loan.user %} {{ loan.user.fname }} {{
                       loan.user.lname }}
@@ -2328,13 +2389,13 @@ SACCO{% endblock %} {% block extra_head %}
                     </td>
                     {% endif %}
                   </tr>
-                  {% endif %} {% endfor %} {% if not has_repayments.value %}
-                  <tr>
+                  {% endif %} {% endfor %}
+                  <tr class="history-empty-row d-none">
                     <td colspan="5" class="text-center text-muted py-3">
-                      No loan repayment contributions recorded yet.
+                      No loan repayments recorded for the selected day and
+                      member.
                     </td>
                   </tr>
-                  {% endif %}
                 </tbody>
               </table>
             </div>
@@ -2359,14 +2420,18 @@ SACCO{% endblock %} {% block extra_head %}
                   </tr>
                 </thead>
                 <tbody>
-                  {% set has_membership = namespace(value=false) %} {% set
-                  fee_source = all_membership_fees if all_membership_fees is
-                  defined else all_fines_transactions|default([]) %} {% for item
-                  in fee_source %} {% set f = item[0] %} {% set u = item[1] %}
-                  {% if all_membership_fees is defined or (f.fee_type and
-                  'membership' in f.fee_type|lower) %} {% set
-                  has_membership.value = true %}
-                  <tr>
+                  {% set fee_source = all_membership_fees if all_membership_fees
+                  is defined else all_fines_transactions|default([]) %} {% for
+                  item in fee_source %} {% set f = item[0] %} {% set u = item[1]
+                  %} {% if all_membership_fees is defined or (f.fee_type and
+                  'membership' in f.fee_type|lower) %} {% set fee_day =
+                  f.date_recorded.strftime('%Y-%m-%d') if f.date_recorded else
+                  '' %}
+                  <tr
+                    class="history-tx-row"
+                    data-tx-date="{{ fee_day }}"
+                    data-member-id="{{ u.id if u else f.user_id }}"
+                  >
                     <td class="fw-bold">
                       {% if u %} {{ u.fname }} {{ u.lname }}
                       <small class="text-muted d-block"
@@ -2444,13 +2509,13 @@ SACCO{% endblock %} {% block extra_head %}
                     </td>
                     {% endif %}
                   </tr>
-                  {% endif %} {% endfor %} {% if not has_membership.value %}
-                  <tr>
+                  {% endif %} {% endfor %}
+                  <tr class="history-empty-row d-none">
                     <td colspan="7" class="text-center text-muted py-3">
-                      No membership fees recorded yet.
+                      No membership fees recorded for the selected day and
+                      member.
                     </td>
                   </tr>
-                  {% endif %}
                 </tbody>
               </table>
             </div>
@@ -2475,11 +2540,16 @@ SACCO{% endblock %} {% block extra_head %}
                   </tr>
                 </thead>
                 <tbody>
-                  {% set has_other_fines = namespace(value=false) %} {% for item
-                  in all_fines_transactions|default([]) %} {% set f = item[0] %}
-                  {% set u = item[1] %} {% if not (f.fee_type and 'membership'
-                  in f.fee_type|lower) %} {% set has_other_fines.value = true %}
-                  <tr>
+                  {% for item in all_fines_transactions|default([]) %} {% set f
+                  = item[0] %} {% set u = item[1] %} {% if not (f.fee_type and
+                  'membership' in f.fee_type|lower) %} {% set fine_day =
+                  f.date_recorded.strftime('%Y-%m-%d') if f.date_recorded else
+                  '' %}
+                  <tr
+                    class="history-tx-row"
+                    data-tx-date="{{ fine_day }}"
+                    data-member-id="{{ u.id if u else f.user_id }}"
+                  >
                     <td class="fw-bold">
                       {% if u %}{{ u.fname }} {{ u.lname }}
                       <small class="text-muted d-block">@{{ u.username }}</small
@@ -2552,13 +2622,12 @@ SACCO{% endblock %} {% block extra_head %}
                     </td>
                     {% endif %}
                   </tr>
-                  {% endif %} {% endfor %} {% if not has_other_fines.value %}
-                  <tr>
+                  {% endif %} {% endfor %}
+                  <tr class="history-empty-row d-none">
                     <td colspan="7" class="text-center text-muted py-3">
-                      No fines or fees recorded.
+                      No fines or fees recorded for the selected day and member.
                     </td>
                   </tr>
-                  {% endif %}
                 </tbody>
               </table>
             </div>
@@ -3449,14 +3518,18 @@ loan.amount_repaid > 0 %}
       });
     }
 
-    // 2. Flexible Savings Modal Period & Calendar Handler
+    // 2. Flexible Savings Modal Period, Calendar & Processing Lock Handler
     const periodSelect = document.getElementById("savingPeriod");
     const fridayCalendarContainer = document.getElementById("fridayCalendarContainer");
     const customMonthsContainer = document.getElementById("customMonthsContainer");
     const amountInput = document.getElementById("depositAmount");
     const ruleText = document.getElementById("depositRuleText");
     const monthCheckboxes = document.querySelectorAll(".custom-month-checkbox");
-    const savingsForm = document.querySelector("#saveFridayModal form");
+    const savingsForm =
+      document.getElementById("saveFridayForm") ||
+      document.querySelector("#saveFridayModal form");
+    const submitDepositBtn = document.getElementById("submitDepositBtn");
+    const processingAlertEl = document.getElementById("processingAlert");
     const monthError = document.getElementById("monthError");
 
     const calendarMonthYear = document.getElementById("calendarMonthYear");
@@ -3641,16 +3714,153 @@ loan.amount_repaid > 0 %}
           if (selectedFridayInput && !selectedFridayInput.value) {
             e.preventDefault();
             if (fridayError) fridayError.classList.remove("d-none");
+            return;
           }
         } else if (periodSelect && periodSelect.value === "custom") {
           const checkedCount = document.querySelectorAll(".custom-month-checkbox:checked").length;
           if (checkedCount === 0) {
             e.preventDefault();
             if (monthError) monthError.classList.remove("d-none");
+            return;
           }
+        }
+
+        // Prevent duplicate submissions while the first request is in flight
+        if (savingsForm.dataset.submitting === "true") {
+          e.preventDefault();
+          if (processingAlertEl) processingAlertEl.classList.remove("d-none");
+          return false;
+        }
+
+        savingsForm.dataset.submitting = "true";
+
+        if (submitDepositBtn) {
+          submitDepositBtn.disabled = true;
+          submitDepositBtn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Still processing...';
+        }
+
+        savingsForm.querySelectorAll('[data-bs-dismiss="modal"]').forEach((btn) => {
+          btn.disabled = true;
+        });
+
+        if (processingAlertEl) {
+          processingAlertEl.classList.remove("d-none");
+        }
+
+        const saveModalEl = document.getElementById("saveFridayModal");
+        if (saveModalEl && typeof bootstrap !== "undefined") {
+          const saveModalInstance = bootstrap.Modal.getInstance(saveModalEl);
+          if (saveModalInstance) {
+            saveModalInstance.hide();
+          }
+        }
+
+        const processingModalEl = document.getElementById("processingModal");
+        if (processingModalEl && typeof bootstrap !== "undefined") {
+          const procTitle = document.getElementById("processingTitle");
+          const procText = document.getElementById("processingText");
+          if (procTitle) procTitle.textContent = "Processing Deposit";
+          if (procText) {
+            procText.textContent =
+              "Still processing transaction, please wait while we record your deposit...";
+          }
+          const procModal =
+            bootstrap.Modal.getInstance(processingModalEl) ||
+            new bootstrap.Modal(processingModalEl, {
+              backdrop: "static",
+              keyboard: false,
+            });
+          procModal.show();
         }
       });
     }
+
+    // 2B. Transaction History Modal Single-Day + Single-Member Filter
+    const historyModal = document.getElementById("transactionHistoryModal");
+    const historyDayInput = document.getElementById("historyDayFilter");
+    const historyMemberSelect = document.getElementById("historyMemberFilter");
+    const historyTodayBtn = document.getElementById("historyTodayBtn");
+    const historySummaryEl = document.getElementById("historyFilterSummary");
+
+    function getLocalTodayIso() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function applyHistoryFilters() {
+      if (!historyModal || !historyDayInput || !historyMemberSelect) return;
+
+      if (!historyDayInput.value) {
+        historyDayInput.value = getLocalTodayIso();
+      }
+
+      const selectedDay = historyDayInput.value;
+      const selectedMember = historyMemberSelect.value;
+      let activeTabShown = 0;
+
+      historyModal.querySelectorAll(".tab-pane").forEach((pane) => {
+        const rows = pane.querySelectorAll("tbody tr.history-tx-row");
+        const emptyRow = pane.querySelector("tbody tr.history-empty-row");
+        let visibleCount = 0;
+
+        rows.forEach((row) => {
+          const rowDay = row.getAttribute("data-tx-date") || "";
+          const rowMember = row.getAttribute("data-member-id") || "";
+
+          const dayMatch = !selectedDay || rowDay === selectedDay;
+          const memberMatch =
+            selectedMember === "all" || rowMember === selectedMember;
+
+          if (dayMatch && memberMatch) {
+            row.classList.remove("d-none");
+            visibleCount++;
+          } else {
+            row.classList.add("d-none");
+          }
+        });
+
+        if (emptyRow) {
+          emptyRow.classList.toggle("d-none", visibleCount > 0);
+        }
+
+        if (pane.classList.contains("active")) {
+          activeTabShown = visibleCount;
+        }
+      });
+
+      if (historySummaryEl) {
+        const memberLabel =
+          selectedMember === "all"
+            ? "All Members"
+            : historyMemberSelect.options[historyMemberSelect.selectedIndex]?.text ||
+              "Selected Member";
+        historySummaryEl.textContent = `Showing ${activeTabShown} record(s) in current tab for ${selectedDay} — ${memberLabel}.`;
+      }
+    }
+
+    if (historyDayInput) {
+      historyDayInput.addEventListener("change", applyHistoryFilters);
+    }
+    if (historyMemberSelect) {
+      historyMemberSelect.addEventListener("change", applyHistoryFilters);
+    }
+    if (historyTodayBtn && historyDayInput) {
+      historyTodayBtn.addEventListener("click", function () {
+        historyDayInput.value = getLocalTodayIso();
+        applyHistoryFilters();
+      });
+    }
+    if (historyModal) {
+      historyModal.querySelectorAll('[data-bs-toggle="tab"]').forEach((tabBtn) => {
+        tabBtn.addEventListener("shown.bs.tab", applyHistoryFilters);
+      });
+      historyModal.addEventListener("shown.bs.modal", applyHistoryFilters);
+    }
+    applyHistoryFilters();
 
     // 3. Loan Type Rules Handler
     const loanTypeSelect = document.getElementById("loanTypeSelect");
@@ -3735,7 +3945,6 @@ loan.amount_repaid > 0 %}
     updatePagination();
   });
 </script>
-
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
